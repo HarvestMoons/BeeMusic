@@ -9,7 +9,7 @@
 </template>
 
 <script>
-import { ref, watch, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import MarkdownIt from 'markdown-it'
 import MySpinner from "../components/effects/MySpinner.vue";
 import Sidebar from "../components/layout/Sidebar.vue";
