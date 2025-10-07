@@ -3,6 +3,10 @@
     <div class="song-info-container">
       <div class="song-info">
         <h2 id="current-song">当前未播放</h2>
+        <VoteControls
+            v-if="playlist[currentIndex]"
+            :songId="playlist[currentIndex].id"
+        />
         <Playlist
             :playlist="playlist"
             :currentSongId="playlist[currentIndex]?.id"
