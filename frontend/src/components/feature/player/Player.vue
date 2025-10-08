@@ -27,7 +27,7 @@
         </select>
 
         <select id="folder-selector">
-          <option value="ha_ji_mi">哈基咪咪</option>
+          <option value="ha_ji_mi">基米天堂</option>
           <option value="dian_gun">溜冰密室</option>
           <option value="da_si_ma">起飞基地</option>
           <option value="ding_zhen">烟雾缭绕</option>
