@@ -54,7 +54,6 @@ const historyStack = ref([]);       // 历史播放栈
 
 // DOM元素
 let audioPlayer, currentSongEl, playBtn, prevBtn, playModeSelect, folderSelector;
-let likeBtn, dislikeBtn, likeCountEl, dislikeCountEl;
 
 // ------------------- 初始化 -------------------
 async function init() {
@@ -65,10 +64,6 @@ async function init() {
   prevBtn = document.getElementById('prev-btn');
   playModeSelect = document.getElementById('play-mode');
   folderSelector = document.getElementById('folder-selector');
-  likeBtn = document.getElementById('like-btn');
-  dislikeBtn = document.getElementById('dislike-btn');
-  likeCountEl = document.getElementById('like-count');
-  dislikeCountEl = document.getElementById('dislike-count');
 
   audioPlayer.crossOrigin = 'anonymous';
   audioPlayer.volume = 0.2;

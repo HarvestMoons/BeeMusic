@@ -3,8 +3,8 @@ version: '3.9'
 services:
   spring:
     build:
-      context: .
-      dockerfile: backend/Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: spring_app
     restart: always
     ports:
