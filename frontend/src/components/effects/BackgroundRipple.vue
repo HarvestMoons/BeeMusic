@@ -2,7 +2,7 @@
 import { onMounted, onBeforeUnmount } from 'vue';
 
 const props = defineProps({
-  apiBase: { type: String, default: '/api/public' },
+  apiBase: { type: String, default: '/api' },
   swRegister: { type: Boolean, default: false },
 });
 
@@ -52,7 +52,7 @@ async function addVideoToCache(videoId, videoUrl) {
   if (!('caches' in window)) return;
   try {
     const cache = await caches.open(CACHE_NAME);
-    const response = await fetch(videoUrl);
+    const response = await fetch(videoUrl, { credentials: 'omit' }); // 显式设置 credentials
     if (!response || response.status !== 200) return;
 
     const headers = new Headers(response.headers);
@@ -69,7 +69,6 @@ async function addVideoToCache(videoId, videoUrl) {
     console.warn('缓存视频失败:', e);
   }
 }
-
 async function getCachedVideoUrl(videoId) {
   if (!('caches' in window)) return null;
   try {
@@ -110,8 +109,17 @@ async function playCachedVideo(selectedVideo, fromCache = false) {
     videoElement.src = cachedUrl || selectedVideo.url;
     console.log(cachedUrl ? '✅ 从缓存播放视频:' : '⚠️ 缓存获取失败，从网络播放:', selectedVideo.id);
   } else {
-    videoElement.src = selectedVideo.url;
-    console.log('🌐 从网络播放视频:', selectedVideo.id);
+    try {
+      const response = await fetch(selectedVideo.url, { credentials: 'omit' }); // 添加 fetch 并设置 credentials
+      if (!response.ok) throw new Error('Failed to fetch video');
+      const blob = await response.blob();
+      videoElement.src = URL.createObjectURL(blob);
+      console.log('🌐 从网络播放视频:', selectedVideo.id);
+    } catch (e) {
+      console.error('网络播放视频失败:', e);
+      stopVideoInternal();
+      return;
+    }
   }
 
   videoElement.preload = 'auto';
@@ -147,7 +155,6 @@ async function playCachedVideo(selectedVideo, fromCache = false) {
     overlay.addEventListener('click', onOverlayClick);
   });
 
-
   videoElement.addEventListener('ended', stopVideoInternal);
   videoElement.addEventListener('error', stopVideoInternal);
 
@@ -166,15 +173,12 @@ onMounted(() => {
 
   const mainAudio = document.getElementById('audio-player');
 
-  // -------------------- 长按触发 --------------------
-  const mousedownHandler = (e) => {
-    if (e.button !== 0 || mainAudio && videoElement || e.target.closest('button,a,input,textarea,label,select')) return;
+  // -------------------- 长按E键触发 --------------------
+  const keydownHandler = (e) => {
+    if (e.key.toLowerCase() !== 'e' || mainAudio && videoElement || e.repeat) return;
 
     // 清理旧 overlay（未触发状态）
     if (!isTriggered) clearOverlay();
-
-    const x = e.clientX;
-    const y = e.clientY;
 
     longPressTimer = setTimeout(async () => {
       isTriggered = true; // ✅ 标记动画已触发
@@ -185,8 +189,8 @@ onMounted(() => {
 
       const ripple = document.createElement('div');
       ripple.className = 'ripple-circle';
-      ripple.style.left = x + 'px';
-      ripple.style.top = y + 'px';
+      ripple.style.left = '50%'; // 居中显示
+      ripple.style.top = '50%';
       overlay.appendChild(ripple);
 
       const darkBg = document.createElement('div');
@@ -199,43 +203,55 @@ onMounted(() => {
         if (mainAudio) mainAudio.pause();
 
         try {
-          const res = await fetch(`${props.apiBase}/videos/random`);
+          const res = await fetch(`${props.apiBase}/public/videos/random`);
           if (!res.ok) throw new Error('HTTP ' + res.status);
           const videos = await res.json();
-          if (!videos || videos.length === 0) { clearOverlay(); return; }
+          if (!videos || videos.length === 0) {
+            clearOverlay();
+            return;
+          }
 
           const selected = videos[Math.floor(Math.random() * videos.length)];
           if (await isVideoCached(selected.id)) await playCachedVideo(selected, true);
-          else { await playCachedVideo(selected, false); void addVideoToCache(selected.id, selected.url); }
+          else {
+            await playCachedVideo(selected, false);
+            void addVideoToCache(selected.id, selected.url);
+          }
 
-        } catch (err) { console.error(err); clearOverlay(); }
-      }, 2000); // ✅ 动画 2 秒后播放视频，无论鼠标是否抬起
+        } catch (err) {
+          console.error(err);
+          clearOverlay();
+        }
+      }, 2000); // ✅ 动画 2 秒后播放视频，无论键盘是否松开
 
-    }, 4000); // 长按 4 秒触发
+    }, 3000); // 长按 E 键 3 秒触发
   };
 
-// -------------------- mouseup / mouseleave --------------------
-  const mouseupHandler = () => { if (!isTriggered) clearOverlay(); };
-  const mouseleaveHandler = () => { if (!isTriggered) clearOverlay(); };
+  // -------------------- keyup --------------------
+  const keyupHandler = (e) => {
+    if (e.key.toLowerCase() === 'e' && !isTriggered) clearOverlay();
+  };
 
-
-  document.addEventListener('mousedown', mousedownHandler);
-  document.addEventListener('mouseup', mouseupHandler);
-  document.addEventListener('mouseleave', mouseleaveHandler);
+  document.addEventListener('keydown', keydownHandler);
+  document.addEventListener('keyup', keyupHandler);
 
   document.__rippleCleanup = () => {
-    document.removeEventListener('mousedown', mousedownHandler);
-    document.removeEventListener('mouseup', mouseupHandler);
-    document.removeEventListener('mouseleave', mouseleaveHandler);
+    document.removeEventListener('keydown', keydownHandler);
+    document.removeEventListener('keyup', keyupHandler);
     stopVideoInternal();
   };
 });
 
 onBeforeUnmount(() => {
-  if (document.__rippleCleanup) { try { document.__rippleCleanup(); } catch {} delete document.__rippleCleanup; }
+  if (document.__rippleCleanup) {
+    try {
+      document.__rippleCleanup();
+    } catch {
+    }
+    delete document.__rippleCleanup;
+  }
 });
 </script>
-
 
 <style>
 .ripple-overlay {
@@ -248,16 +264,18 @@ onBeforeUnmount(() => {
   pointer-events: none;
   overflow: hidden;
 }
+
 .ripple-circle {
   position: absolute;
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 70%);
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0) 70%);
   transform: translate(-50%, -50%) scale(0);
   opacity: 0;
   transition: all 2s ease-out;
 }
+
 .dark-background {
   position: absolute;
   top: 0;
@@ -268,25 +286,31 @@ onBeforeUnmount(() => {
   opacity: 0;
   transition: opacity 2s ease-in-out;
 }
+
 /* 视频播放时遮挡下方控件，开启事件拦截 */
 .ripple-overlay.video-playing {
   pointer-events: auto;
 }
+
 .ripple-overlay.active .ripple-circle {
   opacity: 1;
   transform: translate(-50%, -50%) scale(30);
 }
+
 .ripple-overlay.active .dark-background {
   opacity: 1;
 }
+
 .ripple-overlay.video-playing .ripple-circle {
   opacity: 0;
   transition: opacity 0.5s ease-in;
 }
+
 .ripple-overlay.video-playing .dark-background {
   opacity: 0;
   transition: opacity 0.5s ease-in;
 }
+
 .ripple-overlay.fade-out .ripple-circle,
 .ripple-overlay.fade-out .dark-background {
   opacity: 0 !important;
