@@ -2,7 +2,7 @@
 import { onMounted, onBeforeUnmount } from 'vue';
 
 const props = defineProps({
-  apiBase: { type: String, default: '/api' },
+  apiBase: { type: String, default: '/api/public' },
   swRegister: { type: Boolean, default: false },
 });
 

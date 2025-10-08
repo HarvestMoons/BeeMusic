@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/songs")
+@RequestMapping("/api/public/songs")
 public class SongController {
 
     private final SongService songService;

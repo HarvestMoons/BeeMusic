@@ -45,6 +45,7 @@ import VoteControls from "./VoteControls.vue";
 
 
 const API_BASE = '/api';
+const PUBLIC_API_BASE = '/api/public';
 const DEFAULT_FOLDER = 'ha_ji_mi';
 
 // 响应式状态
@@ -91,7 +92,7 @@ async function handleFolderChange() {
 async function setFolder(folder) {
   try {
     showLoading(true);
-    const res = await fetch(`${API_BASE}/songs/set-folder`, {
+    const res = await fetch(`${PUBLIC_API_BASE}/songs/set-folder`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({folder})
@@ -120,7 +121,7 @@ async function setFolder(folder) {
 
 async function fetchSongList() {
   try {
-    const res = await fetch(`${API_BASE}/songs/get`);
+    const res = await fetch(`${PUBLIC_API_BASE}/songs/get`);
     const data = await res.json();
     playlist.value = shuffleArray(data);
     return playlist.value;
