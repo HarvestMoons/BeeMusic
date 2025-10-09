@@ -4,6 +4,7 @@
     <h1>关于本站</h1>
     <p>开发者：小蜜蜂 <span style="color: transparent">     特别鸣谢：ChatGPT、DeepSeek</span></p>
     <p>本站是一个个人音乐网站，基于 Vue3 + Spring 开发，音乐来源于Bilibili网站。点击歌名右侧的视频图标，就能跳转到原视频页观看pv（由于该网站收录的音乐类型特殊，某些视频可能已经被下架，该网站仅用于保留其一缕残魂）。
+      由于该网站目前仍处于活跃更新中，某些功能可能暂时不可用或有bug。如果有任何想法，可以在“隐私政策”页面下找到我的联系方式与我交流。
       彩蛋：<span style="color: transparent">在主页面，长按E键可以观看随机逆天视频。</span></p>
     <section class="programmer-honor-shame" aria-labelledby="ps-title">
       <h3 id="ps-title">程序员八荣八耻</h3>
