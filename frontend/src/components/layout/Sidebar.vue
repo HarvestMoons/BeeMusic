@@ -10,15 +10,15 @@
     <!-- 菜单内容（始终存在，用透明度和可见性控制） -->
     <nav class="menu" :class="{ visible: isOpen }">
       <ul>
-        <li><a href="#" @click.prevent="showHome">首页</a></li>
-        <li><a href="#" @click.prevent="showAbout">关于本站</a></li>
-        <li><a href="#" @click.prevent="showPrivacy">隐私政策</a></li>
-        <li><a href="#" @click.prevent="showAuthor">🔗关于小蜜蜂</a></li>
         <li>
           <a href="#" @click.prevent="handleAuthAction">
             {{ authStore.isAuthenticated ? '登出' : '登录' }}
           </a>
         </li>
+        <li><a href="#" @click.prevent="showHome">首页</a></li>
+        <li><a href="#" @click.prevent="showAbout">关于本站</a></li>
+        <li><a href="#" @click.prevent="showPrivacy">隐私政策</a></li>
+        <li><a href="#" @click.prevent="showAuthor">🔗关于小蜜蜂</a></li>
       </ul>
     </nav>
   </div>

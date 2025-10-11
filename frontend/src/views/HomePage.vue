@@ -19,6 +19,9 @@
 
     <BackgroundParticles zIndex="0" opacity="0.4" color="0,0,0" :count="99" />
     <BackgroundRipple apiBase="/api" />
+    <div v-if="loading">
+      <MySpinner />
+    </div>
   </div>
 </template>
 
@@ -30,6 +33,7 @@ import Sidebar from '../components/layout/Sidebar.vue'
 import SpectrumVisualizer from '../components/feature/spectrum/SpectrumVisualizer.vue'
 import BackgroundParticles from '../components/effects/BackgroundParticles.vue'
 import BackgroundRipple from '../components/effects/BackgroundRipple.vue'
+import MySpinner from "../components/effects/MySpinner.vue";
 
 const playerRef = ref(null)
 
