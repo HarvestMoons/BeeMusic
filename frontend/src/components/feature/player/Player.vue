@@ -44,10 +44,8 @@ import {onMounted, ref} from 'vue'
 import portalIcon from '@/assets/icons/protal.svg'
 import VoteControls from "./VoteControls.vue";
 import PlaybackRateControl from "./PlaybackRateControl.vue";
+import { PUBLIC_API_BASE } from '@/constants';
 
-
-const API_BASE = '/api';
-const PUBLIC_API_BASE = '/api/public';
 const DEFAULT_FOLDER = 'ha_ji_mi';
 
 // 响应式状态

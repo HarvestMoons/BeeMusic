@@ -14,36 +14,58 @@
         <li><a href="#" @click.prevent="showAbout">关于本站</a></li>
         <li><a href="#" @click.prevent="showPrivacy">隐私政策</a></li>
         <li><a href="#" @click.prevent="showAuthor">🔗关于小蜜蜂</a></li>
+        <li>
+          <a href="#" @click.prevent="handleAuthAction">
+            {{ authStore.isAuthenticated ? '登出' : '登录' }}
+          </a>
+        </li>
       </ul>
     </nav>
   </div>
 </template>
 
 <script setup>
-import {ref} from 'vue'
-import { useRouter } from 'vue-router'
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import {logout} from "../../services/auth.js";
+import {useAuthStore} from "../../store/index.js";
 
-const isOpen = ref(false)
-const router = useRouter()
+const isOpen = ref(false);
+const router = useRouter();
+const authStore = useAuthStore();
 
 function toggleSidebar() {
-  isOpen.value = !isOpen.value
+  isOpen.value = !isOpen.value;
 }
 
 function showHome() {
-  router.push('/')
+  router.push('/');
 }
 
 function showPrivacy() {
-  router.push('/privacy')
+  router.push('/privacy');
 }
 
 function showAbout() {
-  router.push('/about')
+  router.push('/about');
 }
 
 function showAuthor() {
   window.open("https://github.com/HarvestMoons/HarvestMoons", "_blank");
+}
+
+async function handleAuthAction() {
+  if (authStore.isAuthenticated) {
+    try {
+      await logout(); // 调用注销 API
+      authStore.logout(); // 更新 Pinia 状态
+      await router.push('/'); // 重定向到首页
+    } catch (error) {
+      console.error('登出失败:', error);
+    }
+  } else {
+    await router.push('/login'); // 未登录时跳转到登录页面
+  }
 }
 </script>
 
@@ -132,9 +154,9 @@ function showAuthor() {
   color: #e0e0e0;
   text-decoration: none;
   font-weight: 500;
-  font-size: 16px;      /* 字体更大 */
-  line-height: 1.8;     /* 增加行高 */
-  letter-spacing: 0.5px; /* 字间距稍微拉开 */
+  font-size: 16px; /* 字体更大 */
+  line-height: 1.8; /* 增加行高 */
+  letter-spacing: 1px; /* 字间距稍微拉开 */
   transition: color 0.2s ease;
 }
 

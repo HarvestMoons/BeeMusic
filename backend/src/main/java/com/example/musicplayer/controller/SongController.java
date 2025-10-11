@@ -2,13 +2,14 @@ package com.example.musicplayer.controller;
 
 import com.example.musicplayer.model.Song;
 import com.example.musicplayer.service.SongService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/public/songs")
+@RequestMapping("/api")
 public class SongController {
 
     private final SongService songService;
@@ -18,32 +19,37 @@ public class SongController {
     }
 
     // 首页歌曲列表
-    @GetMapping("/get")
+    @GetMapping("/public/songs/get")
     public List<Song> getSongs() {
         return songService.getSongs();
     }
 
     // 切换歌曲文件夹
-    @PostMapping("/set-folder")
+    @PostMapping("/public/songs/set-folder")
     public Map<String, Object> setFolder(@RequestBody Map<String, String> body) {
         String folder = body.get("folder");
         return songService.setFolder(folder);
     }
 
     // 获取点赞/点踩数
-    @GetMapping("/votes/{songId}")
-    public Map<String, Integer> getVotes(@PathVariable String songId) {
+    @GetMapping("/public/songs/votes/{songId}")
+    public Map<String, Integer> getVotes(@PathVariable String songId, HttpServletRequest request) {
+        String cookieHeader = request.getHeader("Cookie");
+        System.out.println(cookieHeader);
+        System.out.println(request.getSession(false));
         return songService.getVotes(songId);
     }
 
     // 点赞
-    @PostMapping("/like/{songId}")
-    public Map<String, Integer> likeSong(@PathVariable String songId) {
+    @PostMapping("/songs/like/{songId}")
+    public Map<String, Integer> likeSong(@PathVariable String songId, HttpServletRequest request) {
+        String cookieHeader = request.getHeader("Cookie");
+        System.out.println(cookieHeader);
         return songService.likeSong(songId);
     }
 
     // 点踩
-    @PostMapping("/dislike/{songId}")
+    @PostMapping("/songs/dislike/{songId}")
     public Map<String, Integer> dislikeSong(@PathVariable String songId) {
         return songService.dislikeSong(songId);
     }
