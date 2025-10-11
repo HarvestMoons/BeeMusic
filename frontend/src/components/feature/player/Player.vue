@@ -33,6 +33,7 @@
           <option value="ding_zhen">烟雾缭绕</option>
           <option value="dxl">东洋雪莲</option>
         </select>
+        <PlaybackRateControl v-model="playbackRate" @change="handleRateChange" />
       </div>
     </div>
   </div>
@@ -42,6 +43,7 @@
 import {onMounted, ref} from 'vue'
 import portalIcon from '@/assets/icons/protal.svg'
 import VoteControls from "./VoteControls.vue";
+import PlaybackRateControl from "./PlaybackRateControl.vue";
 
 
 const API_BASE = '/api';
@@ -52,9 +54,17 @@ const DEFAULT_FOLDER = 'ha_ji_mi';
 const playlist = ref([]);           // 歌曲列表
 const currentIndex = ref(-1);       // 当前播放索引
 const historyStack = ref([]);       // 历史播放栈
+const playbackRate = ref(1.0)
 
 // DOM元素
 let audioPlayer, currentSongEl, playBtn, prevBtn, playModeSelect, folderSelector;
+
+
+function handleRateChange(rate) {
+  if (audioPlayer) {
+    audioPlayer.playbackRate = rate
+  }
+}
 
 // ------------------- 初始化 -------------------
 async function init() {
