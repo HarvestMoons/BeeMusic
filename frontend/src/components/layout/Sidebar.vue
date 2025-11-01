@@ -7,11 +7,11 @@
       <span></span>
     </button>
 
-    <!-- 菜单内容（始终存在，用透明度和可见性控制） -->
+    <!-- 菜单 -->
     <nav class="menu" :class="{ visible: isOpen }">
       <ul>
         <li>
-          <a href="#" @click.prevent="handleAuthAction">
+          <a href="#" @click.prevent="onAuthClick">
             {{ authStore.isAuthenticated ? '登出' : '登录' }}
           </a>
         </li>
@@ -25,46 +25,44 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import {logout} from "../../services/auth.js";
-import {useAuthStore} from "../../store/index.js";
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '../../store/index.js'
+import { logout } from '../../services/auth.js'
 
-const isOpen = ref(false);
-const router = useRouter();
-const authStore = useAuthStore();
+const isOpen = ref(false)
+const router = useRouter()
+const authStore = useAuthStore()
+
+// 定义父组件通信事件
+const emit = defineEmits(['open-login', 'open-register', 'request-logout'])
 
 function toggleSidebar() {
-  isOpen.value = !isOpen.value;
+  isOpen.value = !isOpen.value
 }
 
 function showHome() {
-  router.push('/');
+  router.push('/')
 }
 
 function showPrivacy() {
-  router.push('/privacy');
+  router.push('/privacy')
 }
 
 function showAbout() {
-  router.push('/about');
+  router.push('/about')
 }
 
 function showAuthor() {
-  window.open("https://github.com/HarvestMoons/HarvestMoons", "_blank");
+  window.open('https://github.com/HarvestMoons/HarvestMoons', '_blank')
 }
 
-async function handleAuthAction() {
+// 登录 / 登出处理
+function onAuthClick() {
   if (authStore.isAuthenticated) {
-    try {
-      await logout(); // 调用注销 API
-      authStore.logout(); // 更新 Pinia 状态
-      await router.push('/'); // 重定向到首页
-    } catch (error) {
-      console.error('登出失败:', error);
-    }
+    emit('request-logout')
   } else {
-    await router.push('/login'); // 未登录时跳转到登录页面
+    emit('open-login')
   }
 }
 </script>
@@ -75,8 +73,8 @@ async function handleAuthAction() {
   top: 0;
   left: 0;
   height: 100vh;
-  width: 60px; /* 收起状态 */
-  background-color: #2c2c2c; /* 偏灰暗色 */
+  width: 60px;
+  background-color: #2c2c2c;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -86,7 +84,7 @@ async function handleAuthAction() {
 }
 
 .sidebar.open {
-  width: 220px; /* 展开宽度 */
+  width: 220px;
   align-items: flex-start;
 }
 
@@ -107,12 +105,11 @@ async function handleAuthAction() {
   display: block;
   height: 3px;
   width: 100%;
-  background-color: #e0e0e0; /* 浅灰色横线 */
+  background-color: #e0e0e0;
   border-radius: 2px;
   transition: all 0.3s ease;
 }
 
-/* 汉堡按钮动画 */
 .sidebar.open .hamburger span:nth-child(1) {
   transform: rotate(45deg) translate(5px, 5px);
 }
@@ -127,10 +124,9 @@ async function handleAuthAction() {
   margin-top: 60px;
   padding: 10px 20px;
   opacity: 0;
-  visibility: hidden; /* 防止收起时文字占位/被挤压 */
+  visibility: hidden;
   pointer-events: none;
   transition: opacity 0.2s ease, visibility 0s linear 0.3s;
-  /* 收起时延迟隐藏，等宽度动画结束 */
 }
 
 .menu.visible {
@@ -138,7 +134,6 @@ async function handleAuthAction() {
   visibility: visible;
   pointer-events: auto;
   transition: opacity 0.3s ease 0.15s, visibility 0s linear 0s;
-  /* 展开时稍微延迟淡入，避免文字提前出现 */
 }
 
 .menu ul {
@@ -147,16 +142,16 @@ async function handleAuthAction() {
 }
 
 .menu li {
-  margin-bottom: 20px; /* 选项之间更宽 */
+  margin-bottom: 20px;
 }
 
 .menu a {
   color: #e0e0e0;
   text-decoration: none;
   font-weight: 500;
-  font-size: 16px; /* 字体更大 */
-  line-height: 1.8; /* 增加行高 */
-  letter-spacing: 1px; /* 字间距稍微拉开 */
+  font-size: 16px;
+  line-height: 1.8;
+  letter-spacing: 1px;
   transition: color 0.2s ease;
 }
 

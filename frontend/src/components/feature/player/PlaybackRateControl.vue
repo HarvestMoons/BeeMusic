@@ -18,6 +18,7 @@
 </template>
 
 <script setup>
+//todo:歌曲切换时，恢复到x1.0倍速，没有保留原来的修改
 import {ref, watch, onMounted} from 'vue'
 
 const props = defineProps({

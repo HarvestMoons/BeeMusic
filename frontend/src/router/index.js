@@ -3,15 +3,11 @@ import HomePage from '../views/HomePage.vue';
 import PrivacyPage from '../views/PrivacyPage.vue';
 import About from '../views/About.vue';
 import { useAuthStore } from '../store';
-import Login from "../components/feature/auth/Login.vue";
-import Register from "../components/feature/auth/Register.vue";
 
 const routes = [
     { path: '/', component: HomePage },
     { path: '/privacy', component: PrivacyPage },
     { path: '/about', component: About },
-    { path: '/login', component: Login },
-    { path: '/register', component: Register },
 ];
 
 const router = createRouter({
