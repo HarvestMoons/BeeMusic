@@ -1,3 +1,4 @@
+<!-- src/components/layout/Sidebar.vue -->
 <template>
   <div :class="['sidebar', { open: isOpen }]">
     <!-- 汉堡按钮 -->
@@ -28,7 +29,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../store/index.js'
-import { logout } from '../../services/auth.js'
+import {eventBus} from "../../utils/eventBus.js";
 
 const isOpen = ref(false)
 const router = useRouter()
@@ -41,18 +42,16 @@ function toggleSidebar() {
   isOpen.value = !isOpen.value
 }
 
+// 路由跳转
 function showHome() {
   router.push('/')
 }
-
 function showPrivacy() {
   router.push('/privacy')
 }
-
 function showAbout() {
   router.push('/about')
 }
-
 function showAuthor() {
   window.open('https://github.com/HarvestMoons/HarvestMoons', '_blank')
 }
@@ -60,11 +59,12 @@ function showAuthor() {
 // 登录 / 登出处理
 function onAuthClick() {
   if (authStore.isAuthenticated) {
-    emit('request-logout')
+    eventBus.emit('request-logout')
   } else {
-    emit('open-login')
+    eventBus.emit('open-login')
   }
 }
+
 </script>
 
 <style scoped>
