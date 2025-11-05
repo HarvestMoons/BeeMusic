@@ -8,6 +8,7 @@ import com.example.musicplayer.model.Song;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import com.aliyun.oss.model.ListObjectsRequest;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -40,30 +41,46 @@ public class SongService {
         this.ossClient = new OSSClientBuilder().build(endpoint, accessKey, secretKey);
     }
 
-    // 获取歌曲列表
+    // 获取歌曲列表（不限量）
     public List<Song> getSongs() {
         String folder = AVAILABLE_FOLDERS.get(currentFolderKey);
         String prefix = "music/" + folder + "/";
-        ObjectListing objectListing = ossClient.listObjects(bucketName, prefix);
 
         List<Song> songs = new ArrayList<>();
-        for (OSSObjectSummary summary : objectListing.getObjectSummaries()) {
-            String key = summary.getKey();
-            if (key.toLowerCase().endsWith(".mp3")) {
-                String filename = key.substring(key.lastIndexOf("/") + 1);
-                String signedUrl = ossClient.generatePresignedUrl(bucketName, key, new Date(System.currentTimeMillis() + 60*60 * 1000*24)).toString();
+        String nextMarker = null;
+        ObjectListing objectListing;
 
-                Song song = new Song();
-                song.setId(Integer.toHexString(key.hashCode()));
-                song.setName(filename);
-                song.setUrl(signedUrl);
-                song.setKey(key);
+        do {
+            objectListing = ossClient.listObjects(new ListObjectsRequest(bucketName)
+                    .withPrefix(prefix)
+                    .withMarker(nextMarker)
+                    // 每次最多 1000 条
+                    .withMaxKeys(1000));
 
-                songs.add(song);
+            for (OSSObjectSummary summary : objectListing.getObjectSummaries()) {
+                String key = summary.getKey();
+                if (key.toLowerCase().endsWith(".mp3")) {
+                    String filename = key.substring(key.lastIndexOf("/") + 1);
+                    String signedUrl = ossClient.generatePresignedUrl(
+                            bucketName, key,
+                            new Date(System.currentTimeMillis() + 60 * 60 * 1000 * 24)
+                    ).toString();
+
+                    Song song = new Song();
+                    song.setId(Integer.toHexString(key.hashCode()));
+                    song.setName(filename);
+                    song.setUrl(signedUrl);
+                    song.setKey(key);
+
+                    songs.add(song);
+                }
             }
-        }
+            nextMarker = objectListing.getNextMarker();
+        } while (objectListing.isTruncated()); // 若结果被截断则继续请求
+
         return songs;
     }
+
 
     // 切换文件夹
     public Map<String, Object> setFolder(String folder) {

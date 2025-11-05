@@ -40,7 +40,7 @@
 </template>
 
 <script setup>
-import {onMounted, ref} from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import portalIcon from '@/assets/icons/protal.svg'
 import VoteControls from "./VoteControls.vue";
 import PlaybackRateControl from "./PlaybackRateControl.vue";
@@ -48,9 +48,17 @@ import { PUBLIC_API_BASE } from '@/constants';
 
 const DEFAULT_FOLDER = 'ha_ji_mi';
 
+// STORAGE key 定义（注意：playbackRate 按 folder 存）
+const STORAGE_KEYS = {
+  VOLUME: 'music_volume',
+  PLAYLIST_PREFIX: 'music_playlist_',         // + folder
+  SELECTED_FOLDER_PREFIX: 'music_selected_folder_', // + selectorId
+  PLAYBACK_RATE_PREFIX: 'music_playback_rate_' // + folder
+};
+
 // 响应式状态
 const playlist = ref([]);           // 歌曲列表
-const currentIndex = ref(-1);       // 当前播放索引
+const currentIndex = ref(-1);       // 当前播放索引（不再持久化）
 const historyStack = ref([]);       // 历史播放栈
 const playbackRate = ref(1.0)
 
@@ -58,11 +66,79 @@ const playbackRate = ref(1.0)
 let audioPlayer, currentSongEl, playBtn, prevBtn, playModeSelect, folderSelector;
 
 
-function handleRateChange(rate) {
-  if (audioPlayer) {
-    audioPlayer.playbackRate = rate
+// ------------------- 存储与恢复 -------------------
+function makeSelectedFolderKey(selectorId) { return STORAGE_KEYS.SELECTED_FOLDER_PREFIX + selectorId; }
+function makePlaybackRateKey(folder) { return STORAGE_KEYS.PLAYBACK_RATE_PREFIX + folder; }
+
+function saveVolumeToStorage(vol) {
+  try { localStorage.setItem(STORAGE_KEYS.VOLUME, String(vol)); } catch (e) {}
+}
+function loadVolumeFromStorage() {
+  try {
+    const v = parseFloat(localStorage.getItem(STORAGE_KEYS.VOLUME));
+    if (!Number.isNaN(v)) return Math.min(1, Math.max(0, v));
+  } catch (e) {}
+  return null;
+}
+
+// 保存/加载 selector 的选中 folder（支持多个 selector，通过 selector.id 区分）
+function saveSelectedFolder(selectorId, folder) {
+  if (!selectorId) return;
+  try { localStorage.setItem(makeSelectedFolderKey(selectorId), folder); } catch (e) {}
+}
+function loadSelectedFolder(selectorId) {
+  if (!selectorId) return null;
+  try { return localStorage.getItem(makeSelectedFolderKey(selectorId)); } catch (e) {}
+}
+
+// playback rate 按 folder 存储（用户在每个 folder 中的偏好）
+function savePlaybackRateForFolder(folder) {
+  try { localStorage.setItem(makePlaybackRateKey(folder), String(playbackRate.value)); } catch (e) {}
+}
+function loadPlaybackRateForFolder(folder) {
+  try {
+    const raw = localStorage.getItem(makePlaybackRateKey(folder));
+    const v = parseFloat(raw);
+    if (!Number.isNaN(v)) return v;
+  } catch (e) {}
+  return null;
+}
+
+// 跨标签页同步（可选）
+function handleStorageEvent(e) {
+  if (!e.key) return;
+
+  // volume
+  if (e.key === STORAGE_KEYS.VOLUME) {
+    const v = parseFloat(e.newValue);
+    if (!Number.isNaN(v) && audioPlayer) audioPlayer.volume = v;
+  }
+
+  // playback rate for current folder
+  const curFolder = folderSelector?.value || DEFAULT_FOLDER;
+  if (e.key === makePlaybackRateKey(curFolder)) {
+    const v = parseFloat(e.newValue);
+    if (!Number.isNaN(v)) {
+      playbackRate.value = v;
+      if (audioPlayer) audioPlayer.playbackRate = v;
+    }
+  }
+
+  // selected folder for selectors: 如果任意 selector key 变化，尝试更新对应 selector 元素
+  if (e.key && e.key.startsWith(STORAGE_KEYS.SELECTED_FOLDER_PREFIX)) {
+    const selectorId = e.key.substring(STORAGE_KEYS.SELECTED_FOLDER_PREFIX.length);
+    const sel = document.getElementById(selectorId);
+    if (sel && sel.tagName === 'SELECT') {
+      sel.value = e.newValue;
+      // 如果是当前页面上的 folderSelector 并且值改变，触发一次 setFolder（谨慎：避免循环）
+      if (selectorId === folderSelector?.id && e.newValue !== folderSelector.value) {
+        // 触发切换但不保存（因为这是同步来的变化）
+        setFolder(e.newValue).catch(() => {});
+      }
+    }
   }
 }
+
 
 // ------------------- 初始化 -------------------
 async function init() {
@@ -75,25 +151,67 @@ async function init() {
   folderSelector = document.getElementById('folder-selector');
 
   audioPlayer.crossOrigin = 'anonymous';
-  audioPlayer.volume = 0.2;
-  folderSelector.value = DEFAULT_FOLDER;
+
+  // 恢复并设置音量
+  const savedVol = loadVolumeFromStorage();
+  audioPlayer.volume = savedVol != null ? savedVol : 0.2;
+
+  // 恢复播放速率 —— 按当前 folder 恢复；（如果没有则使用全局默认）
+  const savedRate = loadPlaybackRateForFolder(DEFAULT_FOLDER);
+  if (savedRate != null) playbackRate.value = savedRate;
+  audioPlayer.playbackRate = playbackRate.value;
+
+  // 如果 folderSelector 元素存在，尝试恢复该 selector 的上次选择（按 selector.id）
+  if (folderSelector && folderSelector.id) {
+    const saved = loadSelectedFolder(folderSelector.id);
+    if (saved) folderSelector.value = saved;
+  } else if (folderSelector) {
+    // 如果没有 id，给它一个 id（保证持久化 key 的稳定）
+    folderSelector.id = `folder-selector-${Date.now()}`;
+  }
 
   setupEventListeners();
 
-  await setFolder(DEFAULT_FOLDER);
+  // listen storage for multi-tab sync
+  window.addEventListener('storage', handleStorageEvent);
+
+  await setFolder(folderSelector?.value || DEFAULT_FOLDER);
+
+  playRandomSong();
 }
 
 function setupEventListeners() {
-  folderSelector.addEventListener('change', handleFolderChange);
-  playBtn.addEventListener('click', handlePlayClick);
-  prevBtn.addEventListener('click', playPreviousSong);
+  if (folderSelector) folderSelector.addEventListener('change', handleFolderChange);
+  if (playBtn) playBtn.addEventListener('click', handlePlayClick);
+  if (prevBtn) prevBtn.addEventListener('click', playPreviousSong);
+
   audioPlayer.addEventListener('ended', handlePlaybackEnd);
   audioPlayer.addEventListener('error', handleAudioError);
+
+  // audio 元素 volume/rate 的变动也要保存
+  audioPlayer.addEventListener('volumechange', () => {
+    saveVolumeToStorage(audioPlayer.volume);
+  });
+  audioPlayer.addEventListener('ratechange', () => {
+    // 将 audio 的 rate 写回到 playbackRate，并持久化为当前 folder 的偏好
+      playbackRate.value = audioPlayer.playbackRate;
+      const folder = folderSelector?.value || DEFAULT_FOLDER;
+      savePlaybackRateForFolder(folder);
+  });
+
+  // 当 new source 加载完后，确保 playbackRate 被设置回去（有些浏览器在 load 后会重置）
+  audioPlayer.addEventListener('loadedmetadata', () => {
+    try {
+      audioPlayer.playbackRate = playbackRate.value;
+    } catch (e) {}
+  });
 }
 
 // ------------------- 歌单与文件夹 -------------------
-async function handleFolderChange() {
-  const selectedFolder = folderSelector.value;
+async function handleFolderChange(e) {
+  const selectedFolder = e?.target?.value || folderSelector.value;
+  // 保存该 selector 的选中值（按 selector.id）
+  if (folderSelector && folderSelector.id) saveSelectedFolder(folderSelector.id, selectedFolder);
   await setFolder(selectedFolder);
 }
 
@@ -109,7 +227,16 @@ async function setFolder(folder) {
 
     if (result.status === 'ok') {
       historyStack.value = [];
-      await fetchSongList();
+      await fetchSongList(folder);
+
+      // 尝试恢复该 folder 对应的播放速率偏好
+      const savedRate = loadPlaybackRateForFolder(folder);
+      if (savedRate != null) {
+        playbackRate.value = savedRate;
+        if (audioPlayer) audioPlayer.playbackRate = savedRate;
+      }
+
+      // 不再恢复 currentIndex（按你要求不保存 currentIndex），从 0 开始播放或提示无歌
       if (playlist.value.length > 0) {
         playSongAtIndex(0);
       } else {
@@ -131,16 +258,18 @@ async function fetchSongList() {
   try {
     const res = await fetch(`${PUBLIC_API_BASE}/songs/get`);
     const data = await res.json();
-    playlist.value = shuffleArray(data);
+    playlist.value = shuffleArray(data || []);
     return playlist.value;
   } catch (err) {
     console.error("获取歌曲列表失败", err);
+    playlist.value = [];
     return [];
   }
 }
 
 function shuffleArray(array) {
   const newArr = [...array];
+  console.log('newArr.length'+newArr.length);
   for (let i = newArr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
@@ -163,7 +292,14 @@ function playSongAtIndex(index, fromHistory = false) {
   currentIndex.value = index;
   const song = playlist.value[index];
 
+  // 设置 src 之前/之后都确保 playbackRate 被恢复（避免某些浏览器把 rate 恢复为 1）
   audioPlayer.src = song.url;
+
+  // 在设置 src 后强制将 playbackRate 写回
+  try {
+    audioPlayer.playbackRate = playbackRate.value;
+  } catch (e) {}
+
   const parsed = parseSongNameWithBv(song.name);
   if (parsed.bv) {
     currentSongEl.innerHTML = `
@@ -172,13 +308,20 @@ function playSongAtIndex(index, fromHistory = false) {
     <img src="${portalIcon}" alt="传送门" class="portal-icon" />
   </a>
 `
-
-
   } else {
     currentSongEl.textContent = parsed.title;
   }
 
-  audioPlayer.play();
+  // 在 metadata 载入时进一步确保 playbackRate 没被重置
+  const once = () => {
+    try { audioPlayer.playbackRate = playbackRate.value; } catch (e) {}
+    audioPlayer.removeEventListener('loadedmetadata', once);
+  };
+  audioPlayer.addEventListener('loadedmetadata', once);
+
+  audioPlayer.play().catch(err => {
+    console.warn('播放未启动：', err);
+  });
 }
 
 function parseSongNameWithBv(name) {
@@ -252,6 +395,14 @@ function handleSelectSong(songId) {
   }
 }
 
+// ------------------- watch 与其他 -------------------
+
+// 当 playbackRate 改变时，同步到 audioPlayer 并持久化为当前 folder 的偏好
+watch(playbackRate, (val) => {
+  if (audioPlayer) audioPlayer.playbackRate = val;
+  const folder = folderSelector?.value || DEFAULT_FOLDER;
+  savePlaybackRateForFolder(folder);
+});
 // ------------------- 工具 -------------------
 function showLoading(show) {
   document.body.classList.toggle('loading', show);
@@ -263,9 +414,9 @@ onMounted(() => {
 
 // 对外暴露响应式对象和方法
 defineExpose({
-  playlist,          // 暴露响应式 playlist
-  currentIndex,      // 暴露响应式 currentIndex
-  playSongAtIndex,    // 暴露播放方法
+  playlist,
+  currentIndex,
+  playSongAtIndex,
   handleSelectSong
 })
 </script>
