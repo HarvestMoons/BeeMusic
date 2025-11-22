@@ -53,11 +53,9 @@ onBeforeUnmount(() => {
 })
 
 function openLogin() {
-  console.log('[App] 打开登录弹窗')
   showLogin.value = true
 }
 function openRegister() {
-  console.log('[App] 打开注册弹窗')
   showRegister.value = true
 }
 

@@ -156,11 +156,6 @@ async function init() {
   const savedVol = loadVolumeFromStorage();
   audioPlayer.volume = savedVol != null ? savedVol : 0.2;
 
-  // 恢复播放速率 —— 按当前 folder 恢复；（如果没有则使用全局默认）
-  const savedRate = loadPlaybackRateForFolder(DEFAULT_FOLDER);
-  if (savedRate != null) playbackRate.value = savedRate;
-  audioPlayer.playbackRate = playbackRate.value;
-
   // 如果 folderSelector 元素存在，尝试恢复该 selector 的上次选择（按 selector.id）
   if (folderSelector && folderSelector.id) {
     const saved = loadSelectedFolder(folderSelector.id);
@@ -169,6 +164,11 @@ async function init() {
     // 如果没有 id，给它一个 id（保证持久化 key 的稳定）
     folderSelector.id = `folder-selector-${Date.now()}`;
   }
+
+  // 恢复播放速率 —— 按当前 folder 恢复；（如果没有则使用全局默认）
+  const savedRate = loadPlaybackRateForFolder(folderSelector.id);
+  if (savedRate != null) playbackRate.value = savedRate;
+  audioPlayer.playbackRate = playbackRate.value;
 
   setupEventListeners();
 
@@ -268,7 +268,6 @@ async function fetchSongList() {
 
 function shuffleArray(array) {
   const newArr = [...array];
-  console.log('newArr.length'+newArr.length);
   for (let i = newArr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
