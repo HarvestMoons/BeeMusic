@@ -1,6 +1,6 @@
 <template>
   <div class="spectrum-container">
-    <HelpTooltip v-show="showSpectrum">- 按 M 切换频谱模式</HelpTooltip>
+    <HelpTooltip v-show="showSpectrum">- 按 Z 切换频谱模式</HelpTooltip>
     <canvas id="spectrumCanvas"></canvas>
   </div>
 </template>
@@ -187,9 +187,9 @@ onMounted(() => {
   document.addEventListener("click", clickResumeHandler);
   document.addEventListener("keydown", keydownResumeHandler);
 
-  // 按 M 切换模式（保留原逻辑）
+  // 按 Z 切换模式（保留原逻辑）
   const modeKeyHandler = (e) => {
-    if (e.key.toLowerCase() !== "m") return;
+    if (e.key.toLowerCase() !== "z") return;
     mode = mode === "spectrum" ? "waveform" : mode === "waveform" ? "circle" : "spectrum";
   };
   document.addEventListener("keydown", modeKeyHandler);

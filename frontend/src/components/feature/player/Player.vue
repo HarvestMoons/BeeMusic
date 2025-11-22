@@ -45,6 +45,7 @@ import portalIcon from '@/assets/icons/protal.svg'
 import VoteControls from "./VoteControls.vue";
 import PlaybackRateControl from "./PlaybackRateControl.vue";
 import { PUBLIC_API_BASE } from '@/constants';
+import {useKeyboardShortcuts} from "../../../composables/useKeyboardShortcuts.js";
 
 const DEFAULT_FOLDER = 'ha_ji_mi';
 
@@ -406,8 +407,33 @@ function showLoading(show) {
   document.body.classList.toggle('loading', show);
 }
 
-onMounted(() => {
-  init();
+// 顺序下一首（不管播放模式是什么，都严格顺序 +1）
+function playNextInOrder() {
+  if (playlist.value.length === 0) return
+  const next = (currentIndex.value + 1) % playlist.value.length
+  playSongAtIndex(next)
+}
+
+// 顺序上一首（严格顺序 -1，到底了就到最后一首）
+function playPrevInOrder() {
+  if (playlist.value.length === 0 || currentIndex.value === -1) return
+  const prev = currentIndex.value === 0
+      ? playlist.value.length - 1
+      : currentIndex.value - 1
+  playSongAtIndex(prev)
+}
+
+onMounted(async () => {
+  await init();
+  useKeyboardShortcuts(
+      () => audioPlayer,
+      () => audioPlayer.paused ? audioPlayer.play() : audioPlayer.pause(),  // 空格：播放/暂停
+      playNextInOrder,         // → / D：顺序下一首（不管模式）
+      playPrevInOrder,         // ← / A：顺序上一首（到底循环到末尾）
+      () => audioPlayer.muted = !audioPlayer.muted,  // M：静音
+      playRandomSong,          // R：随便听听
+      handlePlayClick          // 可选：你原来的“随便听听”按钮逻辑也可以保留为备用
+  )
 });
 
 // 对外暴露响应式对象和方法

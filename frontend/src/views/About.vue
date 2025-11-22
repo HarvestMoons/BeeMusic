@@ -6,6 +6,16 @@
     <p>本站是一个个人音乐网站，基于 Vue3 + Spring 开发，音乐来源于Bilibili网站。点击歌名右侧的视频图标，就能跳转到原视频页观看pv（由于该网站收录的音乐类型特殊，某些视频可能已经被下架，该网站仅用于保留其一缕残魂）。
       由于该网站目前仍处于活跃更新中，某些功能可能暂时不可用或有bug。如果有任何想法，可以在“隐私政策”页面下找到我的联系方式与我交流。
       彩蛋：<span style="color: transparent">在主页面，长按E键可以观看随机逆天视频。</span></p>
+    <p>全局快捷键：</p>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 20px; justify-items: center; padding: 8px 0; font-size: 15px;">
+      <div><kbd>Space</kbd> 播放/暂停</div>
+      <div><kbd>← A</kbd> 上一首</div>
+      <div><kbd>→ D</kbd> 下一首</div>
+      <div><kbd>R</kbd> 随机播放</div>
+      <div><kbd>M</kbd> 静音开关</div>
+      <div><kbd>Z</kbd> 频谱样式切换</div>
+    </div>
+
     <section class="programmer-honor-shame" aria-labelledby="ps-title">
       <h3 id="ps-title">程序员八荣八耻</h3>
       <ul>
