@@ -70,9 +70,20 @@ public class AuthController {
 
     @GetMapping("/status")
     public ResponseEntity<AuthResponse> status(HttpSession session) {
-        User user = (User) session.getAttribute("user");
+        User user = null;
+        try {
+            user = (User) session.getAttribute("user");
+        } catch (IllegalStateException e) {
+            // session invalidated
+            return ResponseEntity.ok(new AuthResponse(false, "Not authenticated", null));
+        }
         if (user != null) {
-            userService.updateLastActiveTime(user);
+            try {
+                userService.updateLastActiveTime(user);
+            } catch (Exception e) {
+                // log error (could add logger) but still return authenticated
+                System.err.println("Failed to update last active time: " + e.getMessage());
+            }
             return ResponseEntity.ok(new AuthResponse(true, "Authenticated", user.getUsername()));
         }
         return ResponseEntity.ok(new AuthResponse(false, "Not authenticated", null));

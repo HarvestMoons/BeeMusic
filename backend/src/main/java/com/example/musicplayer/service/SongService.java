@@ -1,27 +1,20 @@
 package com.example.musicplayer.service;
 
 import com.aliyun.oss.OSS;
-import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.model.OSSObjectSummary;
-import com.aliyun.oss.model.ObjectListing;
 import com.example.musicplayer.model.Song;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import com.example.musicplayer.repository.SongRepository;
 import org.springframework.stereotype.Service;
-import com.aliyun.oss.model.ListObjectsRequest;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class SongService {
 
-    private final StringRedisTemplate redisTemplate;
     private final OSS ossClient;
-    private final String bucketName = "bees-bucket";
-
+    private final OssUtil ossUtil;
+    private final SongRepository songRepository;
     private final Map<String, String> AVAILABLE_FOLDERS = Map.of(
             "ha_ji_mi", "哈基米",
             "dian_gun", "溜冰场",
@@ -32,58 +25,13 @@ public class SongService {
 
     private String currentFolderKey = "ha_ji_mi";
 
-    public SongService(
-            StringRedisTemplate redisTemplate,
-            @Value("${aliyun.oss.endpoint}") String endpoint,
-            @Value("${aliyun.oss.access-key}") String accessKey,
-            @Value("${aliyun.oss.secret-key}") String secretKey) {
-        this.redisTemplate = redisTemplate;
-        this.ossClient = new OSSClientBuilder().build(endpoint, accessKey, secretKey);
+    public SongService(OSS ossClient, OssUtil ossUtil, SongRepository songRepository) {
+        this.ossClient = ossClient;
+        this.ossUtil = ossUtil;
+        this.songRepository = songRepository;
     }
 
-    // 获取歌曲列表（不限量）
-    public List<Song> getSongs() {
-        String folder = AVAILABLE_FOLDERS.get(currentFolderKey);
-        String prefix = "music/" + folder + "/";
-
-        List<Song> songs = new ArrayList<>();
-        String nextMarker = null;
-        ObjectListing objectListing;
-
-        do {
-            objectListing = ossClient.listObjects(new ListObjectsRequest(bucketName)
-                    .withPrefix(prefix)
-                    .withMarker(nextMarker)
-                    // 每次最多 1000 条
-                    .withMaxKeys(1000));
-
-            for (OSSObjectSummary summary : objectListing.getObjectSummaries()) {
-                String key = summary.getKey();
-                if (key.toLowerCase().endsWith(".mp3")) {
-                    String filename = key.substring(key.lastIndexOf("/") + 1);
-                    String signedUrl = ossClient.generatePresignedUrl(
-                            bucketName, key,
-                            new Date(System.currentTimeMillis() + 60 * 60 * 1000 * 24)
-                    ).toString();
-
-                    Song song = new Song();
-                    song.setId(Integer.toHexString(key.hashCode()));
-                    song.setName(filename);
-                    song.setUrl(signedUrl);
-                    song.setKey(key);
-
-                    songs.add(song);
-                }
-            }
-            nextMarker = objectListing.getNextMarker();
-        } while (objectListing.isTruncated()); // 若结果被截断则继续请求
-
-        return songs;
-    }
-
-
-    // 切换文件夹
-    public Map<String, Object> setFolder(String folder) {
+    public Map<String, String> setFolder(String folder) {
         if (AVAILABLE_FOLDERS.containsKey(folder)) {
             currentFolderKey = folder;
             return Map.of("status", "ok", "current", folder);
@@ -91,27 +39,55 @@ public class SongService {
         return Map.of("error", "Invalid folder key");
     }
 
-    // 获取点赞/点踩数
-    public Map<String, Integer> getVotes(String songId) {
-        String likes = redisTemplate.opsForValue().get("likes:" + songId);
-        String dislikes = redisTemplate.opsForValue().get("dislikes:" + songId);
+    public List<Song> getSongs() {
+        String folderChineseName = AVAILABLE_FOLDERS.get(currentFolderKey);
+        String prefix = "music/" + folderChineseName + "/";
 
-        return Map.of(
-                "likes", likes != null ? Integer.parseInt(likes) : 0,
-                "dislikes", dislikes != null ? Integer.parseInt(dislikes) : 0
-        );
+        // 第一步：先从 OSS 列出当前文件夹所有 mp3 文件的 key
+        List<OSSObjectSummary> ossFiles = ossUtil.listFilesByPrefixAndSuffix(prefix, ".mp3");
+
+        // 第二步：从数据库查出当前文件夹所有已持久化的歌曲（按 key 去重）
+        List<Song> dbSongs = songRepository.findByKeyStartingWithAndIsDeleted(prefix, 0);
+
+        // 第三步：生成 signedUrl 并合并（关键！要复用数据库里的 id 和投票数）
+        Map<String, Song> keyToSongMap = new HashMap<>();
+        for (Song song : dbSongs) {
+            keyToSongMap.put(song.getKey(), song);
+        }
+
+        List<Song> result = new ArrayList<>();
+        for (OSSObjectSummary file : ossFiles) {
+            String key = file.getKey();
+
+            // 优先复用数据库已有的记录（包含 id、投票数、创建时间等）
+            Song song = keyToSongMap.getOrDefault(key, new Song());
+
+            // 如果是新文件（数据库没有），则补全基本信息
+            if (song.getId() == null) {
+                String filename = key.substring(key.lastIndexOf('/') + 1);
+                song.setName(filename);
+                song.setKey(key);
+                song.setLikeCount(0);
+                song.setDislikeCount(0);
+                song.setIsDeleted(0);
+                // 注意：这里不要手动 setId，让数据库稍后插入时自动生成
+            }
+
+            // 生成临时签名 URL（24小时有效）
+            String signedUrl = ossClient.generatePresignedUrl(
+                    "bees-bucket",
+                    key,
+                    new Date(System.currentTimeMillis() + 24 * 3600 * 1000)
+            ).toString();
+
+            song.setUrl(signedUrl);
+            result.add(song);
+        }
+        // 自动保存新歌（幂等操作，没性能问题）
+        songRepository.saveAll(result.stream()
+                .filter(s -> s.getId() == null)
+                .collect(Collectors.toList()));
+        return result;
     }
-
-    // 点赞
-    public Map<String, Integer> likeSong(String songId) {
-        redisTemplate.opsForValue().increment("likes:" + songId);
-        return getVotes(songId);
-    }
-
-    // 点踩
-    public Map<String, Integer> dislikeSong(String songId) {
-        redisTemplate.opsForValue().increment("dislikes:" + songId);
-        return getVotes(songId);
-    }
-
 }
+

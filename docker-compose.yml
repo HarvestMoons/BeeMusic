@@ -11,6 +11,12 @@ services:
       - "8082:8082"
     depends_on:
       - redis
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "10"
+        compress: "true"
 
   frontend:
     build:
@@ -22,6 +28,11 @@ services:
       - "8081:80"              # 外部访问前端的端口（原先 nginx 映射 8081）
     depends_on:
       - spring
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
 
   redis:
     image: redis:6.2

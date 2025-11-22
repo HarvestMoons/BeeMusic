@@ -1,10 +1,10 @@
 <template>
   <div class="vote-controls">
-    <button @click="handleLike">
+    <button :class="{ active: userVote === 1 }" @click="handleLike">
       <img :src="likeIcon" alt="点赞" class="vote-icon" />
       <span>{{ likes }}</span>
     </button>
-    <button @click="handleDislike">
+    <button :class="{ active: userVote === -1 }" @click="handleDislike">
       <img :src="dislikeIcon" alt="点踩" class="vote-icon" />
       <span>{{ dislikes }}</span>
     </button>
@@ -25,6 +25,7 @@ const props = defineProps({
 
 const likes = ref(0)
 const dislikes = ref(0)
+const userVote = ref(0) // 1=已点赞, -1=已点踩, 0=无
 
 // 引入图标
 import likeIcon from '@/assets/icons/likes.svg'
@@ -38,6 +39,11 @@ async function refreshVotes() {
     const data = await res.json()
     likes.value = data.likes
     dislikes.value = data.dislikes
+    if (typeof data.userVote === 'number') {
+      userVote.value = data.userVote
+    } else {
+      userVote.value = 0
+    }
   } catch (err) {
     console.error('获取投票数失败', err)
   }
@@ -45,21 +51,39 @@ async function refreshVotes() {
 
 async function handleLike() {
   try {
-    const res = await api.post(`/songs/like/${props.songId}`);
-    likes.value = res.data.likes;
-    dislikes.value = res.data.dislikes;
+    // 如果当前是已点赞 -> 取消
+    if (userVote.value === 1) {
+      const res = await api.delete(`/songs/vote/${props.songId}`)
+      likes.value = res.data.likes
+      dislikes.value = res.data.dislikes
+      userVote.value = 0
+      return
+    }
+    const res = await api.post(`/songs/like/${props.songId}`)
+    likes.value = res.data.likes
+    dislikes.value = res.data.dislikes
+    userVote.value = 1
   } catch (err) {
-    console.error('点赞失败', err.response?.data || err.message);
+    console.error('点赞失败', err.response?.data || err.message)
   }
 }
 
 async function handleDislike() {
   try {
-    const res = await api.post(`/songs/dislike/${props.songId}`);
-    likes.value = res.data.likes;
-    dislikes.value = res.data.dislikes;
+    // 如果当前是已点踩 -> 取消
+    if (userVote.value === -1) {
+      const res = await api.delete(`/songs/vote/${props.songId}`)
+      likes.value = res.data.likes
+      dislikes.value = res.data.dislikes
+      userVote.value = 0
+      return
+    }
+    const res = await api.post(`/songs/dislike/${props.songId}`)
+    likes.value = res.data.likes
+    dislikes.value = res.data.dislikes
+    userVote.value = -1
   } catch (err) {
-    console.error('点踩失败', err.response?.data || err.message);
+    console.error('点踩失败', err.response?.data || err.message)
   }
 }
 
@@ -90,6 +114,12 @@ onMounted(refreshVotes)
 
 .vote-controls button:hover {
   background-color: #fff176;
+}
+
+.vote-controls button.active {
+  background-color: #ffe066;
+  border-color: #ffca3a;
+  box-shadow: 0 0 0 2px rgba(255,202,58,0.3);
 }
 
 .vote-icon {

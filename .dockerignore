@@ -1,0 +1,42 @@
+# .dockerignore 文件内容
+
+# 版本控制
+.git/
+.gitignore
+.svn/
+
+# IDE 文件
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 构建输出
+target/
+bin/
+build/
+out/
+*.jar
+*.war
+*.ear
+
+# 日志文件
+*.log
+logs/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# Maven 相关
+pom.xml.asc
+*.versionsBackup
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/
+mvnw
+mvnw.cmd
+
+# 测试相关
+*.tmp
+*.temp

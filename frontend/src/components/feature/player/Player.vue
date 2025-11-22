@@ -261,7 +261,6 @@ async function fetchSongList() {
     playlist.value = shuffleArray(data || []);
     return playlist.value;
   } catch (err) {
-    console.error("获取歌曲列表失败", err);
     playlist.value = [];
     return [];
   }

@@ -20,6 +20,6 @@ public class VideoController {
 
     @GetMapping("/random")
     public List<Video> getVideo() {
-        return videoService.getVideo();
+        return videoService.getVideos();
     }
 }
