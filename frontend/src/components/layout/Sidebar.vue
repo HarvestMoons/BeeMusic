@@ -20,6 +20,11 @@
         <li><a href="#" @click.prevent="showAbout">关于本站</a></li>
         <li><a href="#" @click.prevent="showPrivacy">隐私政策</a></li>
         <li><a href="#" @click.prevent="showAuthor">🔗关于小蜜蜂</a></li>
+        <li>
+          <a href="#" @click.prevent="toggleTheme">
+            {{ themeStore.isDarkMode ? '☀️ 日间模式' : '🌙 夜间模式' }}
+          </a>
+        </li>
       </ul>
     </nav>
   </div>
@@ -28,18 +33,26 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '../../store/index.js'
+import { useAuthStore, useThemeStore } from '../../store/index.js'
 import {eventBus} from "../../utils/eventBus.js";
+// 如果您添加了图标，请取消以下注释并替换 Emoji
+// import sunIcon from '../../assets/icons/sun.svg'
+// import moonIcon from '../../assets/icons/moon.svg'
 
 const isOpen = ref(false)
 const router = useRouter()
 const authStore = useAuthStore()
+const themeStore = useThemeStore()
 
 // 定义父组件通信事件
 const emit = defineEmits(['open-login', 'open-register', 'request-logout'])
 
 function toggleSidebar() {
   isOpen.value = !isOpen.value
+}
+
+function toggleTheme() {
+  themeStore.toggleTheme()
 }
 
 // 路由跳转
@@ -74,11 +87,12 @@ function onAuthClick() {
   left: 0;
   height: 100vh;
   width: 60px;
-  background-color: #2c2c2c;
+  background-color: var(--sidebar-bg, #2c2c2c);
+  box-shadow: var(--sidebar-shadow);
   display: flex;
   flex-direction: column;
   align-items: center;
-  transition: width 0.3s ease;
+  transition: width 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
   z-index: 1000;
   overflow: hidden;
 }
@@ -99,13 +113,14 @@ function onAuthClick() {
   background: transparent;
   cursor: pointer;
   padding: 0;
+  flex-shrink: 0;
 }
 
 .hamburger span {
   display: block;
   height: 3px;
   width: 100%;
-  background-color: #e0e0e0;
+  background-color: var(--hamburger-color, #e0e0e0);
   border-radius: 2px;
   transition: all 0.3s ease;
 }
@@ -146,7 +161,7 @@ function onAuthClick() {
 }
 
 .menu a {
-  color: #e0e0e0;
+  color: var(--sidebar-text, #e0e0e0);
   text-decoration: none;
   font-weight: 500;
   font-size: 16px;
@@ -156,7 +171,7 @@ function onAuthClick() {
 }
 
 .menu a:hover {
-  color: #ffffff;
+  color: var(--sidebar-text-hover, #ffffff);
   text-decoration: underline;
 }
 </style>

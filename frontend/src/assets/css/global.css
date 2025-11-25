@@ -1,8 +1,138 @@
-html, body, #app {
+:root {
+    /* Light Mode Variables */
+    --bg-color: #f1f1b8;
+    --text-color: #333333;
+    --primary-color: #f9a825;
+    --border-color: #ccc;
+
+    /* Playlist */
+    --playlist-bg: #fff9d6;
+    --playlist-item-bg: #fefae0;
+    --playlist-item-text: #555;
+    --playlist-item-hover-bg: #fff176;
+    --playlist-item-hover-text: #333;
+    --playlist-active-bg: #f9a825;
+    --playlist-active-text: #ffffff;
+    --playlist-active-shadow: 0 2px 8px rgba(249, 168, 37, 0.3);
+
+    /* Vote Controls */
+    --vote-btn-bg: #fff8c4;
+    --vote-btn-border: #ccc;
+    --vote-btn-hover-bg: #fff176;
+    --vote-btn-active-bg: #ffe066;
+    --vote-btn-active-border: #ffca3a;
+    --vote-icon-filter: none;
+
+    /* Modal */
+    --modal-bg: #ffffff;
+    --modal-text: #333333;
+    --modal-overlay: rgba(0, 0, 0, 0.5);
+
+    /* Input */
+    --input-bg: #ffffff;
+    --input-text: #333333;
+    --input-border: #ccc;
+
+    /* Sidebar */
+    --sidebar-bg: #fff9d6;
+    --sidebar-text: #5d4037;
+    --sidebar-text-hover: #f57f17;
+    --hamburger-color: #5d4037;
+    --sidebar-shadow: 2px 0 8px rgba(0, 0, 0, 0.08);
+
+    /* Spectrum */
+    --spectrum-bg: linear-gradient(180deg, #ffd8b0, #ffb685, #ff9f6a);
+
+    /* Song Title */
+    --song-title-color: #333333;
+
+    /* Rate Control */
+    --rate-control-bg: rgba(255, 255, 245, 0.8);
+    --rate-control-border: rgba(220, 210, 150, 0.5);
+    --rate-control-hover-bg: rgba(255, 250, 230, 0.9);
+    --rate-control-text: #6b5e3d;
+    --rate-slider-track: linear-gradient(90deg, #f7d87b, #edc963);
+    --rate-slider-thumb: radial-gradient(circle at 30% 30%, #fffef8, #e0c66b);
+    --rate-slider-thumb-border: #c9a84e;
+    --rate-display-bg: linear-gradient(135deg, #f0cc73, #e2b95c);
+    --rate-display-text: #fff;
+    --rate-display-hover-bg: linear-gradient(135deg, #f5d87d, #e5bf64);
+}
+
+[data-theme="dark"] {
+    /* Dark Mode Variables */
+    --bg-color: #222222;
+    --text-color: #e0e0e0;
+    --primary-color: #ffb74d;
+    --border-color: #444;
+
+    /* Playlist */
+    --playlist-bg: #2c2c2c;
+    --playlist-item-bg: #333333;
+    --playlist-item-text: #e0e0e0;
+    --playlist-item-hover-bg: #444444;
+    --playlist-item-hover-text: #ffffff;
+    --playlist-active-bg: #78909c;
+    --playlist-active-text: #ffffff;
+    --playlist-active-shadow: 0 2px 8px rgba(120, 144, 156, 0.3);
+
+    /* Vote Controls */
+    --vote-btn-bg: #333333;
+    --vote-btn-border: #555;
+    --vote-btn-hover-bg: #444444;
+    --vote-btn-active-bg: #ffb74d;
+    --vote-btn-active-border: #ffa726;
+    --vote-icon-filter: invert(0.9);
+
+    /* Modal */
+    --modal-bg: #2c2c2c;
+    --modal-text: #e0e0e0;
+    --modal-overlay: rgba(0, 0, 0, 0.7);
+
+    /* Input */
+    --input-bg: #333;
+    --input-text: #e0e0e0;
+    --input-border: #555;
+
+    /* Sidebar */
+    --sidebar-bg: #1a1a1a;
+    --sidebar-text: #ccc;
+    --sidebar-text-hover: #ffffff;
+    --hamburger-color: #ccc;
+    --sidebar-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+
+    /* Spectrum */
+    --spectrum-bg: linear-gradient(180deg, #37474f, #546e7a, #78909c);
+    /* 冷色调渐变，匹配夜间模式 */
+
+    /* Song Title */
+    --song-title-color: #ffffff;
+
+    /* Rate Control */
+    --rate-control-bg: #333333;
+    --rate-control-border: #555;
+    --rate-control-hover-bg: #444444;
+    --rate-control-text: #e0e0e0;
+    --rate-slider-track: linear-gradient(90deg, #546e7a, #78909c);
+    /* 深蓝灰轨道 */
+    --rate-slider-thumb: radial-gradient(circle at 30% 30%, #b0bec5, #78909c);
+    /* 亮蓝手柄 */
+    --rate-slider-thumb-border: #546e7a;
+    --rate-display-bg: linear-gradient(135deg, #78909c, #546e7a);
+    /* 蓝色徽章 */
+    --rate-display-text: #ffffff;
+    --rate-display-hover-bg: linear-gradient(135deg, #90a4ae, #607d8b);
+}
+
+html,
+body,
+#app {
     height: 100%;
     margin: 0;
     padding: 0;
-    background-color:#f1f1b8;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .song-title {

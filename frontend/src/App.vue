@@ -34,15 +34,17 @@ import {onBeforeUnmount, onMounted, ref} from 'vue'
 import Sidebar from './components/layout/Sidebar.vue'
 import LoginModal from './components/feature/auth/LoginModal.vue'
 import { logout } from './services/auth.js'
-import { useAuthStore } from './store/index.js'
+import { useAuthStore, useThemeStore } from './store/index.js'
 import RegisterModal from "./components/feature/auth/RegisterModal.vue";
 import {eventBus} from "./utils/eventBus.js";
 
 const showLogin = ref(false)
 const showRegister = ref(false)
 const authStore = useAuthStore()
+const themeStore = useThemeStore()
 
 onMounted(() => {
+  themeStore.initTheme()
   eventBus.on('open-login', () => showLogin.value = true)
   eventBus.on('open-register', () => showRegister.value = true)
   eventBus.on('request-logout', handleLogout)

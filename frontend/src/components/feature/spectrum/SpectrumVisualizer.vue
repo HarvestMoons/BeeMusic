@@ -6,11 +6,13 @@
 </template>
 
 <script setup>
-import {onMounted, onBeforeUnmount, ref} from 'vue';
+import {onMounted, onBeforeUnmount, ref, watch} from 'vue';
 import HelpTooltip from "../../common/HelpTooltip.vue";
+import { useThemeStore } from '../../../store/index.js';
 
 //showSpectrum 是响应式变量，协助控制HelpTooltip的出现
 const showSpectrum = ref(false)
+const themeStore = useThemeStore();
 let rafId = null;
 let audioCtx = null;
 let source = null;
@@ -89,23 +91,42 @@ onMounted(() => {
 
   if (btn) btn.addEventListener("click", toggleHandler);
 
-  // 公共渐变色
-  const gradientColors = [
+  // 渐变色配置
+  let currentGradientColors = [];
+
+  const lightGradient = [
     { stop: 0, color: "rgba(255,200,180,0.8)" },
     { stop: 0.5, color: "rgba(255,180,150,0.7)" },
     { stop: 1, color: "rgba(255,160,120,0.6)" },
   ];
 
+  const darkGradient = [
+    { stop: 0, color: "rgba(176, 190, 197, 0.8)" },   // 低饱和度蓝灰
+    { stop: 0.5, color: "rgba(144, 164, 174, 0.7)" },
+    { stop: 1, color: "rgba(120, 144, 156, 0.6)" },
+  ];
+
+  let backgroundColor = "#fff8f0";
+
+  function updateGradientColors() {
+    currentGradientColors = themeStore.isDarkMode ? darkGradient : lightGradient;
+    backgroundColor = themeStore.isDarkMode ? "#222222" : "#fff8f0";
+  }
+
+  // 初始化并监听主题变化
+  updateGradientColors();
+  watch(() => themeStore.isDarkMode, updateGradientColors);
+
   function getGradient(x1, y1, x2, y2) {
     const grad = ctx.createLinearGradient(x1, y1, x2, y2);
-    gradientColors.forEach(c => grad.addColorStop(c.stop, c.color));
+    currentGradientColors.forEach(c => grad.addColorStop(c.stop, c.color));
     return grad;
   }
 
   let mode = "spectrum"; // "spectrum" / "waveform" / "circle"
 
   function clearCanvas() {
-    ctx.fillStyle = "#fff8f0";
+    ctx.fillStyle = backgroundColor;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 
@@ -237,10 +258,10 @@ onBeforeUnmount(() => {
   max-width: none;          /* 取消 max-width */
   padding: 15px 20px;
   box-sizing: border-box;   /* 让 padding 不增加总宽度 */
-  background: linear-gradient(180deg, #ffd8b0, #ffb685, #ff9f6a);
+  background: var(--spectrum-bg);
   border-radius: 12px;
   overflow: hidden;
-  transition: height 0.3s ease;
+  transition: height 0.3s ease, background 0.3s ease;
   min-height: 15px;
 }
 

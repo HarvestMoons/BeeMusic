@@ -52,8 +52,8 @@ onMounted(() => {
   gap: 10px;
   padding: 8px 14px;
   border-radius: 12px;
-  background: rgba(255, 255, 245, 0.8);
-  border: 1px solid rgba(220, 210, 150, 0.5);
+  background: var(--rate-control-bg);
+  border: 1px solid var(--rate-control-border);
   box-shadow: 0 2px 6px rgba(0,0,0,0.05);
   backdrop-filter: blur(6px);
   font-size: 14px;
@@ -61,20 +61,20 @@ onMounted(() => {
 }
 
 .rate-control:hover {
-  background: rgba(255, 250, 230, 0.9);
+  background: var(--rate-control-hover-bg);
   box-shadow: 0 3px 10px rgba(0,0,0,0.08);
 }
 
 .rate-label {
   font-weight: 500;
-  color: #6b5e3d; /* 深棕文字，温和 */
+  color: var(--rate-control-text);
 }
 
 .rate-slider {
   width: 130px;
   height: 5px;
   appearance: none;
-  background: linear-gradient(90deg, #f7d87b, #edc963);
+  background: var(--rate-slider-track);
   border-radius: 5px;
   outline: none;
   cursor: pointer;
@@ -91,8 +91,8 @@ onMounted(() => {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #fffef8, #e0c66b);
-  border: 1px solid #c9a84e;
+  background: var(--rate-slider-thumb);
+  border: 1px solid var(--rate-slider-thumb-border);
   box-shadow: 0 1px 3px rgba(0,0,0,0.15);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
@@ -107,13 +107,13 @@ onMounted(() => {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: radial-gradient(circle at 30% 30%, #fffef8, #e0c66b);
-  border: 1px solid #c9a84e;
+  background: var(--rate-slider-thumb);
+  border: 1px solid var(--rate-slider-thumb-border);
 }
 
 .rate-display {
-  background: linear-gradient(135deg, #f0cc73, #e2b95c);
-  color: #fff;
+  background: var(--rate-display-bg);
+  color: var(--rate-display-text);
   font-weight: 600;
   border-radius: 8px;
   padding: 2px 10px;
@@ -124,7 +124,7 @@ onMounted(() => {
 }
 
 .rate-display:hover {
-  background: linear-gradient(135deg, #f5d87d, #e5bf64);
+  background: var(--rate-display-hover-bg);
   transform: scale(1.08);
   box-shadow: 0 3px 8px rgba(0,0,0,0.25);
 }

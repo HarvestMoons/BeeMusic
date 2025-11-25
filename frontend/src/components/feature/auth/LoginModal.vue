@@ -89,15 +89,15 @@ async function handleLogin() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0,0,0,0.5);
+  background: var(--modal-overlay);
   z-index: 3000; /* 高于 sidebar(1000) */
 }
 
 .modal-card {
   width: 420px;
   max-width: calc(100vw - 48px);
-  background: #2c2c2c; /* 不改变你的配色 */
-  color: #ffffff;
+  background: var(--modal-bg);
+  color: var(--modal-text);
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.6);
@@ -126,7 +126,7 @@ async function handleLogin() {
   margin: 0 0 12px 0;
   font-size: 20px;
   font-weight: 600;
-  color: #fff;
+  color: var(--modal-text);
   text-align: left;
 }
 
@@ -144,7 +144,7 @@ async function handleLogin() {
 
 .label-text {
   font-size: 13px;
-  color: #cfcfcf;
+  color: var(--text-color);
   text-align: left;
 }
 
@@ -153,9 +153,9 @@ input[type="password"] {
   width: 100%;
   padding: 10px 12px;
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.06);
-  background: #1a1a1a;
-  color: #fff;
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--input-text);
   outline: none;
   font-size: 14px;
 }

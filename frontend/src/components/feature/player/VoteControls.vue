@@ -103,27 +103,30 @@ onMounted(refreshVotes)
   display: flex;
   align-items: center;
   gap: 6px;
-  background-color: #fff8c4;
-  border: 1px solid #ccc;
+  background-color: var(--vote-btn-bg);
+  border: 1px solid var(--vote-btn-border);
   border-radius: 6px;
   padding: 6px 12px;
   cursor: pointer;
   font-size: 14px;
   transition: background-color 0.2s ease;
+  color: var(--text-color);
 }
 
 .vote-controls button:hover {
-  background-color: #fff176;
+  background-color: var(--vote-btn-hover-bg);
 }
 
 .vote-controls button.active {
-  background-color: #ffe066;
-  border-color: #ffca3a;
+  background-color: var(--vote-btn-active-bg);
+  border-color: var(--vote-btn-active-border);
   box-shadow: 0 0 0 2px rgba(255,202,58,0.3);
 }
 
 .vote-icon {
   width: 18px;
   height: 18px;
+  filter: var(--vote-icon-filter);
+  transition: filter 0.3s ease;
 }
 </style>

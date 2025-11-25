@@ -69,17 +69,18 @@ const onSearch = () => {
   top: 28px;
   left: 0;
   width: 200px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--input-border);
   border-radius: 6px;
   padding: 6px 10px;
   font-size: 14px;
   outline: none;
-  background: white;
+  background: var(--input-bg);
+  color: var(--input-text);
   z-index: 10;
 }
 
 .search-input:focus {
-  border-color: #f9a825;
+  border-color: var(--primary-color);
   box-shadow: 0 0 4px rgba(249, 168, 37, 0.4);
 }
 

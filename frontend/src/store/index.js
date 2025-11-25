@@ -21,3 +21,21 @@ export const useAuthStore = defineStore('auth', {
         getUsername: (state) => state.username || '未登录',
     },
 });
+
+export const useThemeStore = defineStore('theme', {
+    state: () => ({
+        isDarkMode: localStorage.getItem('theme') === 'dark',
+    }),
+    actions: {
+        toggleTheme() {
+            this.isDarkMode = !this.isDarkMode;
+            const theme = this.isDarkMode ? 'dark' : 'light';
+            localStorage.setItem('theme', theme);
+            document.documentElement.setAttribute('data-theme', theme);
+        },
+        initTheme() {
+            const theme = this.isDarkMode ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+        }
+    }
+});

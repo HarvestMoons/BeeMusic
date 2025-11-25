@@ -91,7 +91,7 @@ async function handleRegister() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0,0,0,0.5);
+  background: var(--modal-overlay);
   z-index: 3000;
 }
 
@@ -123,17 +123,17 @@ async function handleRegister() {
   cursor: pointer;
 }
 
-.modal-title { margin: 0 0 12px 0; font-size: 20px; font-weight: 600; color: #fff; text-align: left; }
+.modal-title { margin: 0 0 12px 0; font-size: 20px; font-weight: 600; color: var(--modal-text); text-align: left; }
 
 .modal-form { display:flex; flex-direction:column; gap:12px; }
 
 .field { display:flex; flex-direction:column; gap:6px; }
 
-.label-text { font-size:13px; color:#cfcfcf; text-align:left; }
+.label-text { font-size:13px; color:var(--text-color); text-align:left; }
 
 input[type="text"], input[type="password"] {
   width:100%; padding:10px 12px; border-radius:8px;
-  border:1px solid rgba(255,255,255,0.06); background:#1a1a1a; color:#fff; outline:none; font-size:14px;
+  border:1px solid var(--input-border); background:var(--input-bg); color:var(--input-text); outline:none; font-size:14px;
 }
 input:focus { box-shadow: 0 0 0 3px rgba(100,111,255,0.08); border-color: rgba(100,111,255,0.2); }
 
