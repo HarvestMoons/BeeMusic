@@ -11,11 +11,13 @@
             </a>
           </template>
         </h2>
-        <OnlineStatus />
-        <VoteControls
-            v-if="playlist[currentIndex]"
-            :songId="playlist[currentIndex].id"
-        />
+        <div class="meta-info">
+          <VoteControls
+              v-if="playlist[currentIndex]"
+              :songId="playlist[currentIndex].id"
+          />
+          <OnlineStatus />
+        </div>
         <Playlist
             :playlist="playlist"
             :currentSongId="playlist[currentIndex]?.id"
@@ -458,6 +460,13 @@ button:hover {
 .song-info h2 {
   color: var(--song-title-color);
   margin-top: 0;
+}
+
+.meta-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 audio {

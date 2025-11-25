@@ -68,8 +68,6 @@ onUnmounted(() => {
   font-size: 13px;
   color: var(--text-color);
   opacity: 0.7;
-  margin-top: 4px;
-  margin-bottom: 12px;
 }
 
 .same-song {
