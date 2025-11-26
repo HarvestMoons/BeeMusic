@@ -53,6 +53,7 @@
           <option value="da_si_ma">起飞基地</option>
           <option value="ding_zhen">烟雾缭绕</option>
           <option value="dxl">东洋雪莲</option>
+          <option value="DDF">哲学圣地</option>
         </select>
         <PlaybackRateControl v-model="playbackRate" />
       </div>

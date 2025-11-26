@@ -20,7 +20,8 @@ public class SongService {
             "dian_gun", "溜冰场",
             "da_si_ma", "大司马",
             "ding_zhen", "丁真",
-            "dxl", "东洋雪莲"
+            "dxl", "东洋雪莲",
+            "DDF","哲学"
     );
 
     private String currentFolderKey = "ha_ji_mi";
