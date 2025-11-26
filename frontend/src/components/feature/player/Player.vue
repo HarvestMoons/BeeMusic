@@ -1,6 +1,7 @@
 <template>
   <div class="player-container">
     <div class="song-info-container">
+      <FolderSelector v-model="selectedFolder" @change="handleFolderChange" />
       <div class="song-info">
         <h2 id="current-song">
           <span v-if="!currentSongInfo.title">当前未播放</span>
@@ -47,14 +48,6 @@
           <option value="single-loop">连播模式：单曲循环</option>
         </select>
 
-        <select id="folder-selector" v-model="selectedFolder" @change="handleFolderChange">
-          <option value="ha_ji_mi">基米天堂</option>
-          <option value="dian_gun">溜冰密室</option>
-          <option value="da_si_ma">起飞基地</option>
-          <option value="ding_zhen">烟雾缭绕</option>
-          <option value="dxl">东洋雪莲</option>
-          <option value="DDF">哲学圣地</option>
-        </select>
         <PlaybackRateControl v-model="playbackRate" />
       </div>
     </div>
@@ -66,6 +59,7 @@ import { onMounted, ref, watch, onUnmounted } from 'vue'
 import portalIcon from '@/assets/icons/protal.svg'
 import VoteControls from "./VoteControls.vue";
 import PlaybackRateControl from "./PlaybackRateControl.vue";
+import FolderSelector from "./FolderSelector.vue";
 import { PUBLIC_API_BASE } from '@/constants';
 import {useKeyboardShortcuts} from "../../../composables/useKeyboardShortcuts.js";
 import OnlineStatus from "../../common/OnlineStatus.vue";
