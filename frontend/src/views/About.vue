@@ -16,7 +16,6 @@
       <div><kbd>M</kbd> 静音开关</div>
       <div><kbd>Z</kbd> 频谱样式切换</div>
     </div>
-
     <section class="programmer-honor-shame" aria-labelledby="ps-title">
       <h3 id="ps-title">程序员八荣八耻</h3>
       <ul>
