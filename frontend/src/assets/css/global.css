@@ -57,6 +57,9 @@
     --rate-display-bg: linear-gradient(135deg, #f0cc73, #e2b95c);
     --rate-display-text: #fff;
     --rate-display-hover-bg: linear-gradient(135deg, #f5d87d, #e5bf64);
+
+    /* Folder Name */
+    --folder-name-bg: #ffffff;
 }
 
 [data-theme="dark"] {
@@ -122,6 +125,9 @@
     /* 蓝色徽章 */
     --rate-display-text: #ffffff;
     --rate-display-hover-bg: linear-gradient(135deg, #90a4ae, #607d8b);
+
+    /* Folder Name */
+    --folder-name-bg: #333333;
 }
 
 html,

@@ -183,11 +183,11 @@ function selectFolder(val) {
   font-size: 14px;
   font-weight: 600;
   color: var(--text-color);
-  background: rgba(255, 255, 255, 0.5);
-  padding: 4px 12px;
+  background-color: var(--folder-name-bg);
+  padding: 6px 16px;
   border-radius: 20px;
-  backdrop-filter: blur(4px);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  display: inline-block;
 }
 
 /* Active State Styling */
@@ -231,14 +231,5 @@ function selectFolder(val) {
 
 @keyframes fadeIn {
   to { opacity: 1; }
-}
-
-@media (prefers-color-scheme: dark) {
-  .card-info {
-    background: rgba(40, 40, 40, 0.95);
-  }
-  .folder-name {
-    color: #eee;
-  }
 }
 </style>

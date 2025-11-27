@@ -10,7 +10,8 @@
 
     <!-- 主体部分 -->
     <div class="flex-1">
-      <router-view />
+      <HomePage v-show="route.path === '/'" />
+      <router-view v-if="route.path !== '/'" />
     </div>
 
     <!-- 登录弹窗 -->
@@ -31,13 +32,16 @@
 
 <script setup>
 import {onBeforeUnmount, onMounted, ref} from 'vue'
+import { useRoute } from 'vue-router'
 import Sidebar from './components/layout/Sidebar.vue'
+import HomePage from './views/HomePage.vue'
 import LoginModal from './components/feature/auth/LoginModal.vue'
 import { logout } from './services/auth.js'
 import { useAuthStore, useThemeStore } from './store/index.js'
 import RegisterModal from "./components/feature/auth/RegisterModal.vue";
 import {eventBus} from "./utils/eventBus.js";
 
+const route = useRoute()
 const showLogin = ref(false)
 const showRegister = ref(false)
 const authStore = useAuthStore()

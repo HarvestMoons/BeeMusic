@@ -1,5 +1,6 @@
 <template>
   <div class="player-container">
+    <Toast :visible="showToast" :message="toastMessage" />
     <div class="song-info-container">
       <FolderSelector v-model="selectedFolder" @change="handleFolderChange" />
       <div class="song-info">
@@ -60,6 +61,7 @@ import portalIcon from '@/assets/icons/protal.svg'
 import VoteControls from "./VoteControls.vue";
 import PlaybackRateControl from "./PlaybackRateControl.vue";
 import FolderSelector from "./FolderSelector.vue";
+import Toast from "../../common/Toast.vue";
 import { PUBLIC_API_BASE } from '@/constants';
 import {useKeyboardShortcuts} from "../../../composables/useKeyboardShortcuts.js";
 import OnlineStatus from "../../common/OnlineStatus.vue";
@@ -81,6 +83,18 @@ const playbackRate = ref(1.0)
 const playMode = ref('random')
 const selectedFolder = ref(DEFAULT_FOLDER)
 const currentSongInfo = ref({ title: '', bv: null })
+const toastMessage = ref('')
+const showToast = ref(false)
+let toastTimer = null
+
+function showToastMessage(msg) {
+  toastMessage.value = msg
+  showToast.value = true
+  if (toastTimer) clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => {
+    showToast.value = false
+  }, 2000)
+}
 
 // Storage Helpers
 const makeSelectedFolderKey = (id) => STORAGE_KEYS.SELECTED_FOLDER_PREFIX + id
@@ -246,7 +260,7 @@ function parseSongNameWithBv(name) {
 
 function playPreviousSong() {
   if (historyStack.value.length === 0) {
-    alert("没有上一首了！");
+    showToastMessage("没有上一首了");
     return;
   }
   const prev = historyStack.value.pop();
@@ -368,7 +382,6 @@ onMounted(async () => {
   window.addEventListener('storage', handleStorageEvent);
 
   await setFolder(selectedFolder.value);
-  playRandomSong();
 
   useKeyboardShortcuts(
       () => audioRef.value,
@@ -395,6 +408,7 @@ defineExpose({
 
 <style scoped>
 .player-container {
+  position: relative;
   flex: 2 1 auto;
   background-color: var(--playlist-bg);
   border-radius: 12px;
@@ -472,5 +486,4 @@ audio {
 .song-info-container {
   flex: 2 1 auto;
 }
-
 </style>
