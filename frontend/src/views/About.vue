@@ -48,4 +48,17 @@ import SongFolderDonut from "@/components/feature/stats/SongFolderDonut.vue";
   box-sizing: border-box;
 
 }
+
+.programmer-honor-shame ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 24px;
+  padding-left: 20px;
+  margin: 12px 0 0;
+}
+
+.programmer-honor-shame li {
+  list-style: disc;
+  line-height: 1.4;
+}
 </style>
