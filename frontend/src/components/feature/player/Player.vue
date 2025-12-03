@@ -44,11 +44,9 @@
           <button id="prev-btn" @click="playPreviousSong">上一首</button>
           <button id="toggleSpectrumBtn" @click="toggleSpectrum">{{ showSpectrum ? '隐藏频谱' : '显示频谱' }}</button>
 
-          <select id="play-mode" v-model="playMode">
-            <option value="random">连播模式：随机播放</option>
-            <option value="loop-list">连播模式：列表循环</option>
-            <option value="single-loop">连播模式：单曲循环</option>
-          </select>
+          <button id="play-mode-btn" @click="cyclePlayMode" :title="playModeText">
+            <img :src="currentPlayModeIcon" alt="模式" class="play-mode-icon" />
+          </button>
 
           <PlaybackRateControl v-model="playbackRate" />
         </div>
@@ -69,8 +67,11 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch, onUnmounted } from 'vue'
+import { onMounted, ref, watch, onUnmounted, computed } from 'vue'
 import portalIcon from '@/assets/icons/protal.svg'
+import randomIcon from '@/assets/icons/play_mode/random.svg'
+import loopIcon from '@/assets/icons/play_mode/loop.svg'
+import singleLoopIcon from '@/assets/icons/play_mode/repeat.svg'
 import VoteControls from "./VoteControls.vue";
 import PlaybackRateControl from "./PlaybackRateControl.vue";
 import FolderSelector from "./FolderSelector.vue";
@@ -97,6 +98,28 @@ const currentIndex = ref(-1)
 const historyStack = ref([])
 const playbackRate = ref(1.0)
 const playMode = ref('random')
+
+const playModeIcons = {
+  'random': randomIcon,
+  'loop-list': loopIcon,
+  'single-loop': singleLoopIcon
+}
+const currentPlayModeIcon = computed(() => playModeIcons[playMode.value])
+const playModeText = computed(() => {
+  const map = {
+    'random': '连播模式：随机播放',
+    'loop-list': '连播模式：列表循环',
+    'single-loop': '连播模式：单曲循环'
+  }
+  return map[playMode.value]
+})
+
+function cyclePlayMode() {
+  const modes = ['random', 'loop-list', 'single-loop']
+  const nextIndex = (modes.indexOf(playMode.value) + 1) % modes.length
+  playMode.value = modes[nextIndex]
+}
+
 const selectedFolder = ref(DEFAULT_FOLDER)
 const currentSongInfo = ref({ title: '', bv: null })
 const toastMessage = ref('')
@@ -617,5 +640,11 @@ audio {
 
 .song-info-container {
   flex: 2 1 auto;
+}
+
+.play-mode-icon {
+  width: 20px;
+  height: 20px;
+  display: block;
 }
 </style>
