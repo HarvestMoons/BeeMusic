@@ -1,5 +1,6 @@
 package com.example.musicplayer.controller;
 
+import com.example.musicplayer.dto.FolderSongCount;
 import com.example.musicplayer.model.Song;
 import com.example.musicplayer.model.SongVote;
 import com.example.musicplayer.repository.SongVoteRepository;
@@ -29,6 +30,11 @@ public class SongController {
     @GetMapping("/public/songs/get")
     public List<Song> getSongs() {
         return songService.getSongs();
+    }
+
+    @GetMapping("/public/songs/folder-counts")
+    public List<FolderSongCount> getFolderCounts() {
+        return songService.getFolderSongCounts();
     }
 
     // 切换歌曲文件夹

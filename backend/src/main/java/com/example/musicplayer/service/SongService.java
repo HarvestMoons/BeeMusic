@@ -2,6 +2,7 @@ package com.example.musicplayer.service;
 
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.model.OSSObjectSummary;
+import com.example.musicplayer.dto.FolderSongCount;
 import com.example.musicplayer.model.Song;
 import com.example.musicplayer.repository.SongRepository;
 import org.springframework.stereotype.Service;
@@ -42,6 +43,16 @@ public class SongService {
 
     public void incrementPlayCount(Long songId) {
         songRepository.incrementPlayCount(songId);
+    }
+
+    public List<FolderSongCount> getFolderSongCounts() {
+        return AVAILABLE_FOLDERS.entrySet().stream()
+                .map(entry -> {
+                    String prefix = "music/" + entry.getValue() + "/";
+                    long count = songRepository.countActiveSongsByPrefix(prefix);
+                    return new FolderSongCount(entry.getKey(), entry.getValue(), count);
+                })
+                .collect(Collectors.toList());
     }
 
     public List<Song> getSongs() {
