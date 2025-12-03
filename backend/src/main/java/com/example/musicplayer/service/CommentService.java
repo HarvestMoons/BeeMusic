@@ -27,10 +27,11 @@ public class CommentService {
     }
 
     public List<CommentDTO> getComments(Long songId, Long currentUserId) {
-        // 1. 获取该歌曲所有未删除评论
         List<Comment> allComments = commentRepository.findBySongIdAndIsDeletedOrderByLikeCountDescCreatedAtDesc(songId, 0);
+        if (allComments.isEmpty()) {
+            return Collections.emptyList();
+        }
 
-        // 2. 批量获取用户信息
         Set<Long> userIds = new HashSet<>();
         for (Comment c : allComments) {
             userIds.add(c.getUserId());
@@ -38,31 +39,21 @@ public class CommentService {
                 userIds.add(c.getReplyToUserId());
             }
         }
-        Map<Long, String> userMap = userRepository.findAllById(userIds).stream()
+        Map<Long, String> userMap = userIds.isEmpty()
+                ? Collections.emptyMap()
+                : userRepository.findAllById(userIds).stream()
                 .collect(Collectors.toMap(User::getId, User::getUsername));
 
-        // 3. 获取当前用户点赞过的评论ID集合
-        Set<Long> likedCommentIds = new HashSet<>();
+        Set<Long> likedCommentIds = Collections.emptySet();
         if (currentUserId != null) {
-            // 这里简单处理，如果评论量大应该优化查询
-            // 既然是单曲评论，通常不会特别多，或者可以只查当前歌曲下的评论的点赞
-            // 为了简单，这里先不做复杂优化，假设前端会传 currentUserId
-            // 实际上应该查 CommentLike 表中 userId = currentUserId 且 commentId IN (allComments ids)
-            // 暂时简化：
-             List<Long> cIds = allComments.stream().map(Comment::getId).toList();
-             // 这种写法在 JPA 里可能不支持直接 IN list，需要自定义查询，或者简单点：
-             // 既然是获取列表，可以循环查 exists (N+1问题)，或者查出该用户所有点赞 (数据量大有问题)。
-             // 最佳实践是查出该用户在该歌曲下的所有点赞。但 CommentLike 表没存 songId。
-             // 方案：查出该用户对这些 commentId 的点赞记录。
-             // 这里为了演示方便，暂且不批量查，或者在 DTO 转换时单独查（N+1）。
-             // 优化方案：
-             // List<CommentLike> likes = commentLikeRepository.findByUserIdAndCommentIdIn(currentUserId, cIds);
-             // 假设 Repository 没加这个方法，先用 N+1 方式，或者加方法。
-             // 我去加一个方法到 Repository 比较好，但现在不想改文件了，先用 N+1 吧，或者全量查该用户所有点赞（如果量不大）。
-             // 考虑到是 Demo/小项目，N+1 在几十条评论下可接受。
+            List<Long> commentIds = allComments.stream()
+                    .map(Comment::getId)
+                    .collect(Collectors.toList());
+            if (!commentIds.isEmpty()) {
+                likedCommentIds = new HashSet<>(commentLikeRepository.findLikedCommentIds(currentUserId, commentIds));
+            }
         }
 
-        // 4. 转换为 DTO 并构建树
         List<CommentDTO> rootComments = new ArrayList<>();
         Map<Long, CommentDTO> dtoMap = new HashMap<>();
 
@@ -82,9 +73,9 @@ public class CommentService {
             }
             dto.setLikeCount(c.getLikeCount());
             dto.setCreatedAt(c.getCreatedAt());
-            
+
             if (currentUserId != null) {
-                dto.setLiked(commentLikeRepository.existsByUserIdAndCommentId(currentUserId, c.getId()));
+                dto.setLiked(likedCommentIds.contains(c.getId()));
                 dto.setOwner(currentUserId.equals(c.getUserId()));
             }
 
