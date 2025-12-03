@@ -1,5 +1,6 @@
 <template>
   <div class="vote-controls">
+    <Toast :visible="showToast" :message="toastMessage" />
     <button :class="{ active: userVote === 1 }" @click="handleLike">
       <img :src="likeIcon" alt="点赞" class="vote-icon" />
       <span>{{ likes }}</span>
@@ -14,6 +15,8 @@
 <script setup>
 import { ref, watch, onMounted } from 'vue'
 import { PUBLIC_API_BASE,API_BASE } from '@/constants';
+import { useAuthStore } from '@/store';
+import Toast from '@/components/common/Toast.vue';
 
 // 使用 props 接收当前歌曲 ID
 const props = defineProps({
@@ -26,11 +29,25 @@ const props = defineProps({
 const likes = ref(0)
 const dislikes = ref(0)
 const userVote = ref(0) // 1=已点赞, -1=已点踩, 0=无
+const showToast = ref(false)
+const toastMessage = ref('')
+let toastTimer = null
+
+const authStore = useAuthStore()
 
 // 引入图标
 import likeIcon from '@/assets/icons/likes.svg'
 import dislikeIcon from '@/assets/icons/dislike.svg'
 import api from '@/services/auth';
+
+function showToastMessage(msg) {
+  toastMessage.value = msg
+  showToast.value = true
+  if (toastTimer) clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => {
+    showToast.value = false
+  }, 2000)
+}
 
 // 刷新投票数
 async function refreshVotes() {
@@ -50,6 +67,10 @@ async function refreshVotes() {
 }
 
 async function handleLike() {
+  if (!authStore.isAuthenticated) {
+    showToastMessage('请先登录再点赞哦')
+    return
+  }
   try {
     // 如果当前是已点赞 -> 取消
     if (userVote.value === 1) {
@@ -69,6 +90,10 @@ async function handleLike() {
 }
 
 async function handleDislike() {
+  if (!authStore.isAuthenticated) {
+    showToastMessage('请先登录再点踩哦')
+    return
+  }
   try {
     // 如果当前是已点踩 -> 取消
     if (userVote.value === -1) {

@@ -5,14 +5,31 @@
       <SearchBar placeholder="搜索歌曲..." @search="handleSearch" />
     </div>
 
+    <div class="sort-toolbar">
+      <select v-model="sortField" class="sort-select">
+        <option value="default">默认排序</option>
+        <option value="playCount">播放次数</option>
+        <option value="likeCount">点赞数</option>
+        <option value="dislikeCount">点踩数</option>
+        <option value="createdAt">上架日期</option>
+      </select>
+      <button class="sort-btn" @click="toggleSortOrder" :title="sortOrder === 'asc' ? '升序' : '降序'">
+        <svg v-if="sortOrder === 'asc'" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+        <svg v-else viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+      </button>
+    </div>
+
     <ul class="playlist">
       <li
-          v-for="song in filteredPlaylist"
+          v-for="song in displayPlaylist"
           :key="song.id"
           :class="{ active: song.id === currentSongId }"
           @click="$emit('select', song.id)"
       >
-        {{ getSongTitle(song.name) }}
+        <div class="song-item-content">
+          <span class="song-title-text">{{ getSongTitle(song.name) }}</span>
+          <span v-if="sortField !== 'default'" class="song-meta">{{ formatMeta(song) }}</span>
+        </div>
       </li>
     </ul>
   </div>
@@ -28,6 +45,8 @@ const props = defineProps({
 })
 
 const searchQuery = ref('')
+const sortField = ref('default')
+const sortOrder = ref('desc')
 
 const handleSearch = (keyword) => {
   searchQuery.value = keyword
@@ -40,6 +59,43 @@ const filteredPlaylist = computed(() => {
       getSongTitle(song.name).toLowerCase().includes(query)
   )
 })
+
+const displayPlaylist = computed(() => {
+  let list = [...filteredPlaylist.value]
+  if (sortField.value === 'default') return list
+
+  return list.sort((a, b) => {
+    let valA = a[sortField.value]
+    let valB = b[sortField.value]
+
+    if (sortField.value === 'createdAt') {
+      valA = valA ? new Date(valA).getTime() : 0
+      valB = valB ? new Date(valB).getTime() : 0
+    } else {
+      valA = Number(valA) || 0
+      valB = Number(valB) || 0
+    }
+
+    if (valA === valB) return 0
+    const result = valA > valB ? 1 : -1
+    return sortOrder.value === 'asc' ? result : -result
+  })
+})
+
+function toggleSortOrder() {
+  sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+}
+
+function formatMeta(song) {
+  if (sortField.value === 'playCount') return `${song.playCount || 0}次`
+  if (sortField.value === 'likeCount') return `${song.likeCount || 0}赞`
+  if (sortField.value === 'dislikeCount') return `${song.dislikeCount || 0}踩`
+  if (sortField.value === 'createdAt') {
+    if (!song.createdAt) return ''
+    return new Date(song.createdAt).toLocaleDateString()
+  }
+  return ''
+}
 
 function getSongTitle(name) {
   let title = name.replace(/\.(mp3)$/i, '')
@@ -74,12 +130,53 @@ function getSongTitle(name) {
   font-weight: 600;
 }
 
+.sort-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  margin-bottom: 8px;
+}
+
+.sort-select {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.3));
+  background-color: var(--playlist-item-bg);
+  color: var(--text-color);
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.sort-select:hover, .sort-select:focus {
+  border-color: var(--primary-color, #4a90e2);
+}
+
+.sort-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color, rgba(128, 128, 128, 0.3));
+  background-color: var(--playlist-item-bg);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.sort-btn:hover {
+  background-color: var(--playlist-item-hover-bg);
+}
+
 .playlist {
-  max-height: 670px;
+  max-height: 615px;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 0;
-  margin: 12px 0 0 0;
+  margin: 4px 0 0 0;
 }
 
 .playlist li {
@@ -105,5 +202,27 @@ function getSongTitle(name) {
   color: var(--playlist-active-text);
   font-weight: 600;
   box-shadow: var(--playlist-active-shadow);
+}
+
+.song-item-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.song-title-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.song-meta {
+  font-size: 12px;
+  opacity: 0.7;
+  margin-left: 8px;
+  white-space: nowrap;
+  font-weight: normal;
 }
 </style>

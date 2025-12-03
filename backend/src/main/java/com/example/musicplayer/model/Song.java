@@ -32,6 +32,9 @@ public class Song {
     @Column(name = "dislike_count", nullable = false)
     private Integer dislikeCount = 0;
 
+    @Column(name = "play_count", nullable = false)
+    private Integer playCount = 0;
+
     @Column(name = "is_deleted", nullable = false)
     private Integer isDeleted = 0; // 0=normal,1=deleted
 

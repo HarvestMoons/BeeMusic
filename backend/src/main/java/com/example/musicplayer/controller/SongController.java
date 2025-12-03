@@ -38,6 +38,12 @@ public class SongController {
         return songService.setFolder(folder);
     }
 
+    // 增加播放次数
+    @PostMapping("/public/songs/play/{songId}")
+    public void incrementPlayCount(@PathVariable Long songId) {
+        songService.incrementPlayCount(songId);
+    }
+
     // 获取点赞/点踩数
     @GetMapping("/public/songs/votes/{songId}")
     public Map<String, Integer> getVotes(@PathVariable Long songId, HttpServletRequest request) {

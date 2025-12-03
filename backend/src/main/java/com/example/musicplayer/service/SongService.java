@@ -40,6 +40,10 @@ public class SongService {
         return Map.of("error", "Invalid folder key");
     }
 
+    public void incrementPlayCount(Long songId) {
+        songRepository.incrementPlayCount(songId);
+    }
+
     public List<Song> getSongs() {
         String folderChineseName = AVAILABLE_FOLDERS.get(currentFolderKey);
         String prefix = "music/" + folderChineseName + "/";
@@ -70,6 +74,7 @@ public class SongService {
                 song.setKey(key);
                 song.setLikeCount(0);
                 song.setDislikeCount(0);
+                song.setPlayCount(0);
                 song.setIsDeleted(0);
                 // 注意：这里不要手动 setId，让数据库稍后插入时自动生成
             }

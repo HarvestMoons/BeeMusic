@@ -246,7 +246,10 @@ function playSongAtIndex(index, fromHistory = false) {
     // Ensure rate is applied
     try { audioRef.value.playbackRate = playbackRate.value; } catch (e) {}
     
-    audioRef.value.play().catch(err => {
+    audioRef.value.play().then(() => {
+      // 播放成功后，增加播放次数
+      fetch(`${PUBLIC_API_BASE}/songs/play/${song.id}`, { method: 'POST' }).catch(console.error);
+    }).catch(err => {
       console.warn('播放未启动：', err);
     });
   }
