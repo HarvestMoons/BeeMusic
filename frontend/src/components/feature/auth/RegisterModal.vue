@@ -91,60 +91,147 @@ async function handleRegister() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--modal-overlay);
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
   z-index: 3000;
 }
 
 .modal-card {
-  width: 420px;
-  max-width: calc(100vw - 48px);
-  background: #2c2c2c;
-  color: #ffffff;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  width: 380px;
+  max-width: 90vw;
+  background: var(--modal-bg);
+  color: var(--modal-text);
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
   position: relative;
-  animation: pop 180ms ease;
+  transform-origin: center;
+  animation: pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 1px solid var(--border-color);
 }
 
 @keyframes pop {
-  from { opacity: 0; transform: scale(0.96); }
+  from { opacity: 0; transform: scale(0.9); }
   to { opacity: 1; transform: scale(1); }
 }
 
 .modal-close {
   position: absolute;
-  right: 12px;
-  top: 10px;
+  right: 16px;
+  top: 16px;
   background: transparent;
   border: none;
-  color: #cfcfcf;
-  font-size: 16px;
+  color: var(--text-color);
+  opacity: 0.5;
+  font-size: 20px;
   cursor: pointer;
+  transition: opacity 0.2s;
+  line-height: 1;
+}
+.modal-close:hover {
+  opacity: 1;
 }
 
-.modal-title { margin: 0 0 12px 0; font-size: 20px; font-weight: 600; color: var(--modal-text); text-align: left; }
-
-.modal-form { display:flex; flex-direction:column; gap:12px; }
-
-.field { display:flex; flex-direction:column; gap:6px; }
-
-.label-text { font-size:13px; color:var(--text-color); text-align:left; }
-
-input[type="text"], input[type="password"] {
-  width:100%; padding:10px 12px; border-radius:8px;
-  border:1px solid var(--input-border); background:var(--input-bg); color:var(--input-text); outline:none; font-size:14px;
+.modal-title {
+  margin: 0 0 24px 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--modal-text);
+  text-align: center;
 }
-input:focus { box-shadow: 0 0 0 3px rgba(100,111,255,0.08); border-color: rgba(100,111,255,0.2); }
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color);
+  text-align: left;
+}
+
+input[type="text"],
+input[type="password"] {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--input-border);
+  background: var(--input-bg);
+  color: var(--input-text);
+  outline: none;
+  font-size: 15px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(249, 168, 37, 0.15);
+}
 
 .primary-btn {
-  width:100%; padding:10px 12px; background:#34b56a; color:#062b11; border-radius:8px; border:none; font-weight:600; cursor:pointer;
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  background: var(--primary-color);
+  color: #fff;
+  border-radius: 10px;
+  border: none;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.2s;
 }
-.primary-btn:disabled { opacity:0.6; cursor:default; }
 
-.muted { font-size:13px; color:#bdbdbd; text-align:center; margin-top:6px; }
-.muted a { color:#646cff; text-decoration:none; }
-.muted a:hover { text-decoration:underline; }
+/* 针对浅色主题下 primary color #f9a825 (黄色) 的文字颜色优化 */
+:root:not([data-theme="dark"]) .primary-btn {
+  color: #333;
+}
 
-.error { color:#ff7b7b; font-size:13px; text-align:center; margin-top:6px; }
+.primary-btn:hover {
+  filter: brightness(1.1);
+}
+.primary-btn:active {
+  transform: scale(0.98);
+}
+.primary-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.muted {
+  font-size: 14px;
+  color: var(--text-color);
+  opacity: 0.7;
+  text-align: center;
+  margin-top: 16px;
+}
+.muted a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 500;
+  margin-left: 4px;
+}
+.muted a:hover {
+  text-decoration: underline;
+}
+
+.error {
+  color: #ff5252;
+  font-size: 14px;
+  text-align: center;
+  margin-top: 8px;
+  background: rgba(255, 82, 82, 0.1);
+  padding: 8px;
+  border-radius: 8px;
+}
 </style>
