@@ -196,6 +196,8 @@ onMounted(() => {
       return;
     }
     if (mode === "spectrum") drawSpectrum();
+    else if (mode === "waveform") drawWaveform();
+    else if (mode === "circle") drawCircleSpectrum();
   }
 
   function resumeAudioContext() {

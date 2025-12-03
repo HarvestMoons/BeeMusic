@@ -42,7 +42,9 @@
         <div class="controls">
           <button id="play-btn" @click="handlePlayClick">随便听听</button>
           <button id="prev-btn" @click="playPreviousSong">上一首</button>
-          <button id="toggleSpectrumBtn" @click="toggleSpectrum">{{ showSpectrum ? '隐藏频谱' : '显示频谱' }}</button>
+          <button id="toggleSpectrumBtn" @click="toggleSpectrum" :title="showSpectrum ? '隐藏频谱' : '显示频谱'">
+            <img :src="spectrumIcon" alt="频谱" class="spectrum-icon" />
+          </button>
 
           <button id="play-mode-btn" @click="cyclePlayMode" :title="playModeText">
             <img :src="currentPlayModeIcon" alt="模式" class="play-mode-icon" />
@@ -72,6 +74,7 @@ import portalIcon from '@/assets/icons/protal.svg'
 import randomIcon from '@/assets/icons/play_mode/random.svg'
 import loopIcon from '@/assets/icons/play_mode/loop.svg'
 import singleLoopIcon from '@/assets/icons/play_mode/repeat.svg'
+import spectrumIcon from '@/assets/icons/spectrum.svg'
 import VoteControls from "./VoteControls.vue";
 import PlaybackRateControl from "./PlaybackRateControl.vue";
 import FolderSelector from "./FolderSelector.vue";
@@ -642,9 +645,12 @@ audio {
   flex: 2 1 auto;
 }
 
-.play-mode-icon {
+.play-mode-icon,
+.spectrum-icon {
   width: 20px;
   height: 20px;
   display: block;
+  filter: var(--vote-icon-filter);
+  transition: filter 0.3s ease;
 }
 </style>
