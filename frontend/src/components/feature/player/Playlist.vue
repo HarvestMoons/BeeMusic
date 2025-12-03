@@ -14,8 +14,8 @@
         <option value="createdAt">上架日期</option>
       </select>
       <button class="sort-btn" @click="toggleSortOrder" :title="sortOrder === 'asc' ? '升序' : '降序'">
-        <svg v-if="sortOrder === 'asc'" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
-        <svg v-else viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+        <img v-if="sortOrder === 'asc'" :src="upArrowIcon" alt="升序" class="sort-icon" />
+        <img v-else :src="downArrowIcon" alt="降序" class="sort-icon" />
       </button>
     </div>
 
@@ -38,6 +38,8 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import SearchBar from "../../common/SearchBar.vue";
+import upArrowIcon from '@/assets/icons/up_arrow.svg'
+import downArrowIcon from '@/assets/icons/down_arrow.svg'
 
 const props = defineProps({
   playlist: { type: Array, required: true },
@@ -246,5 +248,12 @@ function getSongTitle(name) {
   margin-left: 8px;
   white-space: nowrap;
   font-weight: normal;
+}
+
+.sort-icon {
+  width: 20px;
+  height: 20px;
+  display: block;
+  filter: var(--vote-icon-filter); /* 复用黑夜模式反色滤镜 */
 }
 </style>

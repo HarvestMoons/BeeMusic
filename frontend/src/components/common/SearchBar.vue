@@ -86,7 +86,8 @@ onUnmounted(() => {
   width: 20px;
   height: 20px;
   cursor: pointer;
-  transition: transform 0.2s ease, filter 0.2s ease;
+  filter: var(--vote-icon-filter);
+  transition: filter 0.3s ease;
 }
 
 .search-icon.active {
