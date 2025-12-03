@@ -36,7 +36,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import SearchBar from "../../common/SearchBar.vue";
 
 const props = defineProps({
@@ -47,6 +47,25 @@ const props = defineProps({
 const searchQuery = ref('')
 const sortField = ref('default')
 const sortOrder = ref('desc')
+
+// LocalStorage Keys
+const STORAGE_KEY_SORT_FIELD = 'music_playlist_sort_field'
+const STORAGE_KEY_SORT_ORDER = 'music_playlist_sort_order'
+
+onMounted(() => {
+  const savedField = localStorage.getItem(STORAGE_KEY_SORT_FIELD)
+  const savedOrder = localStorage.getItem(STORAGE_KEY_SORT_ORDER)
+  if (savedField) sortField.value = savedField
+  if (savedOrder) sortOrder.value = savedOrder
+})
+
+watch(sortField, (newVal) => {
+  localStorage.setItem(STORAGE_KEY_SORT_FIELD, newVal)
+})
+
+watch(sortOrder, (newVal) => {
+  localStorage.setItem(STORAGE_KEY_SORT_ORDER, newVal)
+})
 
 const handleSearch = (keyword) => {
   searchQuery.value = keyword
