@@ -97,9 +97,48 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, nextTick } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useAuthStore } from '@/store'
 import api from '@/services/auth'
+
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+const MAX_CACHE_ENTRIES = 50;
+const commentCache = new Map();
+
+function deepCloneComments(data = []) {
+  try {
+    return JSON.parse(JSON.stringify(data));
+  } catch (err) {
+    console.warn('Failed to clone comments cache entry', err);
+    return [];
+  }
+}
+
+function getCachedComments(songId) {
+  if (!songId) return null;
+  const entry = commentCache.get(songId);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > CACHE_TTL) {
+    commentCache.delete(songId);
+    return null;
+  }
+  return deepCloneComments(entry.data);
+}
+
+function pruneCacheIfNeeded() {
+  if (commentCache.size <= MAX_CACHE_ENTRIES) return;
+  const entries = [...commentCache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
+  while (commentCache.size > MAX_CACHE_ENTRIES && entries.length) {
+    const [key] = entries.shift();
+    commentCache.delete(key);
+  }
+}
+
+function saveCommentsToCache(songId, list = []) {
+  if (!songId) return;
+  commentCache.set(songId, { data: deepCloneComments(list), timestamp: Date.now() });
+  pruneCacheIfNeeded();
+}
 
 const props = defineProps({
   visible: Boolean,
@@ -113,6 +152,11 @@ const comments = ref([])
 const loading = ref(false)
 const inputContent = ref('')
 const replyingTo = ref(null) // { commentId, userId, username, rootId }
+
+function persistCurrentComments() {
+  if (!props.songId) return
+  saveCommentsToCache(props.songId, comments.value)
+}
 
 const totalComments = computed(() => {
   let count = comments.value.length
@@ -134,12 +178,23 @@ watch(() => props.songId, (val) => {
   }
 })
 
-async function fetchComments() {
+async function fetchComments(force = false) {
   if (!props.songId) return
+
+  if (!force) {
+    const cached = getCachedComments(props.songId)
+    if (cached) {
+      comments.value = cached
+      loading.value = false
+      return
+    }
+  }
+
   loading.value = true
   try {
     const res = await api.get(`/public/comments/${props.songId}`)
-    comments.value = res.data
+    comments.value = res.data || []
+    saveCommentsToCache(props.songId, comments.value)
   } catch (err) {
     console.error('加载评论失败', err)
   } finally {
@@ -199,6 +254,7 @@ async function submitComment() {
       comments.value.unshift(newComment)
     }
     
+    persistCurrentComments()
     inputContent.value = ''
     cancelReply()
   } catch (err) {
@@ -220,6 +276,7 @@ async function toggleLike(comment) {
       comment.liked = true
       comment.likeCount++
     }
+    persistCurrentComments()
   } catch (err) {
     console.error('操作失败', err)
   }
@@ -246,6 +303,7 @@ async function handleDelete(commentId) {
         }
       }
     }
+    persistCurrentComments()
   } catch (err) {
     console.error('删除失败', err)
   }
