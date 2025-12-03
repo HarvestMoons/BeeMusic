@@ -12,8 +12,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import CommentDrawer from './CommentDrawer.vue'
-import SpectrumVisualizer from '../spectrum/SpectrumVisualizer.vue'
+import CommentDrawer from '@/components/feature/player/CommentDrawer.vue'
+import SpectrumVisualizer from '@/components/feature/spectrum/SpectrumVisualizer.vue'
 
 const props = defineProps({
   songId: {

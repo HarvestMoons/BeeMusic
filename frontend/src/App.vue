@@ -36,14 +36,14 @@
 <script setup>
 import {onBeforeUnmount, onMounted, ref} from 'vue'
 import { useRoute } from 'vue-router'
-import Sidebar from './components/layout/Sidebar.vue'
-import HomePage from './views/HomePage.vue'
-import LoginModal from './components/feature/auth/LoginModal.vue'
-import RegisterModal from "./components/feature/auth/RegisterModal.vue";
-import Toast from './components/common/Toast.vue'
-import { logout } from './services/auth.js'
-import { useAuthStore, useThemeStore } from './store/index.js'
-import {eventBus} from "./utils/eventBus.js";
+import Sidebar from '@/components/layout/Sidebar.vue'
+import HomePage from '@/views/HomePage.vue'
+import LoginModal from '@/components/feature/auth/LoginModal.vue'
+import RegisterModal from "@/components/feature/auth/RegisterModal.vue";
+import Toast from '@/components/common/Toast.vue'
+import { logout } from '@/services/auth.js'
+import { useAuthStore, useThemeStore } from '@/store/index.js'
+import {eventBus} from "@/utils/eventBus.js";
 
 const route = useRoute()
 const showLogin = ref(false)

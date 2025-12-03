@@ -37,7 +37,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
-import SearchBar from "../../common/SearchBar.vue";
+import SearchBar from "@/components/common/SearchBar.vue";
 import upArrowIcon from '@/assets/icons/up_arrow.svg'
 import downArrowIcon from '@/assets/icons/down_arrow.svg'
 

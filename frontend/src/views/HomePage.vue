@@ -26,12 +26,12 @@
 
 <script setup>
 import {ref} from 'vue'
-import Player from '../components/feature/player/Player.vue'
-import Playlist from '../components/feature/player/Playlist.vue'
-import Sidebar from '../components/layout/Sidebar.vue'
-import BackgroundParticles from '../components/effects/BackgroundParticles.vue'
-import BackgroundRipple from '../components/effects/BackgroundRipple.vue'
-import MySpinner from "../components/effects/MySpinner.vue";
+import Player from '@/components/feature/player/Player.vue'
+import Playlist from '@/components/feature/player/Playlist.vue'
+import Sidebar from '@/components/layout/Sidebar.vue'
+import BackgroundParticles from '@/components/effects/BackgroundParticles.vue'
+import BackgroundRipple from '@/components/effects/BackgroundRipple.vue'
+import MySpinner from "@/components/effects/MySpinner.vue";
 
 const playerRef = ref(null)
 

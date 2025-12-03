@@ -71,14 +71,14 @@ import randomIcon from '@/assets/icons/play_mode/random.svg'
 import loopIcon from '@/assets/icons/play_mode/loop.svg'
 import singleLoopIcon from '@/assets/icons/play_mode/repeat.svg'
 import spectrumIcon from '@/assets/icons/spectrum.svg'
-import VoteControls from "./VoteControls.vue";
-import PlaybackRateControl from "./PlaybackRateControl.vue";
-import FolderSelector from "./FolderSelector.vue";
-import Toast from "../../common/Toast.vue";
-import PlayerSidebar from "./PlayerSidebar.vue";
+import VoteControls from "@/components/feature/player/VoteControls.vue";
+import PlaybackRateControl from "@/components/feature/player/PlaybackRateControl.vue";
+import FolderSelector from "@/components/feature/player/FolderSelector.vue";
+import Toast from "@/components/common/Toast.vue";
+import PlayerSidebar from "@/components/feature/player/PlayerSidebar.vue";
 import { PUBLIC_API_BASE } from '@/constants';
-import {useKeyboardShortcuts} from "../../../composables/useKeyboardShortcuts.js";
-import OnlineStatus from "../../common/OnlineStatus.vue";
+import {useKeyboardShortcuts} from "@/composables/useKeyboardShortcuts.js";
+import OnlineStatus from "@/components/common/OnlineStatus.vue";
 
 const DEFAULT_FOLDER = 'ha_ji_mi';
 const PLAY_COUNT_THRESHOLD_SECONDS = 10;

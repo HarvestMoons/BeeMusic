@@ -7,8 +7,8 @@
 
 <script setup>
 import {onMounted, onBeforeUnmount, ref, watch} from 'vue';
-import HelpTooltip from "../../common/HelpTooltip.vue";
-import { useThemeStore } from '../../../store/index.js';
+import HelpTooltip from "@/components/common/HelpTooltip.vue";
+import { useThemeStore } from '@/store/index.js';
 
 const props = defineProps({
   visible: {

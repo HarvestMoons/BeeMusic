@@ -37,8 +37,8 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { register } from '../../../services/auth.js'   // <- 若路径不同请调整
-import { useAuthStore } from '../../../store/index.js' // <- 若路径不同请调整
+import { register } from '@/services/auth.js'
+import { useAuthStore } from '@/store/index.js'
 
 const props = defineProps({
   visible: { type: Boolean, default: false }

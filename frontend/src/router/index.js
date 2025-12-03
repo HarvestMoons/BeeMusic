@@ -1,8 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router';
-import HomePage from '../views/HomePage.vue';
-import PrivacyPage from '../views/PrivacyPage.vue';
-import About from '../views/About.vue';
-import { useAuthStore } from '../store';
+import HomePage from '@/views/HomePage.vue';
+import PrivacyPage from '@/views/PrivacyPage.vue';
+import About from '@/views/About.vue';
+import { useAuthStore } from '@/store';
 
 const routes = [
     { path: '/', component: HomePage },

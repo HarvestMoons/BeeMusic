@@ -33,11 +33,11 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore, useThemeStore } from '../../store/index.js'
-import {eventBus} from "../../utils/eventBus.js";
+import { useAuthStore, useThemeStore } from '@/store/index.js'
+import {eventBus} from "@/utils/eventBus.js";
 // 如果您添加了图标，请取消以下注释并替换 Emoji
-// import sunIcon from '../../assets/icons/sun.svg'
-// import moonIcon from '../../assets/icons/moon.svg'
+// import sunIcon from '@/assets/icons/sun.svg'
+// import moonIcon from '@/assets/icons/moon.svg'
 
 const isOpen = ref(false)
 const router = useRouter()

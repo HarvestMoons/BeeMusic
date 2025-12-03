@@ -35,8 +35,8 @@
 </template>
 
 <script setup>
-import Sidebar from "../components/layout/Sidebar.vue";
-import SongFolderDonut from "../components/feature/stats/SongFolderDonut.vue";
+import Sidebar from "@/components/layout/Sidebar.vue";
+import SongFolderDonut from "@/components/feature/stats/SongFolderDonut.vue";
 </script>
 
 <style scoped>

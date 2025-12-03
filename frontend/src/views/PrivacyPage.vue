@@ -11,8 +11,8 @@
 <script>
 import { ref, onMounted } from 'vue'
 import MarkdownIt from 'markdown-it'
-import MySpinner from "../components/effects/MySpinner.vue";
-import Sidebar from "../components/layout/Sidebar.vue";
+import MySpinner from "@/components/effects/MySpinner.vue";
+import Sidebar from "@/components/layout/Sidebar.vue";
 
 export default {
   components: {Sidebar, MySpinner },
@@ -27,7 +27,7 @@ export default {
       error.value = null
       try {
         const markdownModule = await import(
-          `../assets/markdown/zh-CN-privacy.md?raw`
+          `@/assets/markdown/zh-CN-privacy.md?raw`
         )
         renderedMarkdown.value = mdParser.render(markdownModule.default)
       } catch (err) {

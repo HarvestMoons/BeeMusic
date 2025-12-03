@@ -1,6 +1,6 @@
 // services/auth.js
 import axios from 'axios';
-import {API_BASE} from "../constants/index.js";
+import { API_BASE } from "@/constants/index.js";
 
 const api = axios.create({
     baseURL: API_BASE,
