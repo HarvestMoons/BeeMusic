@@ -36,7 +36,7 @@ let toastTimer = null
 const authStore = useAuthStore()
 
 // 引入图标
-import likeIcon from '@/assets/icons/likes.svg'
+import likeIcon from '@/assets/icons/like.svg'
 import dislikeIcon from '@/assets/icons/dislike.svg'
 import api from '@/services/auth';
 
