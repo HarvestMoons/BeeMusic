@@ -35,6 +35,7 @@
             @error="handleAudioError"
             @volumechange="handleVolumeChange"
             @ratechange="handleRateChangeNative"
+            @timeupdate="handleTimeUpdate"
             @loadedmetadata="handleLoadedMetadata"
           ></audio>
         </div>
@@ -86,6 +87,7 @@ import {useKeyboardShortcuts} from "../../../composables/useKeyboardShortcuts.js
 import OnlineStatus from "../../common/OnlineStatus.vue";
 
 const DEFAULT_FOLDER = 'ha_ji_mi';
+const PLAY_COUNT_THRESHOLD_SECONDS = 10;
 const STORAGE_KEYS = {
   VOLUME: 'music_volume',
   PLAYLIST_PREFIX: 'music_playlist_',
@@ -130,6 +132,7 @@ const showToast = ref(false)
 const showComments = ref(true)
 const showSpectrum = ref(false)
 let toastTimer = null
+const playCountState = ref({ songId: null, reported: false })
 
 function toggleComments() {
   if (showComments.value) {
@@ -207,6 +210,16 @@ function handleRateChangeNative() {
 function handleLoadedMetadata() {
   if (audioRef.value) {
     try { audioRef.value.playbackRate = playbackRate.value } catch (e) {}
+  }
+}
+
+function handleTimeUpdate() {
+  if (!audioRef.value) return
+  const state = playCountState.value
+  if (!state.songId || state.reported) return
+  if (audioRef.value.currentTime >= PLAY_COUNT_THRESHOLD_SECONDS) {
+    state.reported = true
+    fetch(`${PUBLIC_API_BASE}/songs/play/${state.songId}`, { method: 'POST' }).catch(console.error)
   }
 }
 
@@ -292,6 +305,7 @@ function playSongAtIndex(index, fromHistory = false) {
 
   currentIndex.value = index;
   const song = playlist.value[index];
+  playCountState.value = { songId: song.id, reported: false };
 
   // Global state for OnlineStatus
   window.currentSongId = String(song.id)
@@ -311,10 +325,7 @@ function playSongAtIndex(index, fromHistory = false) {
     // Ensure rate is applied
     try { audioRef.value.playbackRate = playbackRate.value; } catch (e) {}
     
-    audioRef.value.play().then(() => {
-      // 播放成功后，增加播放次数
-      fetch(`${PUBLIC_API_BASE}/songs/play/${song.id}`, { method: 'POST' }).catch(console.error);
-    }).catch(err => {
+    audioRef.value.play().catch(err => {
       console.warn('播放未启动：', err);
     });
   }
