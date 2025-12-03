@@ -43,7 +43,7 @@
         <div class="controls">
           <button id="play-btn" @click="handlePlayClick">随便听听</button>
           <button id="prev-btn" @click="playPreviousSong">上一首</button>
-          <button id="toggleSpectrumBtn" @click="toggleSpectrum" :title="showSpectrum ? '隐藏频谱' : '显示频谱'">
+          <button id="toggleSpectrumBtn" @click="handleToggleSpectrum" :title="isSpectrumVisible ? '隐藏频谱' : '显示频谱'">
             <img :src="spectrumIcon" alt="频谱" class="spectrum-icon" />
           </button>
 
@@ -56,16 +56,11 @@
       </div>
     </div>
 
-    <!-- 评论侧边栏 + 频谱 -->
-    <div class="sidebar-wrapper" :class="{ collapsed: !showComments }">
-      <CommentDrawer 
-        :visible="showComments" 
-        :songId="playlist[currentIndex]?.id"
-        @close="toggleComments"
-        class="comment-drawer-flex"
-      />
-      <SpectrumVisualizer :visible="showSpectrum" />
-    </div>
+    <PlayerSidebar
+      ref="playerSidebarRef"
+      :song-id="playlist[currentIndex]?.id"
+      :show-comments-storage-key="STORAGE_KEYS.SHOW_COMMENTS"
+    />
   </div>
 </template>
 
@@ -80,8 +75,7 @@ import VoteControls from "./VoteControls.vue";
 import PlaybackRateControl from "./PlaybackRateControl.vue";
 import FolderSelector from "./FolderSelector.vue";
 import Toast from "../../common/Toast.vue";
-import CommentDrawer from "./CommentDrawer.vue";
-import SpectrumVisualizer from "../spectrum/SpectrumVisualizer.vue";
+import PlayerSidebar from "./PlayerSidebar.vue";
 import { PUBLIC_API_BASE } from '@/constants';
 import {useKeyboardShortcuts} from "../../../composables/useKeyboardShortcuts.js";
 import OnlineStatus from "../../common/OnlineStatus.vue";
@@ -103,6 +97,8 @@ const currentIndex = ref(-1)
 const historyStack = ref([])
 const playbackRate = ref(1.0)
 const playMode = ref('random')
+const playerSidebarRef = ref(null)
+const isSpectrumVisible = computed(() => playerSidebarRef.value?.showSpectrum?.value ?? false)
 
 const playModeIcons = {
   'random': randomIcon,
@@ -129,31 +125,8 @@ const selectedFolder = ref(DEFAULT_FOLDER)
 const currentSongInfo = ref({ title: '', bv: null })
 const toastMessage = ref('')
 const showToast = ref(false)
-const showComments = ref(true)
-const showSpectrum = ref(false)
 let toastTimer = null
 const playCountState = ref({ songId: null, reported: false })
-
-function toggleComments() {
-  if (showComments.value) {
-    // 收起评论区时，同时关闭频谱
-    showComments.value = false
-    showSpectrum.value = false
-  } else {
-    showComments.value = true
-  }
-  localStorage.setItem(STORAGE_KEYS.SHOW_COMMENTS, String(showComments.value))
-}
-
-function toggleSpectrum() {
-  if (showSpectrum.value) {
-    showSpectrum.value = false
-  } else {
-    // 展开频谱时，强制展开评论区
-    showSpectrum.value = true
-    showComments.value = true
-  }
-}
 
 function showToastMessage(msg) {
   toastMessage.value = msg
@@ -162,6 +135,10 @@ function showToastMessage(msg) {
   toastTimer = setTimeout(() => {
     showToast.value = false
   }, 2000)
+}
+
+function handleToggleSpectrum() {
+  playerSidebarRef.value?.toggleSpectrum()
 }
 
 // Storage Helpers
@@ -458,12 +435,6 @@ onMounted(async () => {
   if (savedRate != null) playbackRate.value = savedRate;
   if (audioRef.value) audioRef.value.playbackRate = playbackRate.value;
 
-  // Init Comments Visibility
-  const savedShowComments = localStorage.getItem(STORAGE_KEYS.SHOW_COMMENTS);
-  if (savedShowComments !== null) {
-    showComments.value = savedShowComments === 'true';
-  }
-
   window.addEventListener('storage', handleStorageEvent);
 
   await setFolder(selectedFolder.value);
@@ -582,74 +553,6 @@ audio {
 }
 .song-info-container {
   flex: 2 1 auto;
-}
-
-.sidebar-wrapper {
-  width: 400px;
-  height: var(--content-height);
-  display: flex;
-  flex-direction: column;
-  background: var(--playlist-bg);
-  border-left: 1px solid var(--border-color);
-  border-radius: 12px;
-  overflow: hidden;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.sidebar-wrapper.collapsed {
-  width: 60px;
-}
-
-.sidebar-wrapper.collapsed :deep(.drawer-header h3) {
-  display: none;
-}
-
-.sidebar-wrapper.collapsed :deep(.drawer-header) {
-  justify-content: center;
-  padding: 16px 0;
-}
-
-.sidebar-wrapper.collapsed :deep(.spectrum-container) {
-  display: none;
-}
-
-:deep(.spectrum-container) {
-  border-top: 1px solid var(--border-color);
-}
-
-.comment-drawer-flex {
-  flex: 1;
-  min-height: 0;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-:deep(.comment-sidebar) {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  background: transparent; /* Use wrapper background */
-  box-shadow: none; /* Remove drawer shadow if any */
-  transform: none !important; /* Disable drawer transform animation */
-}
-
-/* Remove border from header when comments are collapsed to avoid double border with spectrum */
-:deep(.comment-sidebar.collapsed .drawer-header) {
-  border-bottom: none;
-}
-
-:deep(.comment-content-wrapper) {
-  flex: 1;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-:deep(.comment-list) {
-  flex: 1;
-  overflow-y: auto;
 }
 
 .song-info-container {
