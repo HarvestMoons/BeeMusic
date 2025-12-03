@@ -13,7 +13,6 @@
       <!-- 右侧：播放器 + 频谱 -->
       <div class="right-container">
         <Player ref="playerRef" />
-        <SpectrumVisualizer />
       </div>
     </div>
 
@@ -30,7 +29,6 @@ import {ref} from 'vue'
 import Player from '../components/feature/player/Player.vue'
 import Playlist from '../components/feature/player/Playlist.vue'
 import Sidebar from '../components/layout/Sidebar.vue'
-import SpectrumVisualizer from '../components/feature/spectrum/SpectrumVisualizer.vue'
 import BackgroundParticles from '../components/effects/BackgroundParticles.vue'
 import BackgroundRipple from '../components/effects/BackgroundRipple.vue'
 import MySpinner from "../components/effects/MySpinner.vue";
@@ -48,7 +46,7 @@ function handlePlaylistClick(songId) {
 <style scoped>
 .home-page {
   font-family: 'Arial', sans-serif;
-  max-width: 1000px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
   color: #333;

@@ -1,5 +1,5 @@
 <template>
-  <div class="search-bar">
+  <div class="search-bar" ref="searchBarRef">
     <!-- 搜索图标 -->
     <img
         src="@/assets/icons/search.svg"
@@ -18,13 +18,14 @@
           @input="onSearch"
           :placeholder="placeholder"
           class="search-input"
+          ref="inputRef"
       />
     </transition>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 
 const props = defineProps({
   placeholder: {
@@ -35,15 +36,44 @@ const props = defineProps({
 
 const query = ref('')
 const showInput = ref(false)
+const searchBarRef = ref(null)
+const inputRef = ref(null)
 const emit = defineEmits(['search'])
 
+const closeSearch = () => {
+  showInput.value = false
+  query.value = ''
+  emit('search', '')
+}
+
 const toggleSearch = () => {
-  showInput.value = !showInput.value
+  if (showInput.value) {
+    closeSearch()
+  } else {
+    showInput.value = true
+    nextTick(() => {
+      if (inputRef.value) inputRef.value.focus()
+    })
+  }
 }
 
 const onSearch = () => {
   emit('search', query.value.trim())
 }
+
+const handleClickOutside = (event) => {
+  if (searchBarRef.value && !searchBarRef.value.contains(event.target) && showInput.value) {
+    closeSearch()
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
 
 <style scoped>

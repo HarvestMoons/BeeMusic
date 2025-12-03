@@ -1,6 +1,6 @@
 <template>
   <div class="spectrum-container">
-    <HelpTooltip v-show="showSpectrum">- 按 Z 切换频谱模式</HelpTooltip>
+    <HelpTooltip v-show="visible">- 按 Z 切换频谱模式</HelpTooltip>
     <canvas id="spectrumCanvas"></canvas>
   </div>
 </template>
@@ -10,8 +10,13 @@ import {onMounted, onBeforeUnmount, ref, watch} from 'vue';
 import HelpTooltip from "../../common/HelpTooltip.vue";
 import { useThemeStore } from '../../../store/index.js';
 
-//showSpectrum 是响应式变量，协助控制HelpTooltip的出现
-const showSpectrum = ref(false)
+const props = defineProps({
+  visible: {
+    type: Boolean,
+    default: false
+  }
+})
+
 const themeStore = useThemeStore();
 let rafId = null;
 let audioCtx = null;
@@ -21,7 +26,6 @@ let analyser = null;
 onMounted(() => {
   const audio = document.getElementById("audio-player");
   const canvas = document.getElementById("spectrumCanvas");
-  const btn = document.getElementById("toggleSpectrumBtn");
   const rect = canvas.getBoundingClientRect();
 
   canvas.width = rect.width;
@@ -70,26 +74,24 @@ onMounted(() => {
     }
   }
 
-// 初始设置容器高度
+  // 初始设置容器高度
   const container = canvas.parentElement;
   if (container) {
-    container.style.height = "0";
-    canvas.style.opacity = "0";
+    // Initialize based on prop
+    const height = props.visible ? "310px" : "0";
+    const opacity = props.visible ? "1" : "0";
+    container.style.height = height;
+    canvas.style.opacity = opacity;
   }
 
-  const toggleHandler = () => {
-    showSpectrum.value = !showSpectrum.value;
-    if (btn) btn.textContent = showSpectrum.value ? "隐藏频谱" : "显示频谱";
-    //container.style.height=上下padding（2*15px）+ canvas height（280px）
-    const height = showSpectrum.value ? "310px" : "0";
-    const opacity = showSpectrum.value ? "1" : "0";
+  watch(() => props.visible, (val) => {
+    const height = val ? "310px" : "0";
+    const opacity = val ? "1" : "0";
     if (container) {
       container.style.height = height;
       canvas.style.opacity = opacity;
     }
-  };
-
-  if (btn) btn.addEventListener("click", toggleHandler);
+  });
 
   // 渐变色配置
   let currentGradientColors = [];
@@ -189,13 +191,11 @@ onMounted(() => {
 
   function draw() {
     rafId = requestAnimationFrame(draw);
-    if (!showSpectrum.value) {
+    if (!props.visible) {
       clearCanvas();
       return;
     }
     if (mode === "spectrum") drawSpectrum();
-    else if (mode === "waveform") drawWaveform();
-    else drawCircleSpectrum();
   }
 
   function resumeAudioContext() {
@@ -220,7 +220,6 @@ onMounted(() => {
 
   // 存放清理函数到 element 上，便于卸载时找到（可选）
   canvas.__spectrumCleanup = () => {
-    if (btn) btn.removeEventListener("click", toggleHandler);
     document.removeEventListener("click", clickResumeHandler);
     document.removeEventListener("keydown", keydownResumeHandler);
     document.removeEventListener("keydown", modeKeyHandler);

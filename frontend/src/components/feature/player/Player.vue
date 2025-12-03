@@ -1,56 +1,69 @@
 <template>
-  <div class="player-container">
-    <Toast :visible="showToast" :message="toastMessage" />
-    <div class="song-info-container">
-      <FolderSelector v-model="selectedFolder" @change="handleFolderChange" />
-      <div class="song-info">
-        <h2 id="current-song">
-          <span v-if="!currentSongInfo.title">当前未播放</span>
-          <template v-else>
-            <span class="song-title">{{ currentSongInfo.title }}</span>
-            <a v-if="currentSongInfo.bv" :href="`https://www.bilibili.com/video/${currentSongInfo.bv}/`" target="_blank" class="portal-link">
-              <img :src="portalIcon" alt="传送门" class="portal-icon" />
-            </a>
-          </template>
-        </h2>
-        <div class="meta-info">
-          <VoteControls
-              v-if="playlist[currentIndex]"
-              :songId="playlist[currentIndex].id"
+  <div class="player-wrapper">
+    <div class="player-container">
+      <Toast :visible="showToast" :message="toastMessage" />
+      <div class="song-info-container">
+        <FolderSelector v-model="selectedFolder" @change="handleFolderChange" />
+        <div class="song-info">
+          <h2 id="current-song">
+            <span v-if="!currentSongInfo.title">当前未播放</span>
+            <template v-else>
+              <span class="song-title">{{ currentSongInfo.title }}</span>
+              <a v-if="currentSongInfo.bv" :href="`https://www.bilibili.com/video/${currentSongInfo.bv}/`" target="_blank" class="portal-link">
+                <img :src="portalIcon" alt="传送门" class="portal-icon" />
+              </a>
+            </template>
+          </h2>
+          <div class="meta-info">
+            <VoteControls
+                v-if="playlist[currentIndex]"
+                :songId="playlist[currentIndex].id"
+            />
+            <OnlineStatus />
+          </div>
+          <Playlist
+              :playlist="playlist"
+              :currentSongId="playlist[currentIndex]?.id"
+              @select="handleSelectSong"
           />
-          <OnlineStatus />
+          <audio 
+            id="audio-player" 
+            ref="audioRef" 
+            controls 
+            crossorigin="anonymous"
+            @ended="handlePlaybackEnd"
+            @error="handleAudioError"
+            @volumechange="handleVolumeChange"
+            @ratechange="handleRateChangeNative"
+            @loadedmetadata="handleLoadedMetadata"
+          ></audio>
         </div>
-        <Playlist
-            :playlist="playlist"
-            :currentSongId="playlist[currentIndex]?.id"
-            @select="handleSelectSong"
-        />
-        <audio 
-          id="audio-player" 
-          ref="audioRef" 
-          controls 
-          crossorigin="anonymous"
-          @ended="handlePlaybackEnd"
-          @error="handleAudioError"
-          @volumechange="handleVolumeChange"
-          @ratechange="handleRateChangeNative"
-          @loadedmetadata="handleLoadedMetadata"
-        ></audio>
+
+        <div class="controls">
+          <button id="play-btn" @click="handlePlayClick">随便听听</button>
+          <button id="prev-btn" @click="playPreviousSong">上一首</button>
+          <button id="toggleSpectrumBtn" @click="toggleSpectrum">{{ showSpectrum ? '隐藏频谱' : '显示频谱' }}</button>
+
+          <select id="play-mode" v-model="playMode">
+            <option value="random">连播模式：随机播放</option>
+            <option value="loop-list">连播模式：列表循环</option>
+            <option value="single-loop">连播模式：单曲循环</option>
+          </select>
+
+          <PlaybackRateControl v-model="playbackRate" />
+        </div>
       </div>
+    </div>
 
-      <div class="controls">
-        <button id="play-btn" @click="handlePlayClick">随便听听</button>
-        <button id="prev-btn" @click="playPreviousSong">上一首</button>
-        <button id="toggleSpectrumBtn">显示频谱</button>
-
-        <select id="play-mode" v-model="playMode">
-          <option value="random">连播模式：随机播放</option>
-          <option value="loop-list">连播模式：列表循环</option>
-          <option value="single-loop">连播模式：单曲循环</option>
-        </select>
-
-        <PlaybackRateControl v-model="playbackRate" />
-      </div>
+    <!-- 评论侧边栏 + 频谱 -->
+    <div class="sidebar-wrapper" :class="{ collapsed: !showComments }">
+      <CommentDrawer 
+        :visible="showComments" 
+        :songId="playlist[currentIndex]?.id"
+        @close="toggleComments"
+        class="comment-drawer-flex"
+      />
+      <SpectrumVisualizer :visible="showSpectrum" />
     </div>
   </div>
 </template>
@@ -62,6 +75,8 @@ import VoteControls from "./VoteControls.vue";
 import PlaybackRateControl from "./PlaybackRateControl.vue";
 import FolderSelector from "./FolderSelector.vue";
 import Toast from "../../common/Toast.vue";
+import CommentDrawer from "./CommentDrawer.vue";
+import SpectrumVisualizer from "../spectrum/SpectrumVisualizer.vue";
 import { PUBLIC_API_BASE } from '@/constants';
 import {useKeyboardShortcuts} from "../../../composables/useKeyboardShortcuts.js";
 import OnlineStatus from "../../common/OnlineStatus.vue";
@@ -71,7 +86,8 @@ const STORAGE_KEYS = {
   VOLUME: 'music_volume',
   PLAYLIST_PREFIX: 'music_playlist_',
   SELECTED_FOLDER_PREFIX: 'music_selected_folder_',
-  PLAYBACK_RATE_PREFIX: 'music_playback_rate_'
+  PLAYBACK_RATE_PREFIX: 'music_playback_rate_',
+  SHOW_COMMENTS: 'music_show_comments'
 };
 
 // Refs
@@ -85,7 +101,30 @@ const selectedFolder = ref(DEFAULT_FOLDER)
 const currentSongInfo = ref({ title: '', bv: null })
 const toastMessage = ref('')
 const showToast = ref(false)
+const showComments = ref(true)
+const showSpectrum = ref(false)
 let toastTimer = null
+
+function toggleComments() {
+  if (showComments.value) {
+    // 收起评论区时，同时关闭频谱
+    showComments.value = false
+    showSpectrum.value = false
+  } else {
+    showComments.value = true
+  }
+  localStorage.setItem(STORAGE_KEYS.SHOW_COMMENTS, String(showComments.value))
+}
+
+function toggleSpectrum() {
+  if (showSpectrum.value) {
+    showSpectrum.value = false
+  } else {
+    // 展开频谱时，强制展开评论区
+    showSpectrum.value = true
+    showComments.value = true
+  }
+}
 
 function showToastMessage(msg) {
   toastMessage.value = msg
@@ -382,6 +421,12 @@ onMounted(async () => {
   if (savedRate != null) playbackRate.value = savedRate;
   if (audioRef.value) audioRef.value.playbackRate = playbackRate.value;
 
+  // Init Comments Visibility
+  const savedShowComments = localStorage.getItem(STORAGE_KEYS.SHOW_COMMENTS);
+  if (savedShowComments !== null) {
+    showComments.value = savedShowComments === 'true';
+  }
+
   window.addEventListener('storage', handleStorageEvent);
 
   await setFolder(selectedFolder.value);
@@ -410,15 +455,28 @@ defineExpose({
 </script>
 
 <style scoped>
+.player-wrapper {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+  overflow: hidden;
+  height: 100%;
+  --content-height: 750px;
+}
+
 .player-container {
   position: relative;
-  flex: 2 1 auto;
+  flex: 1;
   background-color: var(--playlist-bg);
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
   border: 1px solid var(--border-color);
   transition: background-color 0.3s ease, border-color 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* 防止 flex 子项溢出 */
+  overflow-y: auto; /* 允许左侧滚动，如果内容超出 */
 }
 
 .controls {
@@ -484,6 +542,77 @@ button:hover {
 audio {
   width: 100%;
   margin-top: 12px;
+}
+.song-info-container {
+  flex: 2 1 auto;
+}
+
+.sidebar-wrapper {
+  width: 400px;
+  height: var(--content-height);
+  display: flex;
+  flex-direction: column;
+  background: var(--playlist-bg);
+  border-left: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-wrapper.collapsed {
+  width: 60px;
+}
+
+.sidebar-wrapper.collapsed :deep(.drawer-header h3) {
+  display: none;
+}
+
+.sidebar-wrapper.collapsed :deep(.drawer-header) {
+  justify-content: center;
+  padding: 16px 0;
+}
+
+.sidebar-wrapper.collapsed :deep(.spectrum-container) {
+  display: none;
+}
+
+:deep(.spectrum-container) {
+  border-top: 1px solid var(--border-color);
+}
+
+.comment-drawer-flex {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+:deep(.comment-sidebar) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background: transparent; /* Use wrapper background */
+  box-shadow: none; /* Remove drawer shadow if any */
+  transform: none !important; /* Disable drawer transform animation */
+}
+
+/* Remove border from header when comments are collapsed to avoid double border with spectrum */
+:deep(.comment-sidebar.collapsed .drawer-header) {
+  border-bottom: none;
+}
+
+:deep(.comment-content-wrapper) {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+:deep(.comment-list) {
+  flex: 1;
+  overflow-y: auto;
 }
 
 .song-info-container {

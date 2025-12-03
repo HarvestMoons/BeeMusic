@@ -127,6 +127,7 @@ function getSongTitle(name) {
 <style scoped>
 .playlist-container {
   width: 320px;
+  height: var(--content-height, 750px);
   background: var(--playlist-bg);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
@@ -134,6 +135,8 @@ function getSongTitle(name) {
   box-sizing: border-box;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   transition: background-color 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
@@ -191,7 +194,7 @@ function getSongTitle(name) {
 }
 
 .playlist {
-  max-height: 615px;
+  flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 0;
