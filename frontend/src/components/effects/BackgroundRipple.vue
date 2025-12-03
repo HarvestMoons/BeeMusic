@@ -3,7 +3,6 @@ import { onMounted, onBeforeUnmount } from 'vue';
 
 const props = defineProps({
   apiBase: { type: String, default: '/api' },
-  swRegister: { type: Boolean, default: false },
 });
 
 let darkenInterval = null;
@@ -12,75 +11,6 @@ let longPressTimer = null;
 let isTriggered = false;
 let videoElement = null;
 let clickCount = 0;
-
-const CACHE_NAME = 'video-cache-v1';
-const CACHE_EXPIRY_TIME = 24 * 60 * 60 * 1000;
-
-function now() { return Date.now(); }
-
-// -------------------- SW 注册 --------------------
-async function tryRegisterSW() {
-  if (!props.swRegister || !('serviceWorker' in navigator)) return;
-  try {
-    const reg = await navigator.serviceWorker.register('/sw.js');
-    console.log('SW registered in component: ', reg);
-  } catch (err) {
-    console.warn('SW registration failed (component):', err);
-  }
-}
-
-// -------------------- 缓存管理 --------------------
-async function isVideoCached(videoId) {
-  if (!('caches' in window)) return false;
-  try {
-    const cache = await caches.open(CACHE_NAME);
-    const res = await cache.match(`/video/${videoId}`);
-    if (!res) return false;
-    const expiry = res.headers.get('x-cache-expiry');
-    if (expiry && now() > parseInt(expiry, 10)) {
-      await cache.delete(`/video/${videoId}`);
-      return false;
-    }
-    return true;
-  } catch (e) {
-    console.warn('检查缓存失败:', e);
-    return false;
-  }
-}
-
-async function addVideoToCache(videoId, videoUrl) {
-  if (!('caches' in window)) return;
-  try {
-    const cache = await caches.open(CACHE_NAME);
-    const response = await fetch(videoUrl, { credentials: 'omit' }); // 显式设置 credentials
-    if (!response || response.status !== 200) return;
-
-    const headers = new Headers(response.headers);
-    headers.set('x-cache-expiry', String(now() + CACHE_EXPIRY_TIME));
-    headers.set('x-video-id', String(videoId));
-
-    await cache.put(`/video/${videoId}`, new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers
-    }));
-    console.log('视频已缓存，ID:', videoId);
-  } catch (e) {
-    console.warn('缓存视频失败:', e);
-  }
-}
-async function getCachedVideoUrl(videoId) {
-  if (!('caches' in window)) return null;
-  try {
-    const cache = await caches.open(CACHE_NAME);
-    const res = await cache.match(`/video/${videoId}`);
-    if (!res) return null;
-    return URL.createObjectURL(await res.blob());
-  } catch (e) {
-    console.warn('获取缓存视频失败:', e);
-    return null;
-  }
-}
 
 // -------------------- 播放控制 --------------------
 function stopVideoInternal() {
@@ -101,25 +31,17 @@ function stopVideoInternal() {
   if (mainAudio) try { mainAudio.play(); } catch {}
 }
 
-async function playCachedVideo(selectedVideo, fromCache = false) {
+async function playVideo(selectedVideo) {
   videoElement = document.createElement('video');
 
-  if (fromCache) {
-    const cachedUrl = await getCachedVideoUrl(selectedVideo.id);
-    videoElement.src = cachedUrl || selectedVideo.url;
-    console.log(cachedUrl ? '✅ 从缓存播放视频:' : '⚠️ 缓存获取失败，从网络播放:', selectedVideo.id);
-  } else {
-    try {
-      const response = await fetch(selectedVideo.url, { credentials: 'omit' }); // 添加 fetch 并设置 credentials
-      if (!response.ok) throw new Error('Failed to fetch video');
-      const blob = await response.blob();
-      videoElement.src = URL.createObjectURL(blob);
-      console.log('🌐 从网络播放视频:', selectedVideo.id);
-    } catch (e) {
-      console.error('网络播放视频失败:', e);
-      stopVideoInternal();
-      return;
-    }
+  try {
+    const response = await fetch(selectedVideo.url, { credentials: 'omit' });
+    if (!response.ok) throw new Error('Failed to fetch video');
+    const blob = await response.blob();
+    videoElement.src = URL.createObjectURL(blob);
+  } catch (e) {
+    stopVideoInternal();
+    return;
   }
 
   videoElement.preload = 'auto';
@@ -169,8 +91,6 @@ function clearOverlay() {
 }
 
 onMounted(() => {
-  void tryRegisterSW();
-
   const mainAudio = document.getElementById('audio-player');
 
   // -------------------- 长按E键触发 --------------------
@@ -181,7 +101,7 @@ onMounted(() => {
     if (!isTriggered) clearOverlay();
 
     longPressTimer = setTimeout(async () => {
-      isTriggered = true; // ✅ 标记动画已触发
+      isTriggered = true; // 标记动画已触发
 
       overlay = document.createElement('div');
       overlay.className = 'ripple-overlay';
@@ -212,17 +132,11 @@ onMounted(() => {
           }
 
           const selected = videos[Math.floor(Math.random() * videos.length)];
-          if (await isVideoCached(selected.id)) await playCachedVideo(selected, true);
-          else {
-            await playCachedVideo(selected, false);
-            void addVideoToCache(selected.id, selected.url);
-          }
-
+          await playVideo(selected);
         } catch (err) {
-          console.error(err);
           clearOverlay();
         }
-      }, 2000); // ✅ 动画 2 秒后播放视频，无论键盘是否松开
+      }, 2000); // 动画 2 秒后播放视频，无论键盘是否松开
 
     }, 3000); // 长按 E 键 3 秒触发
   };
