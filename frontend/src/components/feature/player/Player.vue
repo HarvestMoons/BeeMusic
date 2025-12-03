@@ -567,4 +567,9 @@ audio {
   filter: var(--vote-icon-filter);
   transition: filter 0.3s ease;
 }
+
+.portal-icon{
+  filter: var(--vote-icon-filter);
+  transition: filter 0.3s ease;
+}
 </style>
