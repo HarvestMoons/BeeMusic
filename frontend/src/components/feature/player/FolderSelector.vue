@@ -232,4 +232,42 @@ function selectFolder(val) {
 @keyframes fadeIn {
   to { opacity: 1; }
 }
+
+@media (max-width: 768px) {
+  .folder-selector-container {
+    overflow-x: auto;
+    justify-content: flex-start;
+    padding: 10px 20px;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .folder-selector-container::-webkit-scrollbar {
+    display: none;
+  }
+
+  .carousel-stage {
+    display: flex;
+    width: max-content;
+    max-width: none;
+    height: auto;
+    gap: 15px;
+    padding: 10px 0;
+  }
+
+  .folder-card {
+    position: relative !important;
+    left: auto !important;
+    margin-left: 0 !important;
+    transform: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    width: 140px !important;
+    flex-shrink: 0;
+  }
+
+  .folder-card.active {
+    transform: scale(1.05) !important;
+  }
+}
 </style>

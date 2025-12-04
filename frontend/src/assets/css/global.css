@@ -3,6 +3,7 @@
     --bg-color: #f1f1b8;
     --text-color: #333333;
     --primary-color: #f9a825;
+    --primary-color-rgb: 249, 168, 37;
     --border-color: #ccc;
 
     /* Playlist */
@@ -67,6 +68,7 @@
     --bg-color: #222222;
     --text-color: #e0e0e0;
     --primary-color: #ffb74d;
+    --primary-color-rgb: 255, 183, 77;
     --border-color: #444;
 
     /* Playlist */
