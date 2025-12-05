@@ -1,7 +1,22 @@
 <template>
   <div class="comment-sidebar" :class="{ collapsed: !visible }">
     <div class="drawer-header">
-      <h3>评论 ({{ totalComments }})</h3>
+      <div class="header-left">
+        <h3>评论 ({{ totalComments }})</h3>
+        <div class="sort-controls">
+          <button 
+            class="sort-btn" 
+            :class="{ active: sortOrder === 'hot' }" 
+            @click="sortOrder = 'hot'"
+          >最热</button>
+          <span class="divider">|</span>
+          <button 
+            class="sort-btn" 
+            :class="{ active: sortOrder === 'time' }" 
+            @click="sortOrder = 'time'"
+          >最新</button>
+        </div>
+      </div>
       <button class="close-btn" @click="$emit('close')">
         <span v-if="visible">»</span>
         <span v-else>«</span>
@@ -14,7 +29,7 @@
         <div v-else-if="comments.length === 0" class="empty-state">暂无评论，快来抢沙发吧~</div>
         
         <div v-else class="comment-items">
-          <div v-for="comment in comments" :key="comment.id" class="comment-item">
+          <div v-for="comment in sortedComments" :key="comment.id" class="comment-item">
             <!-- 主评论 -->
             <div class="comment-main">
               <div class="user-avatar">{{ comment.username.charAt(0).toUpperCase() }}</div>
@@ -149,6 +164,21 @@ const emit = defineEmits(['close'])
 
 const authStore = useAuthStore()
 const comments = ref([])
+const sortOrder = ref('hot')
+
+const sortedComments = computed(() => {
+  const list = [...comments.value]
+  if (sortOrder.value === 'time') {
+    return list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+  } else {
+    return list.sort((a, b) => {
+      const diff = (b.likeCount || 0) - (a.likeCount || 0)
+      if (diff !== 0) return diff
+      return new Date(b.createdAt) - new Date(a.createdAt)
+    })
+  }
+})
+
 const loading = ref(false)
 const inputContent = ref('')
 const replyingTo = ref(null) // { commentId, userId, username, rootId }
@@ -353,6 +383,43 @@ async function handleDelete(commentId) {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.header-left {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.sort-controls {
+  font-size: 12px;
+  color: var(--text-color);
+  opacity: 0.6;
+}
+
+.sort-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: inherit;
+  font-size: inherit;
+}
+
+.sort-btn:hover {
+  color: var(--primary-color);
+  opacity: 1;
+}
+
+.sort-btn.active {
+  color: var(--primary-color);
+  font-weight: bold;
+  opacity: 1;
+}
+
+.divider {
+  margin: 0 6px;
+  opacity: 0.5;
 }
 
 .drawer-header h3 {
