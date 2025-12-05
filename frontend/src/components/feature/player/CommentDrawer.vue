@@ -3,7 +3,7 @@
     <div class="drawer-header">
       <div class="header-left">
         <h3>评论 ({{ totalComments }})</h3>
-        <div class="sort-controls">
+        <div class="sort-controls" v-show="visible">
           <button 
             class="sort-btn" 
             :class="{ active: sortOrder === 'hot' }" 
