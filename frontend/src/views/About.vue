@@ -10,8 +10,8 @@
     <p>快捷键提示：</p>
     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 20px; justify-items: center; padding: 8px 0; font-size: 15px;">
       <div><kbd>Space</kbd> 播放/暂停</div>
-      <div><kbd>← A</kbd> 上一首</div>
-      <div><kbd>→ D</kbd> 下一首</div>
+      <div><kbd>←/A</kbd> 上一首</div>
+      <div><kbd>→/D</kbd> 下一首</div>
       <div><kbd>R</kbd> 随机播放</div>
       <div><kbd>M</kbd> 静音开关</div>
       <div><kbd>Z</kbd> 频谱样式切换</div>
