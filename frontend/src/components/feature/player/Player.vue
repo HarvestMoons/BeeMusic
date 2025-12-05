@@ -543,8 +543,7 @@ defineExpose({
   margin-top: 15px;
 }
 
-.controls button,
-.controls select {
+.controls button {
   padding: 8px 12px;
   border-radius: 8px;
   border: 1px solid var(--border-color);
@@ -599,10 +598,6 @@ audio {
   width: 100%;
   margin-top: 12px;
 }
-.song-info-container {
-  flex: 2 1 auto;
-}
-
 .song-info-container {
   flex: 2 1 auto;
 }

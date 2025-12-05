@@ -341,42 +341,6 @@ async function handleDelete(commentId) {
 </script>
 
 <style scoped>
-.comment-drawer-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 2000;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.comment-drawer-overlay.open {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.comment-drawer {
-  width: 400px;
-  max-width: 90vw;
-  height: 100%;
-  background: var(--playlist-bg);
-  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  transform: translateX(100%);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.comment-drawer-overlay.open .comment-drawer {
-  transform: translateX(0);
-}
-
 .drawer-header {
   padding: 16px;
   border-bottom: 1px solid var(--border-color);
