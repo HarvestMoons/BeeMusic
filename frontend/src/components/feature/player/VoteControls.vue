@@ -2,11 +2,11 @@
   <div class="vote-controls">
     <Toast :visible="showToast" :message="toastMessage" />
     <button :class="{ active: userVote === 1 }" @click="handleLike">
-      <img :src="likeIcon" alt="点赞" class="vote-icon" />
+      <img :src="likeIcon" alt="点赞" class="vote-icon svg-icon" />
       <span>{{ likes }}</span>
     </button>
     <button :class="{ active: userVote === -1 }" @click="handleDislike">
-      <img :src="dislikeIcon" alt="点踩" class="vote-icon" />
+      <img :src="dislikeIcon" alt="点踩" class="vote-icon svg-icon" />
       <span>{{ dislikes }}</span>
     </button>
   </div>
@@ -14,7 +14,7 @@
 
 <script setup>
 import { ref, watch, onMounted } from 'vue'
-import { PUBLIC_API_BASE,API_BASE } from '@/constants';
+import { PUBLIC_API_BASE } from '@/constants';
 import { useAuthStore } from '@/store';
 import Toast from '@/components/common/Toast.vue';
 
@@ -151,7 +151,5 @@ onMounted(refreshVotes)
 .vote-icon {
   width: 18px;
   height: 18px;
-  filter: var(--vote-icon-filter);
-  transition: filter 0.3s ease;
 }
 </style>

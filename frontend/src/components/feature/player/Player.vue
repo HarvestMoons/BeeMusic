@@ -10,7 +10,7 @@
             <template v-else>
               <span class="song-title">{{ currentSongInfo.title }}</span>
               <a v-if="currentSongInfo.bv" :href="`https://www.bilibili.com/video/${currentSongInfo.bv}/`" target="_blank" class="portal-link">
-                <img :src="portalIcon" alt="传送门" class="portal-icon" />
+                <img :src="portalIcon" alt="传送门" class="svg-icon" />
               </a>
             </template>
           </h2>
@@ -44,11 +44,15 @@
           <button id="play-btn" @click="handlePlayClick">随便听听</button>
           <button id="prev-btn" @click="playPreviousSong">上一首</button>
           <button id="toggleSpectrumBtn" @click="handleToggleSpectrum" :title="isSpectrumVisible ? '隐藏频谱' : '显示频谱'">
-            <img :src="spectrumIcon" alt="频谱" class="spectrum-icon" />
+            <img :src="spectrumIcon" alt="频谱" class="svg-icon" />
+          </button>
+
+          <button id="share-btn" @click="handleShare" title="分享当前歌曲">
+            <img :src="shareIcon" alt="分享" class="svg-icon" />
           </button>
 
           <button id="play-mode-btn" @click="cyclePlayMode" :title="playModeText">
-            <img :src="currentPlayModeIcon" alt="模式" class="play-mode-icon" />
+            <img :src="currentPlayModeIcon" alt="模式" class="svg-icon" />
           </button>
 
           <PlaybackRateControl v-model="playbackRate" />
@@ -67,6 +71,7 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted, computed } from 'vue'
 import portalIcon from '@/assets/icons/protal.svg'
+import shareIcon from '@/assets/icons/share.svg'
 import randomIcon from '@/assets/icons/play_mode/random.svg'
 import loopIcon from '@/assets/icons/play_mode/loop.svg'
 import singleLoopIcon from '@/assets/icons/play_mode/repeat.svg'
@@ -141,6 +146,31 @@ function handleToggleSpectrum() {
   playerSidebarRef.value?.toggleSpectrum()
 }
 
+function handleShare() {
+  if (!playlist.value[currentIndex.value]) {
+    showToastMessage('当前没有播放歌曲');
+    return;
+  }
+  const data = {
+    f: selectedFolder.value,
+    id: playlist.value[currentIndex.value].id
+  };
+  try {
+    const jsonStr = JSON.stringify(data);
+    const encoded = btoa(jsonStr);
+    const url = `${window.location.origin}${window.location.pathname}?share=${encoded}`;
+
+    navigator.clipboard.writeText(url).then(() => {
+      showToastMessage('分享链接已复制！');
+    }).catch(() => {
+      showToastMessage('复制失败，请手动复制');
+    });
+  } catch (e) {
+    console.error('生成分享链接失败', e);
+    showToastMessage('生成链接失败');
+  }
+}
+
 // Storage Helpers
 const makeSelectedFolderKey = (id) => STORAGE_KEYS.SELECTED_FOLDER_PREFIX + id
 const makePlaybackRateKey = (folder) => STORAGE_KEYS.PLAYBACK_RATE_PREFIX + folder
@@ -212,7 +242,7 @@ async function handleFolderChange() {
   await setFolder(selectedFolder.value)
 }
 
-async function setFolder(folder) {
+async function setFolder(folder, targetSongId = null) {
   try {
     document.body.classList.add('loading')
     const res = await fetch(`${PUBLIC_API_BASE}/songs/set-folder`, {
@@ -233,7 +263,12 @@ async function setFolder(folder) {
       }
 
       if (playlist.value.length > 0) {
-        playSongAtIndex(0);
+        let playIndex = 0;
+        if (targetSongId) {
+          const foundIndex = playlist.value.findIndex(s => s.id === targetSongId);
+          if (foundIndex !== -1) playIndex = foundIndex;
+        }
+        playSongAtIndex(playIndex);
       } else {
         currentSongInfo.value = { title: '', bv: null }
         if (audioRef.value) audioRef.value.src = '';
@@ -408,17 +443,6 @@ function handleStorageEvent(e) {
       if (audioRef.value) audioRef.value.playbackRate = v;
     }
   }
-
-  if (e.key && e.key.startsWith(STORAGE_KEYS.SELECTED_FOLDER_PREFIX)) {
-    const selectorId = e.key.substring(STORAGE_KEYS.SELECTED_FOLDER_PREFIX.length);
-    // Assuming selectorId is 'folder-selector'
-    if (selectorId === 'folder-selector') {
-       if (e.newValue !== selectedFolder.value) {
-         selectedFolder.value = e.newValue
-         setFolder(e.newValue).catch(() => {})
-       }
-    }
-  }
 }
 
 onMounted(async () => {
@@ -426,9 +450,33 @@ onMounted(async () => {
   const savedVol = loadVolumeFromStorage();
   if (audioRef.value) audioRef.value.volume = savedVol != null ? savedVol : 0.2;
 
+  // 解析分享参数
+  const urlParams = new URLSearchParams(window.location.search);
+  const shareParam = urlParams.get('share');
+  let shareFolder = null;
+  let shareSongId = null;
+
+  if (shareParam) {
+    try {
+      const decoded = atob(shareParam);
+      const data = JSON.parse(decoded);
+      if (data.f) shareFolder = data.f;
+      if (data.id) shareSongId = data.id;
+
+      // 清除 URL 参数
+      window.history.replaceState({}, '', window.location.pathname);
+    } catch (e) {
+      console.error('解析分享链接失败', e);
+    }
+  }
+
   // Init Folder
-  const savedFolder = loadSelectedFolder('folder-selector');
-  if (savedFolder) selectedFolder.value = savedFolder;
+  if (shareFolder) {
+    selectedFolder.value = shareFolder;
+  } else {
+    const savedFolder = loadSelectedFolder('folder-selector');
+    if (savedFolder) selectedFolder.value = savedFolder;
+  }
 
   // Init Rate
   const savedRate = loadPlaybackRateForFolder(selectedFolder.value);
@@ -437,7 +485,7 @@ onMounted(async () => {
 
   window.addEventListener('storage', handleStorageEvent);
 
-  await setFolder(selectedFolder.value);
+  await setFolder(selectedFolder.value, shareSongId);
 
   useKeyboardShortcuts(
       () => audioRef.value,
@@ -557,19 +605,5 @@ audio {
 
 .song-info-container {
   flex: 2 1 auto;
-}
-
-.play-mode-icon,
-.spectrum-icon {
-  width: 20px;
-  height: 20px;
-  display: block;
-  filter: var(--vote-icon-filter);
-  transition: filter 0.3s ease;
-}
-
-.portal-icon{
-  filter: var(--vote-icon-filter);
-  transition: filter 0.3s ease;
 }
 </style>

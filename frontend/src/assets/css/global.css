@@ -48,19 +48,18 @@
     --song-title-color: #333333;
 
     /* Rate Control */
-    --rate-control-bg: rgba(255, 255, 245, 0.8);
-    --rate-control-border: rgba(220, 210, 150, 0.5);
-    --rate-control-hover-bg: rgba(255, 250, 230, 0.9);
-    --rate-control-text: #6b5e3d;
-    --rate-slider-track: linear-gradient(90deg, #f7d87b, #edc963);
-    --rate-slider-thumb: radial-gradient(circle at 30% 30%, #fffef8, #e0c66b);
-    --rate-slider-thumb-border: #c9a84e;
-    --rate-display-bg: linear-gradient(135deg, #f0cc73, #e2b95c);
-    --rate-display-text: #fff;
-    --rate-display-hover-bg: linear-gradient(135deg, #f5d87d, #e5bf64);
+    --rate-control-bg: #fff8c4;
+    --rate-control-border: #ccc;
+    --rate-control-text: #333;
+}
 
-    /* Folder Name */
-    --folder-name-bg: #ffffff;
+/* Global Icon Style */
+.svg-icon {
+    width: 20px;
+    height: 20px;
+    display: block;
+    filter: var(--vote-icon-filter);
+    transition: filter 0.3s ease;
 }
 
 [data-theme="dark"] {

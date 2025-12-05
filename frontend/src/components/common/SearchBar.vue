@@ -4,7 +4,7 @@
     <img
         src="@/assets/icons/search.svg"
         alt="search"
-        class="search-icon"
+        class="search-icon svg-icon"
         :class="{ active: showInput }"
         @click="toggleSearch"
     />
@@ -83,11 +83,7 @@ onUnmounted(() => {
 }
 
 .search-icon {
-  width: 20px;
-  height: 20px;
   cursor: pointer;
-  filter: var(--vote-icon-filter);
-  transition: filter 0.3s ease;
 }
 
 .search-icon.active {

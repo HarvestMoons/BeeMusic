@@ -14,8 +14,8 @@
         <option value="createdAt">上架日期</option>
       </select>
       <button class="sort-btn" @click="toggleSortOrder" :title="sortOrder === 'asc' ? '升序' : '降序'">
-        <img v-if="sortOrder === 'asc'" :src="upArrowIcon" alt="升序" class="sort-icon" />
-        <img v-else :src="downArrowIcon" alt="降序" class="sort-icon" />
+        <img v-if="sortOrder === 'asc'" :src="upArrowIcon" alt="升序" class="svg-icon" />
+        <img v-else :src="downArrowIcon" alt="降序" class="svg-icon" />
       </button>
     </div>
 
@@ -248,12 +248,5 @@ function getSongTitle(name) {
   margin-left: 8px;
   white-space: nowrap;
   font-weight: normal;
-}
-
-.sort-icon {
-  width: 20px;
-  height: 20px;
-  display: block;
-  filter: var(--vote-icon-filter); /* 复用黑夜模式反色滤镜 */
 }
 </style>
