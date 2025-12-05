@@ -51,6 +51,13 @@
     --rate-control-bg: #fff8c4;
     --rate-control-border: #ccc;
     --rate-control-text: #333;
+    --rate-control-hover-bg: #fff59d;
+    --rate-slider-track: linear-gradient(90deg, #ffd54f, #ffb74d);
+    --rate-slider-thumb: radial-gradient(circle at 30% 30%, #fff, #ffecb3);
+    --rate-slider-thumb-border: #ffb74d;
+    --rate-display-bg: linear-gradient(135deg, #ffca28, #ffb300);
+    --rate-display-text: #5d4037;
+    --rate-display-hover-bg: linear-gradient(135deg, #ffd54f, #ffca28);
 }
 
 /* Global Icon Style */

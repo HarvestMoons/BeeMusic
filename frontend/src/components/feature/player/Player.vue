@@ -40,22 +40,28 @@
           ></audio>
         </div>
 
-        <div class="controls">
-          <button id="play-btn" @click="handlePlayClick">随便听听</button>
-          <button id="prev-btn" @click="playPreviousSong">上一首</button>
-          <button id="toggleSpectrumBtn" @click="handleToggleSpectrum" :title="isSpectrumVisible ? '隐藏频谱' : '显示频谱'">
-            <img :src="spectrumIcon" alt="频谱" class="svg-icon" />
-          </button>
+        <div class="controls-section">
+          <div class="buttons-row">
+            <button id="play-btn" @click="handlePlayClick" title="随便听听 (R)">
+              <img :src="playRandomBtnIcon" alt="随便听听 (R)" class="svg-icon" />
+            </button>
+            <button id="prev-btn" @click="playPreviousSong" title="上一首 (←/A)">
+              <img :src="prevIcon" alt="上一首 (←/A)" class="svg-icon" />
+            </button>
+            <button id="toggleSpectrumBtn" @click="handleToggleSpectrum" :title="isSpectrumVisible ? '隐藏频谱' : '显示频谱'">
+              <img :src="spectrumIcon" alt="频谱" class="svg-icon" />
+            </button>
+            <button id="play-mode-btn" @click="cyclePlayMode" :title="playModeText">
+              <img :src="currentPlayModeIcon" alt="模式" class="svg-icon" />
+            </button>
+            <button id="share-btn" @click="handleShare" title="分享当前歌曲">
+              <img :src="shareIcon" alt="分享" class="svg-icon" />
+            </button>
+          </div>
 
-          <button id="share-btn" @click="handleShare" title="分享当前歌曲">
-            <img :src="shareIcon" alt="分享" class="svg-icon" />
-          </button>
-
-          <button id="play-mode-btn" @click="cyclePlayMode" :title="playModeText">
-            <img :src="currentPlayModeIcon" alt="模式" class="svg-icon" />
-          </button>
-
-          <PlaybackRateControl v-model="playbackRate" />
+          <div class="rate-control-row">
+            <PlaybackRateControl v-model="playbackRate" />
+          </div>
         </div>
       </div>
     </div>
@@ -72,6 +78,8 @@
 import { onMounted, ref, watch, onUnmounted, computed } from 'vue'
 import portalIcon from '@/assets/icons/protal.svg'
 import shareIcon from '@/assets/icons/share.svg'
+import playRandomBtnIcon from '@/assets/icons/play-random.svg'
+import prevIcon from '@/assets/icons/skip-previous.svg'
 import randomIcon from '@/assets/icons/play_mode/random.svg'
 import loopIcon from '@/assets/icons/play_mode/loop.svg'
 import singleLoopIcon from '@/assets/icons/play_mode/repeat.svg'
@@ -535,28 +543,48 @@ defineExpose({
   overflow-y: auto; /* 允许左侧滚动，如果内容超出 */
 }
 
-.controls {
+.controls-section {
+  margin-top: 20px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-  margin-top: 15px;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.controls button {
-  padding: 8px 12px;
-  border-radius: 8px;
+.buttons-row {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  align-items: center;
+  padding: 0 10px;
+}
+
+.rate-control-row {
+  display: flex;
+  justify-content: center;
+}
+
+.buttons-row button {
+  padding: 10px;
+  border-radius: 12px;
   border: 1px solid var(--border-color);
-  font-size: 14px;
   background-color: var(--playlist-item-bg);
   color: var(--text-color);
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.controls button:hover {
+.buttons-row button:hover {
   background-color: var(--playlist-item-hover-bg);
-  color: var(--playlist-item-hover-text);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.buttons-row .svg-icon {
+  width: 24px;
+  height: 24px;
 }
 
 button {
