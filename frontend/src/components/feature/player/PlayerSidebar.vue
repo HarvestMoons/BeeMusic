@@ -117,16 +117,6 @@ defineExpose({
   flex-direction: column;
 }
 
-:deep(.comment-sidebar) {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  background: transparent;
-  box-shadow: none;
-  transform: none !important;
-}
-
 :deep(.comment-sidebar.collapsed .drawer-header) {
   border-bottom: none;
 }
@@ -136,10 +126,5 @@ defineExpose({
   overflow: hidden;
   display: flex;
   flex-direction: column;
-}
-
-:deep(.comment-list) {
-  flex: 1;
-  overflow-y: auto;
 }
 </style>

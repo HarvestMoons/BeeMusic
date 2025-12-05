@@ -159,9 +159,7 @@ const props = defineProps({
   visible: Boolean,
   songId: [String, Number]
 })
-
-const emit = defineEmits(['close'])
-
+defineEmits(['close']);
 const authStore = useAuthStore()
 const comments = ref([])
 const sortOrder = ref('hot')
