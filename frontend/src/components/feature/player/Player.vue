@@ -77,13 +77,13 @@
 <script setup>
 import { onMounted, ref, watch, onUnmounted, computed } from 'vue'
 import portalIcon from '@/assets/icons/protal.svg'
-import shareIcon from '@/assets/icons/share.svg'
-import playRandomBtnIcon from '@/assets/icons/play-random.svg'
-import prevIcon from '@/assets/icons/skip-previous.svg'
-import randomIcon from '@/assets/icons/play_mode/random.svg'
-import loopIcon from '@/assets/icons/play_mode/loop.svg'
-import singleLoopIcon from '@/assets/icons/play_mode/repeat.svg'
-import spectrumIcon from '@/assets/icons/spectrum.svg'
+import shareIcon from '@/assets/icons/player_funtion/share.svg'
+import playRandomBtnIcon from '@/assets/icons/player_funtion/play-random.svg'
+import prevIcon from '@/assets/icons/player_funtion/skip-previous.svg'
+import randomIcon from '@/assets/icons/player_funtion/play_mode/random.svg'
+import loopIcon from '@/assets/icons/player_funtion/play_mode/loop.svg'
+import singleLoopIcon from '@/assets/icons/player_funtion/play_mode/repeat.svg'
+import spectrumIcon from '@/assets/icons/player_funtion/spectrum.svg'
 import VoteControls from "@/components/feature/player/VoteControls.vue";
 import PlaybackRateControl from "@/components/feature/player/PlaybackRateControl.vue";
 import FolderSelector from "@/components/feature/player/FolderSelector.vue";

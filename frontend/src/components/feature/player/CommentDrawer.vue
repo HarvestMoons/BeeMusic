@@ -23,7 +23,7 @@
       </button>
     </div>
 
-    <div v-show="visible" class="comment-content-wrapper">
+    <div v-show="contentVisible" class="comment-content-wrapper">
       <div class="comment-list" ref="listRef">
         <div v-if="loading" class="loading-state">加载中...</div>
         <div v-else-if="comments.length === 0" class="empty-state">暂无评论，快来抢沙发吧~</div>
@@ -116,7 +116,7 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/store'
 import api from '@/services/auth'
 
@@ -167,6 +167,26 @@ defineEmits(['close']);
 const authStore = useAuthStore()
 const comments = ref([])
 const sortOrder = ref('hot')
+const contentVisible = ref(props.visible)
+let timer = null
+
+watch(() => props.visible, (val) => {
+  if (timer) clearTimeout(timer)
+  
+  if (val) {
+    // 展开：延迟显示内容，等待动画完成
+    timer = setTimeout(() => {
+      contentVisible.value = true
+      timer = null
+    }, 300)
+    if (props.songId) {
+      fetchComments()
+    }
+  } else {
+    // 收起：立即隐藏内容
+    contentVisible.value = false
+  }
+})
 
 const sortedComments = computed(() => {
   const list = [...comments.value]
@@ -196,12 +216,6 @@ const totalComments = computed(() => {
     if (c.replies) count += c.replies.length
   })
   return count
-})
-
-watch(() => props.visible, (val) => {
-  if (val && props.songId) {
-    fetchComments()
-  }
 })
 
 watch(() => props.songId, (val) => {
