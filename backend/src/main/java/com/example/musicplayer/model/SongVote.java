@@ -1,5 +1,6 @@
 package com.example.musicplayer.model;
 
+import com.example.musicplayer.enums.VoteType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

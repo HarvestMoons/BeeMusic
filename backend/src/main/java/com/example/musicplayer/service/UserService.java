@@ -1,5 +1,6 @@
 package com.example.musicplayer.service;
 
+import com.example.musicplayer.enums.UserRole;
 import com.example.musicplayer.model.User;
 import com.example.musicplayer.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,6 +27,7 @@ public class UserService {
         user.setUsername(username);
         user.setPassword(passwordEncoder.encode(password));
         user.setLastActiveTime(LocalDateTime.now());
+        user.setRoleEnum(UserRole.USER);
         return userRepository.save(user);
     }
 

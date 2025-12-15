@@ -19,6 +19,7 @@ public class CommentDTO {
     private LocalDateTime createdAt;
     private boolean isLiked; // 当前用户是否点赞
     private boolean isOwner; // 当前用户是否是评论作者
+    private String userRole; // 用户角色
 
     private List<CommentDTO> replies = new ArrayList<>();
 }

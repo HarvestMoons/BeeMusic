@@ -1,5 +1,6 @@
 package com.example.musicplayer.model;
 
+import com.example.musicplayer.enums.UserRole;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -44,6 +45,17 @@ public class User implements Serializable {
     @Column(nullable = false)
     private Integer status = 1; // 1=active,0=disabled
 
+    @Column(nullable = false)
+    private Integer role;
+
+    public UserRole getRoleEnum() {
+        return UserRole.fromCode(role);
+    }
+
+    public void setRoleEnum(UserRole role) {
+        this.role = role.getCode();
+    }
+
     @PrePersist
     public void prePersist() {
         if (lastActiveTime == null) {
@@ -51,6 +63,9 @@ public class User implements Serializable {
         }
         if (status == null) {
             status = 1;
+        }
+        if (role == null) {
+            role = UserRole.USER.getCode();
         }
     }
 

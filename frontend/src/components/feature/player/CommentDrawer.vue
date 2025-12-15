@@ -36,6 +36,8 @@
               <div class="comment-content-box">
                 <div class="comment-header">
                   <span class="username">{{ comment.username }}</span>
+                  <span v-if="comment.userRole === 'STATION_MASTER'" class="role-badge station-master">站长</span>
+                  <span v-else-if="comment.userRole === 'ADMIN'" class="role-badge admin">管理员</span>
                   <span class="time">{{ formatDate(comment.createdAt) }}</span>
                 </div>
                 <div class="comment-text">{{ comment.content }}</div>
@@ -60,6 +62,8 @@
                 <div class="comment-content-box">
                   <div class="comment-header">
                     <span class="username">{{ reply.username }}</span>
+                    <span v-if="reply.userRole === 'STATION_MASTER'" class="role-badge station-master">站长</span>
+                    <span v-else-if="reply.userRole === 'ADMIN'" class="role-badge admin">管理员</span>
                     <span v-if="reply.replyToUserId && reply.replyToUserId !== comment.userId" class="reply-target">
                       回复 <span class="target-name">@{{ reply.replyToUsername }}</span>
                     </span>
@@ -591,5 +595,29 @@ async function handleDelete(commentId) {
 .send-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.role-badge {
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  margin-left: 4px;
+  font-weight: normal;
+  line-height: 1.2;
+  display: inline-block;
+  vertical-align: middle;
+  transform: translateY(-1px);
+}
+
+.role-badge.station-master {
+  background-color: rgba(255, 77, 79, 0.1);
+  color: #ff4d4f;
+  border: 1px solid rgba(255, 77, 79, 0.2);
+}
+
+.role-badge.admin {
+  background-color: rgba(24, 144, 255, 0.1);
+  color: #1890ff;
+  border: 1px solid rgba(24, 144, 255, 0.2);
 }
 </style>

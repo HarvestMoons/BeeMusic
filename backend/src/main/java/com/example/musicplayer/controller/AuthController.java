@@ -35,7 +35,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
         User user = userService.register(request.getUsername(), request.getPassword());
-        return ResponseEntity.ok(new AuthResponse(true, "Registration successful", user.getUsername()));
+        return ResponseEntity.ok(new AuthResponse(true, "Registration successful", user.getUsername(), user.getRoleEnum().name()));
     }
 
     @PostMapping("/login")
@@ -57,7 +57,7 @@ public class AuthController {
         userService.updateLastActiveTime(user);
         session.setAttribute("user", user);
 
-        return ResponseEntity.ok(new AuthResponse(true, "Login successful", user.getUsername()));
+        return ResponseEntity.ok(new AuthResponse(true, "Login successful", user.getUsername(), user.getRoleEnum().name()));
 
     }
 
@@ -84,7 +84,7 @@ public class AuthController {
                 // log error (could add logger) but still return authenticated
                 System.err.println("Failed to update last active time: " + e.getMessage());
             }
-            return ResponseEntity.ok(new AuthResponse(true, "Authenticated", user.getUsername()));
+            return ResponseEntity.ok(new AuthResponse(true, "Authenticated", user.getUsername(), user.getRoleEnum().name()));
         }
         return ResponseEntity.ok(new AuthResponse(false, "Not authenticated", null));
     }

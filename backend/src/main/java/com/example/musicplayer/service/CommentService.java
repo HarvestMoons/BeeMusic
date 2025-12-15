@@ -39,10 +39,10 @@ public class CommentService {
                 userIds.add(c.getReplyToUserId());
             }
         }
-        Map<Long, String> userMap = userIds.isEmpty()
+        Map<Long, User> userMap = userIds.isEmpty()
                 ? Collections.emptyMap()
                 : userRepository.findAllById(userIds).stream()
-                .collect(Collectors.toMap(User::getId, User::getUsername));
+                .collect(Collectors.toMap(User::getId, u -> u));
 
         Set<Long> likedCommentIds = Collections.emptySet();
         if (currentUserId != null) {
@@ -64,12 +64,22 @@ public class CommentService {
             dto.setId(c.getId());
             dto.setSongId(c.getSongId());
             dto.setUserId(c.getUserId());
-            dto.setUsername(userMap.getOrDefault(c.getUserId(), "Unknown"));
+            
+            User u = userMap.get(c.getUserId());
+            if (u != null) {
+                dto.setUsername(u.getUsername());
+                dto.setUserRole(u.getRoleEnum().name());
+            } else {
+                dto.setUsername("Unknown");
+                dto.setUserRole("USER");
+            }
+            
             dto.setContent(c.getContent());
             dto.setParentId(c.getParentId());
             dto.setReplyToUserId(c.getReplyToUserId());
             if (c.getReplyToUserId() != null) {
-                dto.setReplyToUsername(userMap.getOrDefault(c.getReplyToUserId(), "Unknown"));
+                User replyUser = userMap.get(c.getReplyToUserId());
+                dto.setReplyToUsername(replyUser != null ? replyUser.getUsername() : "Unknown");
             }
             dto.setLikeCount(c.getLikeCount());
             dto.setCreatedAt(c.getCreatedAt());
@@ -134,7 +144,11 @@ public class CommentService {
         dto.setId(comment.getId());
         dto.setSongId(songId);
         dto.setUserId(userId);
-        dto.setUsername(userRepository.findById(userId).map(User::getUsername).orElse("Unknown"));
+        
+        User currentUser = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        dto.setUsername(currentUser.getUsername());
+        dto.setUserRole(currentUser.getRoleEnum().name());
+        
         dto.setContent(content);
         dto.setParentId(parentId);
         dto.setReplyToUserId(replyToUserId);

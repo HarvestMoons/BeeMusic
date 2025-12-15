@@ -1,4 +1,4 @@
-package com.example.musicplayer.model;
+package com.example.musicplayer.enums;
 
 public enum VoteType {
     LIKE(1),
