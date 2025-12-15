@@ -2,7 +2,7 @@
 <template>
   <div class="online-status">
     在线 {{ onlineCount }} 人
-    <span v-if="sameSongCount >= 1" class="same-song">
+    <span v-if="sameSongCount === '-' || sameSongCount > 0" class="same-song">
       · {{ sameSongCount }} 人正在听
     </span>
   </div>
@@ -12,14 +12,13 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 
-const onlineCount = ref(0)
-const sameSongCount = ref(0)
+const onlineCount = ref('-')
+const sameSongCount = ref('-')
 const currentSongName = ref('')
 
 let ws = null
 
 onMounted(() => {
-  // 用相对路径，走 Nginx 代理
   ws = new WebSocket(`ws://${location.host}/ws/online`)
 
   window.ws=ws;

@@ -3,8 +3,8 @@
   <div class="about-page">
     <h1>关于本站</h1>
     <p>开发者：小蜜蜂 <span style="color: transparent">     特别鸣谢：ChatGPT、DeepSeek、Github Copilot</span></p>
-    <p>本站是一个个人音乐网站，基于 Vue3 + Spring 开发，音乐来源于Bilibili网站。点击歌名右侧的视频图标，就能跳转到原视频页观看pv（由于该网站收录的音乐类型特殊，某些视频可能已经被下架，该网站仅用于保留其一缕残魂）。
-      由于该网站目前仍处于活跃更新中，某些功能可能暂时不可用或有bug。如果有任何想法，可以在“隐私政策”页面下找到我的联系方式与我交流。
+    <p>本站是一个非营利性的个人音乐网站，代码已开源在<a href="https://github.com/HarvestMoons/BeeMusic" target="_blank" class="link">Github</a>，音乐来源于<a href="https://www.bilibili.com/" target="_blank" class="link">Bilibili</a>。点击歌名右侧的视频图标，就能跳转到原视频页观看pv（由于该网站收录的音乐类型特殊，某些视频可能已经被下架，该网站仅用于保留其一缕残魂）。
+      由于该网站目前仍处于活跃更新中，某些功能可能暂时不可用或有bug。如果有任何想法，可以在<router-link to="/privacy" class="link">“隐私政策”</router-link>页面下找到我的联系方式与我交流。
       彩蛋：<span style="color: transparent">在主页面，长按E键可以观看随机逆天视频。</span></p>
     <p>账号不是必须的，但还是建议注册———评价歌曲等相关功能需要在登录后进行，预计未来会继续推出更多账号相关功能。</p>
     <p>快捷键提示：</p>
@@ -44,7 +44,7 @@ import SongFolderDonut from "@/components/feature/stats/SongFolderDonut.vue";
 .about-page {
   text-align: left;
   padding: 20px;
-  margin-left: 120px; /* 给侧边栏留出空间，偏右 */
+  margin-left: 120px;
   box-sizing: border-box;
 
 }
@@ -60,5 +60,15 @@ import SongFolderDonut from "@/components/feature/stats/SongFolderDonut.vue";
 .programmer-honor-shame li {
   list-style: disc;
   line-height: 1.4;
+}
+
+.link {
+  color: var(--link-color);
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.link:hover {
+  text-decoration: underline;
 }
 </style>

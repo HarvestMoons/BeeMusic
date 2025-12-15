@@ -4,6 +4,7 @@
     --text-color: #333333;
     --primary-color: #f9a825;
     --primary-color-rgb: 249, 168, 37;
+    --link-color: #c67100;
     --border-color: #ccc;
 
     /* Playlist */
@@ -75,6 +76,7 @@
     --text-color: #e0e0e0;
     --primary-color: #ffb74d;
     --primary-color-rgb: 255, 183, 77;
+    --link-color: #8ab4f8;
     --border-color: #444;
 
     /* Playlist */

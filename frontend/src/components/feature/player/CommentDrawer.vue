@@ -18,8 +18,8 @@
         </div>
       </div>
       <button class="close-btn" @click="$emit('close')">
-        <span v-if="visible">»</span>
-        <span v-else>«</span>
+        <img v-if="visible" :src="foldIcon" class="svg-icon" alt="收起" />
+        <img v-else :src="unfoldIcon" class="svg-icon" alt="展开" />
       </button>
     </div>
 
@@ -119,6 +119,8 @@
 import { ref, watch, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/store'
 import api from '@/services/auth'
+import unfoldIcon from '@/assets/icons/unfold.svg'
+import foldIcon from '@/assets/icons/fold.svg'
 
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 const MAX_CACHE_ENTRIES = 50;
