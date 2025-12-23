@@ -13,6 +13,9 @@ services:
       - app-network
     environment:
       - SPRING_PROFILES_ACTIVE=prod
+      - DB_PASSWORD
+      - ALIYUN_OSS_ACCESS_KEY
+      - ALIYUN_OSS_SECRET_KEY
     # 每次部署前拉取最新镜像
     deploy:
       update_config:

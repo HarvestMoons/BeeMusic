@@ -11,6 +11,10 @@ services:
       - "8082:8082"
     depends_on:
       - redis
+    environment:
+      - DB_PASSWORD
+      - ALIYUN_OSS_ACCESS_KEY
+      - ALIYUN_OSS_SECRET_KEY
     logging:
       driver: "json-file"
       options:
