@@ -49,7 +49,7 @@ async function playVideo(selectedVideo) {
   videoElement.loop = false;
   Object.assign(videoElement.style, {
     position: 'fixed', top: '0', left: '0', width: '100vw', height: '100vh',
-    objectFit: 'cover', pointerEvents: 'none', zIndex: '10000'
+    objectFit: 'contain', backgroundColor: 'black', pointerEvents: 'none', zIndex: '10000'
   });
 
   const mainAudio = document.getElementById('audio-player');
