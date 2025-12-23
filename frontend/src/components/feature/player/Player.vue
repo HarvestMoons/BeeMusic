@@ -100,7 +100,8 @@ const STORAGE_KEYS = {
   PLAYLIST_PREFIX: 'music_playlist_',
   SELECTED_FOLDER_PREFIX: 'music_selected_folder_',
   PLAYBACK_RATE_PREFIX: 'music_playback_rate_',
-  SHOW_COMMENTS: 'music_show_comments'
+  SHOW_COMMENTS: 'music_show_comments',
+  PLAY_MODE: 'music_play_mode'
 };
 
 // Refs
@@ -109,7 +110,7 @@ const playlist = ref([])
 const currentIndex = ref(-1)
 const historyStack = ref([])
 const playbackRate = ref(1.0)
-const playMode = ref('random')
+const playMode = ref(localStorage.getItem(STORAGE_KEYS.PLAY_MODE) || 'random')
 const playerSidebarRef = ref(null)
 const isSpectrumVisible = computed(() => playerSidebarRef.value?.showSpectrum?.value ?? false)
 
@@ -275,6 +276,10 @@ function handleTimeUpdate() {
 watch(playbackRate, (val) => {
   if (audioRef.value) audioRef.value.playbackRate = val
   savePlaybackRateForFolder(selectedFolder.value)
+})
+
+watch(playMode, (val) => {
+  localStorage.setItem(STORAGE_KEYS.PLAY_MODE, val)
 })
 
 // Logic
