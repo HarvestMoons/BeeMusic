@@ -67,4 +67,3 @@ if %errorlevel% equ 0 (
 
 echo.
 echo 脚本执行完成
-pause
