@@ -23,7 +23,7 @@
     --vote-btn-hover-bg: #fff176;
     --vote-btn-active-bg: #ffe066;
     --vote-btn-active-border: #ffca3a;
-    --vote-icon-filter: none;
+    --vote-icon-filter: brightness(0) invert(0.2);
 
     /* Modal */
     --modal-bg: #ffffff;

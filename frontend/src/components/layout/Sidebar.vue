@@ -19,10 +19,16 @@
         <li><a href="#" @click.prevent="showHome">首页</a></li>
         <li><a href="#" @click.prevent="showAbout">关于本站</a></li>
         <li><a href="#" @click.prevent="showPrivacy">隐私政策</a></li>
-        <li><a href="#" @click.prevent="showAuthor">🔗关于小蜜蜂</a></li>
         <li>
-          <a href="#" @click.prevent="toggleTheme">
-            {{ themeStore.isDarkMode ? '☀️ 日间模式' : '🌙 夜间模式' }}
+          <a href="#" @click.prevent="showAuthor" class="theme-toggle-link">
+            <img :src="linkIcon" class="svg-icon" alt="链接" />
+            关于小蜜蜂
+          </a>
+        </li>
+        <li>
+          <a href="#" @click.prevent="toggleTheme" class="theme-toggle-link">
+            <img :src="themeStore.isDarkMode ? sunIcon : moonIcon" class="svg-icon" alt="切换模式" />
+            {{ themeStore.isDarkMode ? '日间模式' : '夜间模式' }}
           </a>
         </li>
       </ul>
@@ -35,9 +41,9 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore, useThemeStore } from '@/store/index.js'
 import {eventBus} from "@/utils/eventBus.js";
-// 如果您添加了图标，请取消以下注释并替换 Emoji
-// import sunIcon from '@/assets/icons/sun.svg'
-// import moonIcon from '@/assets/icons/moon.svg'
+import sunIcon from '@/assets/icons/theme/sun.svg'
+import moonIcon from '@/assets/icons/theme/moon.svg'
+import linkIcon from '@/assets/icons/link.svg'
 
 const isOpen = ref(false)
 const router = useRouter()
@@ -58,15 +64,19 @@ function toggleTheme() {
 // 路由跳转
 function showHome() {
   router.push('/')
+  isOpen.value = false
 }
 function showPrivacy() {
   router.push('/privacy')
+  isOpen.value = false
 }
 function showAbout() {
   router.push('/about')
+  isOpen.value = false
 }
 function showAuthor() {
   window.open('https://github.com/HarvestMoons/HarvestMoons', '_blank')
+  isOpen.value = false
 }
 
 // 登录 / 登出处理
@@ -173,5 +183,11 @@ function onAuthClick() {
 .menu a:hover {
   color: var(--sidebar-text-hover, #ffffff);
   text-decoration: underline;
+}
+
+.theme-toggle-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 </style>
