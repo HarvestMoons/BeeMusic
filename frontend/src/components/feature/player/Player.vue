@@ -410,6 +410,9 @@ function handlePlaybackEnd() {
   if (audioRef.value.duration > 0 && diff < 0.5) {
     if (playMode.value === 'single-loop') {
       audioRef.value.currentTime = 0;
+      if (playCountState.value.songId) {
+        playCountState.value.reported = false;
+      }
       audioRef.value.play();
     } else if (playMode.value === 'loop-list') {
       const next = (currentIndex.value + 1) % playlist.value.length;
