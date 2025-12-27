@@ -10,7 +10,7 @@
 
 <!-- OnlineStatus.vue -->
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import {onMounted, onUnmounted, ref} from 'vue'
 
 const onlineCount = ref('-')
 const sameSongCount = ref('-')
@@ -21,7 +21,7 @@ let ws = null
 onMounted(() => {
   ws = new WebSocket(`ws://${location.host}/ws/online`)
 
-  window.ws=ws;
+  window.ws = ws;
 
   ws.onopen = () => {
     console.log('实时在线人数连接成功！')

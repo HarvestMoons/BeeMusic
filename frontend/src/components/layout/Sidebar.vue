@@ -21,13 +21,13 @@
         <li><a href="#" @click.prevent="showPrivacy">隐私政策</a></li>
         <li>
           <a href="#" @click.prevent="showAuthor" class="theme-toggle-link">
-            <img :src="linkIcon" class="svg-icon" alt="链接" />
+            <img :src="linkIcon" class="svg-icon" alt="链接"/>
             关于小蜜蜂
           </a>
         </li>
         <li>
           <a href="#" @click.prevent="toggleTheme" class="theme-toggle-link">
-            <img :src="themeStore.isDarkMode ? sunIcon : moonIcon" class="svg-icon" alt="切换模式" />
+            <img :src="themeStore.isDarkMode ? sunIcon : moonIcon" class="svg-icon" alt="切换模式"/>
             {{ themeStore.isDarkMode ? '日间模式' : '夜间模式' }}
           </a>
         </li>
@@ -37,9 +37,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore, useThemeStore } from '@/store/index.js'
+import {ref} from 'vue'
+import {useRouter} from 'vue-router'
+import {useAuthStore, useThemeStore} from '@/store/index.js'
 import {eventBus} from "@/utils/eventBus.js";
 import sunIcon from '@/assets/icons/theme/sun.svg'
 import moonIcon from '@/assets/icons/theme/moon.svg'
@@ -66,14 +66,17 @@ function showHome() {
   router.push('/')
   isOpen.value = false
 }
+
 function showPrivacy() {
   router.push('/privacy')
   isOpen.value = false
 }
+
 function showAbout() {
   router.push('/about')
   isOpen.value = false
 }
+
 function showAuthor() {
   window.open('https://github.com/HarvestMoons/HarvestMoons', '_blank')
   isOpen.value = false
@@ -138,9 +141,11 @@ function onAuthClick() {
 .sidebar.open .hamburger span:nth-child(1) {
   transform: rotate(45deg) translate(5px, 5px);
 }
+
 .sidebar.open .hamburger span:nth-child(2) {
   opacity: 0;
 }
+
 .sidebar.open .hamburger span:nth-child(3) {
   transform: rotate(-45deg) translate(5px, -5px);
 }

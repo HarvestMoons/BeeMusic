@@ -18,7 +18,7 @@
 </template>
 
 <script setup>
-import {ref, watch, onMounted} from 'vue'
+import {onMounted, ref, watch} from 'vue'
 
 const props = defineProps({
   modelValue: {type: Number, default: 1.0},
@@ -54,7 +54,7 @@ onMounted(() => {
   border-radius: 12px;
   background: var(--rate-control-bg);
   border: 1px solid var(--rate-control-border);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   backdrop-filter: blur(6px);
   font-size: 14px;
   transition: all 0.3s ease;
@@ -62,7 +62,7 @@ onMounted(() => {
 
 .rate-control:hover {
   background: var(--rate-control-hover-bg);
-  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
 }
 
 .rate-label {
@@ -93,13 +93,13 @@ onMounted(() => {
   border-radius: 50%;
   background: var(--rate-slider-thumb);
   border: 1px solid var(--rate-slider-thumb-border);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .rate-slider::-webkit-slider-thumb:hover {
   transform: scale(1.1);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
 /* Firefox */
@@ -117,7 +117,7 @@ onMounted(() => {
   font-weight: 600;
   border-radius: 8px;
   padding: 2px 10px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
   cursor: pointer;
   user-select: none;
   transition: all 0.2s ease;
@@ -126,6 +126,6 @@ onMounted(() => {
 .rate-display:hover {
   background: var(--rate-display-hover-bg);
   transform: scale(1.08);
-  box-shadow: 0 3px 8px rgba(0,0,0,0.25);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
 }
 </style>

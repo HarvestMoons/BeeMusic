@@ -9,12 +9,12 @@
         <form @submit.prevent="handleLogin" class="modal-form" autocomplete="on">
           <label class="field">
             <span class="label-text">用户名</span>
-            <input v-model="username" id="login-username" type="text" required autocomplete="username" />
+            <input v-model="username" id="login-username" type="text" required autocomplete="username"/>
           </label>
 
           <label class="field">
             <span class="label-text">密码</span>
-            <input v-model="password" id="login-password" type="password" required autocomplete="current-password" />
+            <input v-model="password" id="login-password" type="password" required autocomplete="current-password"/>
           </label>
 
           <button class="primary-btn" type="submit" :disabled="loading">
@@ -35,13 +35,13 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { login } from '@/services/auth.js'
-import { useAuthStore } from '@/store/index.js'
+import {ref} from 'vue'
+import {useRouter} from 'vue-router'
+import {login} from '@/services/auth.js'
+import {useAuthStore} from '@/store/index.js'
 
 const props = defineProps({
-  visible: { type: Boolean, default: false }
+  visible: {type: Boolean, default: false}
 })
 const emit = defineEmits(['close', 'switch'])
 
@@ -69,7 +69,7 @@ async function handleLogin() {
   error.value = ''
   loading.value = true
   try {
-    await login({ username: username.value, password: password.value }) // 你的现有逻辑
+    await login({username: username.value, password: password.value}) // 你的现有逻辑
     await authStore.fetchUserStatus() // 保持原逻辑：刷新认证状态
     emit('close')
     await router.push('/') // 保持原逻辑：跳转首页
@@ -101,7 +101,7 @@ async function handleLogin() {
   color: var(--modal-text);
   border-radius: 16px;
   padding: 32px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
   position: relative;
   transform-origin: center;
   animation: pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -109,8 +109,14 @@ async function handleLogin() {
 }
 
 @keyframes pop {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .modal-close {
@@ -126,6 +132,7 @@ async function handleLogin() {
   transition: opacity 0.2s;
   line-height: 1;
 }
+
 .modal-close:hover {
   opacity: 1;
 }
@@ -198,9 +205,11 @@ input:focus {
 .primary-btn:hover {
   filter: brightness(1.1);
 }
+
 .primary-btn:active {
   transform: scale(0.98);
 }
+
 .primary-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
@@ -213,12 +222,14 @@ input:focus {
   text-align: center;
   margin-top: 16px;
 }
+
 .muted a {
   color: var(--primary-color);
   text-decoration: none;
   font-weight: 500;
   margin-left: 4px;
 }
+
 .muted a:hover {
   text-decoration: underline;
 }

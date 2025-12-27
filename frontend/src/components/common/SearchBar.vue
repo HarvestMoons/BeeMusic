@@ -25,7 +25,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import {nextTick, onMounted, onUnmounted, ref} from 'vue'
 
 const props = defineProps({
   placeholder: {
@@ -115,6 +115,7 @@ onUnmounted(() => {
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
+
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
   transform: translateY(-5px);

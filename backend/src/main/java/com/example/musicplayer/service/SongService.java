@@ -22,7 +22,7 @@ public class SongService {
             "da_si_ma", "大司马",
             "ding_zhen", "丁真",
             "dxl", "东洋雪莲",
-            "DDF","哲学",
+            "DDF", "哲学",
             "true_music", "真正的音乐"
     );
 

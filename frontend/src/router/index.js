@@ -1,13 +1,13 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import {createRouter, createWebHistory} from 'vue-router';
 import HomePage from '@/views/HomePage.vue';
 import PrivacyPage from '@/views/PrivacyPage.vue';
 import About from '@/views/About.vue';
-import { useAuthStore } from '@/store';
+import {useAuthStore} from '@/store';
 
 const routes = [
-    { path: '/', component: HomePage },
-    { path: '/privacy', component: PrivacyPage },
-    { path: '/about', component: About },
+    {path: '/', component: HomePage},
+    {path: '/privacy', component: PrivacyPage},
+    {path: '/about', component: About},
 ];
 
 const router = createRouter({

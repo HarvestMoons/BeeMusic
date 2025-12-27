@@ -1,25 +1,25 @@
 <template>
   <div class="home-page">
     <div class="layout">
-      <Sidebar />
+      <Sidebar/>
 
       <!-- 左侧歌单 -->
-        <Playlist
+      <Playlist
           :playlist="safePlaylist"
           :currentSongId="currentSongId"
           @select="handlePlaylistClick"
-        />
+      />
 
       <!-- 右侧：播放器 + 频谱 -->
       <div class="right-container">
-        <Player ref="playerRef" />
+        <Player ref="playerRef"/>
       </div>
     </div>
 
-    <BackgroundParticles zIndex="0" opacity="0.4" color="0,0,0" :count="99" />
-    <BackgroundRipple apiBase="/api" />
+    <BackgroundParticles zIndex="0" opacity="0.4" color="0,0,0" :count="99"/>
+    <BackgroundRipple apiBase="/api"/>
     <div v-if="loading">
-      <MySpinner />
+      <MySpinner/>
     </div>
   </div>
 </template>

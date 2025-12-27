@@ -1,16 +1,17 @@
 <template>
   <div class="player-wrapper">
     <div class="player-container">
-      <Toast :visible="showToast" :message="toastMessage" />
+      <Toast :visible="showToast" :message="toastMessage"/>
       <div class="song-info-container">
-        <FolderSelector v-model="selectedFolder" @change="handleFolderChange" />
+        <FolderSelector v-model="selectedFolder" @change="handleFolderChange"/>
         <div class="song-info">
           <h2 id="current-song">
             <span v-if="!currentSongInfo.title">当前未播放</span>
             <template v-else>
               <span class="song-title">{{ currentSongInfo.title }}</span>
-              <a v-if="currentSongInfo.bv" :href="`https://www.bilibili.com/video/${currentSongInfo.bv}/`" target="_blank" class="portal-link">
-                <img :src="portalIcon" alt="传送门" class="svg-icon" />
+              <a v-if="currentSongInfo.bv" :href="`https://www.bilibili.com/video/${currentSongInfo.bv}/`"
+                 target="_blank" class="portal-link">
+                <img :src="portalIcon" alt="传送门" class="svg-icon"/>
               </a>
             </template>
           </h2>
@@ -19,63 +20,64 @@
                 v-if="playlist[currentIndex]"
                 :songId="playlist[currentIndex].id"
             />
-            <OnlineStatus />
+            <OnlineStatus/>
           </div>
           <Playlist
               :playlist="playlist"
               :currentSongId="playlist[currentIndex]?.id"
               @select="handleSelectSong"
           />
-          <audio 
-            id="audio-player" 
-            ref="audioRef" 
-            controls 
-            crossorigin="anonymous"
-            @ended="handlePlaybackEnd"
-            @error="handleAudioError"
-            @volumechange="handleVolumeChange"
-            @ratechange="handleRateChangeNative"
-            @timeupdate="handleTimeUpdate"
-            @loadedmetadata="handleLoadedMetadata"
+          <audio
+              id="audio-player"
+              ref="audioRef"
+              controls
+              crossorigin="anonymous"
+              @ended="handlePlaybackEnd"
+              @error="handleAudioError"
+              @volumechange="handleVolumeChange"
+              @ratechange="handleRateChangeNative"
+              @timeupdate="handleTimeUpdate"
+              @loadedmetadata="handleLoadedMetadata"
           ></audio>
         </div>
 
         <div class="controls-section">
           <div class="buttons-row">
             <button id="play-btn" @click="handlePlayClick" title="随便听听 (R)">
-              <img :src="playRandomBtnIcon" alt="随便听听 (R)" class="svg-icon" />
+              <img :src="playRandomBtnIcon" alt="随便听听 (R)" class="svg-icon"/>
             </button>
             <button id="prev-btn" @click="playPreviousSong" title="上一首 (←/A)">
-              <img :src="prevIcon" alt="上一首 (←/A)" class="svg-icon" />
+              <img :src="prevIcon" alt="上一首 (←/A)" class="svg-icon"/>
             </button>
-            <button id="toggleSpectrumBtn" @click="handleToggleSpectrum" :title="isSpectrumVisible ? '隐藏频谱' : '显示频谱'">
-              <img :src="spectrumIcon" alt="频谱" class="svg-icon" />
+            <button id="toggleSpectrumBtn" @click="handleToggleSpectrum"
+                    :title="isSpectrumVisible ? '隐藏频谱' : '显示频谱'">
+              <img :src="spectrumIcon" alt="频谱" class="svg-icon"/>
             </button>
             <button id="play-mode-btn" @click="cyclePlayMode" :title="playModeText">
-              <img :src="currentPlayModeIcon" alt="模式" class="svg-icon" />
+              <img :src="currentPlayModeIcon" alt="模式" class="svg-icon"/>
             </button>
             <button id="share-btn" @click="handleShare" title="分享当前歌曲">
-              <img :src="shareIcon" alt="分享" class="svg-icon" />
+              <img :src="shareIcon" alt="分享" class="svg-icon"/>
             </button>
           </div>
 
           <div class="rate-control-row">
-            <PlaybackRateControl v-model="playbackRate" />
+            <PlaybackRateControl v-model="playbackRate"/>
           </div>
         </div>
       </div>
     </div>
 
     <PlayerSidebar
-      ref="playerSidebarRef"
-      :song-id="playlist[currentIndex]?.id"
-      :show-comments-storage-key="STORAGE_KEYS.SHOW_COMMENTS"
+        ref="playerSidebarRef"
+        :song-id="playlist[currentIndex]?.id"
+        :show-comments-storage-key="STORAGE_KEYS.SHOW_COMMENTS"
     />
   </div>
 </template>
 
 <script setup>
-import { onMounted, ref, watch, onUnmounted, computed } from 'vue'
+import {computed, onMounted, onUnmounted, ref, watch} from 'vue'
 import portalIcon from '@/assets/icons/protal.svg'
 import shareIcon from '@/assets/icons/player_funtion/share.svg'
 import playRandomBtnIcon from '@/assets/icons/player_funtion/play-random.svg'
@@ -89,7 +91,7 @@ import PlaybackRateControl from "@/components/feature/player/PlaybackRateControl
 import FolderSelector from "@/components/feature/player/FolderSelector.vue";
 import Toast from "@/components/common/Toast.vue";
 import PlayerSidebar from "@/components/feature/player/PlayerSidebar.vue";
-import { PUBLIC_API_BASE } from '@/constants';
+import {PUBLIC_API_BASE} from '@/constants';
 import {useKeyboardShortcuts} from "@/composables/useKeyboardShortcuts.js";
 import OnlineStatus from "@/components/common/OnlineStatus.vue";
 
@@ -136,11 +138,11 @@ function cyclePlayMode() {
 }
 
 const selectedFolder = ref(DEFAULT_FOLDER)
-const currentSongInfo = ref({ title: '', bv: null })
+const currentSongInfo = ref({title: '', bv: null})
 const toastMessage = ref('')
 const showToast = ref(false)
 let toastTimer = null
-const playCountState = ref({ songId: null, reported: false })
+const playCountState = ref({songId: null, reported: false})
 
 function showToastMessage(msg) {
   toastMessage.value = msg
@@ -189,19 +191,19 @@ function fallbackCopyText(text) {
   try {
     const textArea = document.createElement("textarea");
     textArea.value = text;
-    
+
     // 避免页面滚动
     textArea.style.position = "fixed";
     textArea.style.left = "-9999px";
     textArea.style.top = "0";
-    
+
     document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();
-    
+
     const successful = document.execCommand('copy');
     document.body.removeChild(textArea);
-    
+
     if (successful) {
       showToastMessage('分享链接已复制！');
     } else {
@@ -218,30 +220,49 @@ const makeSelectedFolderKey = (id) => STORAGE_KEYS.SELECTED_FOLDER_PREFIX + id
 const makePlaybackRateKey = (folder) => STORAGE_KEYS.PLAYBACK_RATE_PREFIX + folder
 
 function saveVolumeToStorage(vol) {
-  try { localStorage.setItem(STORAGE_KEYS.VOLUME, String(vol)); } catch (e) {}
+  try {
+    localStorage.setItem(STORAGE_KEYS.VOLUME, String(vol));
+  } catch (e) {
+  }
 }
+
 function loadVolumeFromStorage() {
   try {
     const v = parseFloat(localStorage.getItem(STORAGE_KEYS.VOLUME));
     if (!Number.isNaN(v)) return Math.min(1, Math.max(0, v));
-  } catch (e) {}
+  } catch (e) {
+  }
   return null;
 }
+
 function saveSelectedFolder(id, folder) {
-  try { localStorage.setItem(makeSelectedFolderKey(id), folder); } catch (e) {}
+  try {
+    localStorage.setItem(makeSelectedFolderKey(id), folder);
+  } catch (e) {
+  }
 }
+
 function loadSelectedFolder(id) {
-  try { return localStorage.getItem(makeSelectedFolderKey(id)); } catch (e) {}
+  try {
+    return localStorage.getItem(makeSelectedFolderKey(id));
+  } catch (e) {
+  }
 }
+
 function savePlaybackRateForFolder(folder) {
-  try { localStorage.setItem(makePlaybackRateKey(folder), String(playbackRate.value)); } catch (e) {}
+  try {
+    localStorage.setItem(makePlaybackRateKey(folder), String(playbackRate.value));
+  } catch (e) {
+  }
 }
+
 function loadPlaybackRateForFolder(folder) {
   try {
     const raw = localStorage.getItem(makePlaybackRateKey(folder));
     const v = parseFloat(raw);
     if (!Number.isNaN(v)) return v;
-  } catch (e) {}
+  } catch (e) {
+  }
   return null;
 }
 
@@ -258,7 +279,10 @@ function handleRateChangeNative() {
 
 function handleLoadedMetadata() {
   if (audioRef.value) {
-    try { audioRef.value.playbackRate = playbackRate.value } catch (e) {}
+    try {
+      audioRef.value.playbackRate = playbackRate.value
+    } catch (e) {
+    }
   }
 }
 
@@ -268,7 +292,17 @@ function handleTimeUpdate() {
   if (!state.songId || state.reported) return
   if (audioRef.value.currentTime >= PLAY_COUNT_THRESHOLD_SECONDS) {
     state.reported = true
-    fetch(`${PUBLIC_API_BASE}/songs/play/${state.songId}`, { method: 'POST' }).catch(console.error)
+    fetch(`${PUBLIC_API_BASE}/songs/play/${state.songId}`, {method: 'POST'})
+        .then(res => {
+          if (res.ok) {
+            // 更新本地播放列表中的计数，以便 UI 实时反映
+            const song = playlist.value.find(s => s.id === state.songId)
+            if (song) {
+              song.playCount = (song.playCount || 0) + 1
+            }
+          }
+        })
+        .catch(console.error)
   }
 }
 
@@ -316,7 +350,7 @@ async function setFolder(folder, targetSongId = null) {
         }
         playSongAtIndex(playIndex);
       } else {
-        currentSongInfo.value = { title: '', bv: null }
+        currentSongInfo.value = {title: '', bv: null}
         if (audioRef.value) audioRef.value.src = '';
       }
     } else {
@@ -353,7 +387,7 @@ function shuffleArray(array) {
 
 function playSongAtIndex(index, fromHistory = false) {
   if (index < 0 || index >= playlist.value.length) {
-    currentSongInfo.value = { title: '播放失败：索引越界', bv: null }
+    currentSongInfo.value = {title: '播放失败：索引越界', bv: null}
     return;
   }
 
@@ -363,7 +397,7 @@ function playSongAtIndex(index, fromHistory = false) {
 
   currentIndex.value = index;
   const song = playlist.value[index];
-  playCountState.value = { songId: song.id, reported: false };
+  playCountState.value = {songId: song.id, reported: false};
 
   // Global state for OnlineStatus
   window.currentSongId = String(song.id)
@@ -381,8 +415,11 @@ function playSongAtIndex(index, fromHistory = false) {
   if (audioRef.value) {
     audioRef.value.src = song.url;
     // Ensure rate is applied
-    try { audioRef.value.playbackRate = playbackRate.value; } catch (e) {}
-    
+    try {
+      audioRef.value.playbackRate = playbackRate.value;
+    } catch (e) {
+    }
+
     audioRef.value.play().catch(err => {
       console.warn('播放未启动：', err);
     });
@@ -437,7 +474,7 @@ function handleAudioError() {
 
 function playRandomSong() {
   if (!playlist.value || playlist.value.length === 0) {
-    currentSongInfo.value = { title: '播放失败：歌曲列表为空', bv: null }
+    currentSongInfo.value = {title: '播放失败：歌曲列表为空', bv: null}
     return;
   }
   const rand = Math.floor(Math.random() * playlist.value.length);
@@ -620,7 +657,7 @@ defineExpose({
 .buttons-row button:hover {
   background-color: var(--playlist-item-hover-bg);
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .buttons-row .svg-icon {
@@ -667,6 +704,7 @@ audio {
   width: 100%;
   margin-top: 12px;
 }
+
 .song-info-container {
   flex: 2 1 auto;
 }

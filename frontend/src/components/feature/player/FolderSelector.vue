@@ -1,17 +1,17 @@
 <template>
   <div class="folder-selector-container">
     <div class="carousel-stage">
-      <div 
-        v-for="(folder, index) in folders" 
-        :key="folder.value"
-        class="folder-card"
-        :class="{ active: modelValue === folder.value }"
-        :style="getCardStyle(index)"
-        @click="selectFolder(folder.value)"
+      <div
+          v-for="(folder, index) in folders"
+          :key="folder.value"
+          class="folder-card"
+          :class="{ active: modelValue === folder.value }"
+          :style="getCardStyle(index)"
+          @click="selectFolder(folder.value)"
       >
         <div class="card-inner">
           <div class="image-container">
-            <img :src="folder.img" :alt="folder.label" />
+            <img :src="folder.img" :alt="folder.label"/>
             <div class="active-indicator" v-if="modelValue === folder.value">
               <div class="playing-icon">
                 <span></span><span></span><span></span>
@@ -28,9 +28,9 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits, computed } from 'vue'
-import { useAuthStore } from '@/store'
-import { FOLDER_INFO } from '@/constants'
+import {computed, defineEmits, defineProps} from 'vue'
+import {useAuthStore} from '@/store'
+import {FOLDER_INFO} from '@/constants'
 
 // Import images
 import ha_ji_mi from '@/assets/cover/哈基米.jpg'
@@ -52,13 +52,13 @@ const emit = defineEmits(['update:modelValue', 'change'])
 const authStore = useAuthStore()
 
 const allFolders = [
-  { value: 'ha_ji_mi', label: FOLDER_INFO.ha_ji_mi, img: ha_ji_mi },
-  { value: 'dian_gun', label: FOLDER_INFO.dian_gun, img: dian_gun },
-  { value: 'da_si_ma', label: FOLDER_INFO.da_si_ma, img: da_si_ma },
-  { value: 'ding_zhen', label: FOLDER_INFO.ding_zhen, img: ding_zhen },
-  { value: 'dxl', label: FOLDER_INFO.dxl, img: dxl },
-  { value: 'DDF', label: FOLDER_INFO.DDF, img: DDF },
-  { value: 'true_music', label: FOLDER_INFO.true_music, img: true_music, hidden: true },
+  {value: 'ha_ji_mi', label: FOLDER_INFO.ha_ji_mi, img: ha_ji_mi},
+  {value: 'dian_gun', label: FOLDER_INFO.dian_gun, img: dian_gun},
+  {value: 'da_si_ma', label: FOLDER_INFO.da_si_ma, img: da_si_ma},
+  {value: 'ding_zhen', label: FOLDER_INFO.ding_zhen, img: ding_zhen},
+  {value: 'dxl', label: FOLDER_INFO.dxl, img: dxl},
+  {value: 'DDF', label: FOLDER_INFO.DDF, img: DDF},
+  {value: 'true_music', label: FOLDER_INFO.true_music, img: true_music, hidden: true},
 ]
 
 const folders = computed(() => {
@@ -75,9 +75,9 @@ function getCardStyle(index) {
   // Calculate circular distance
   let diff = (index - currentIndex.value + total) % total
   if (diff > total / 2) diff -= total
-  
+
   const absDiff = Math.abs(diff)
-  
+
   // Only show center and immediate neighbors (3 items total)
   if (absDiff > 1) {
     return {
@@ -150,7 +150,7 @@ function selectFolder(val) {
   border-radius: 12px;
   overflow: hidden;
   background: var(--playlist-item-bg);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
   transition: all 0.3s ease;
   border: 2px solid transparent;
 }
@@ -195,7 +195,7 @@ function selectFolder(val) {
   background-color: var(--folder-name-bg);
   padding: 6px 16px;
   border-radius: 20px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   display: inline-block;
 }
 
@@ -226,20 +226,37 @@ function selectFolder(val) {
   background-color: #fff;
   border-radius: 2px;
   animation: bounce 1s infinite ease-in-out;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.playing-icon span:nth-child(1) { animation-delay: 0s; height: 60%; }
-.playing-icon span:nth-child(2) { animation-delay: 0.2s; height: 100%; }
-.playing-icon span:nth-child(3) { animation-delay: 0.4s; height: 50%; }
+.playing-icon span:nth-child(1) {
+  animation-delay: 0s;
+  height: 60%;
+}
+
+.playing-icon span:nth-child(2) {
+  animation-delay: 0.2s;
+  height: 100%;
+}
+
+.playing-icon span:nth-child(3) {
+  animation-delay: 0.4s;
+  height: 50%;
+}
 
 @keyframes bounce {
-  0%, 100% { transform: scaleY(0.5); }
-  50% { transform: scaleY(1); }
+  0%, 100% {
+    transform: scaleY(0.5);
+  }
+  50% {
+    transform: scaleY(1);
+  }
 }
 
 @keyframes fadeIn {
-  to { opacity: 1; }
+  to {
+    opacity: 1;
+  }
 }
 
 @media (max-width: 768px) {
@@ -249,7 +266,7 @@ function selectFolder(val) {
     padding: 10px 20px;
     -webkit-overflow-scrolling: touch;
   }
-  
+
   .folder-selector-container::-webkit-scrollbar {
     display: none;
   }

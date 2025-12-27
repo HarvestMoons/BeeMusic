@@ -10,8 +10,8 @@
 
     <!-- 主体部分 -->
     <div class="flex-1">
-      <HomePage v-show="route.path === '/'" />
-      <router-view v-if="route.path !== '/'" />
+      <HomePage v-show="route.path === '/'"/>
+      <router-view v-if="route.path !== '/'"/>
     </div>
 
     <!-- 登录弹窗 -->
@@ -29,20 +29,20 @@
     />
 
     <!-- 全局 Toast -->
-    <Toast :visible="toastVisible" :message="toastMessage" />
+    <Toast :visible="toastVisible" :message="toastMessage"/>
   </div>
 </template>
 
 <script setup>
 import {onBeforeUnmount, onMounted, ref} from 'vue'
-import { useRoute } from 'vue-router'
+import {useRoute} from 'vue-router'
 import Sidebar from '@/components/layout/Sidebar.vue'
 import HomePage from '@/views/HomePage.vue'
 import LoginModal from '@/components/feature/auth/LoginModal.vue'
 import RegisterModal from "@/components/feature/auth/RegisterModal.vue";
 import Toast from '@/components/common/Toast.vue'
-import { logout } from '@/services/auth.js'
-import { useAuthStore, useThemeStore } from '@/store/index.js'
+import {logout} from '@/services/auth.js'
+import {useAuthStore, useThemeStore} from '@/store/index.js'
 import {eventBus} from "@/utils/eventBus.js";
 
 const route = useRoute()
@@ -77,6 +77,7 @@ onBeforeUnmount(() => {
 function openLogin() {
   showLogin.value = true
 }
+
 function openRegister() {
   showRegister.value = true
 }

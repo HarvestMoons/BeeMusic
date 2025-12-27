@@ -11,6 +11,7 @@ import java.util.Optional;
 
 public interface CommentLikeRepository extends JpaRepository<CommentLike, Long> {
     Optional<CommentLike> findByUserIdAndCommentId(Long userId, Long commentId);
+
     boolean existsByUserIdAndCommentId(Long userId, Long commentId);
 
     @Query("SELECT cl.commentId FROM CommentLike cl WHERE cl.userId = :userId AND cl.commentId IN :commentIds")

@@ -1,5 +1,5 @@
-import { defineStore } from 'pinia';
-import { getUserStatus } from '@/services/auth'; // 假设已定义
+import {defineStore} from 'pinia';
+import {getUserStatus} from '@/services/auth'; // 假设已定义
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({

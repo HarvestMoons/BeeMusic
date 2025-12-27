@@ -7,6 +7,5 @@ import java.util.Optional;
 
 public interface SongVoteRepository extends JpaRepository<SongVote, Long> {
     Optional<SongVote> findByUserIdAndSongId(Long userId, Long songId);
-    long countBySongIdAndVote(Long songId, Integer vote);
 }
 

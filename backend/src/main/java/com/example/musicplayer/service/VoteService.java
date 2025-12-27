@@ -1,7 +1,7 @@
 package com.example.musicplayer.service;
 
-import com.example.musicplayer.model.SongVote;
 import com.example.musicplayer.enums.VoteType;
+import com.example.musicplayer.model.SongVote;
 import com.example.musicplayer.repository.SongRepository;
 import com.example.musicplayer.repository.SongVoteRepository;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -24,8 +24,13 @@ public class VoteService {
         this.redisTemplate = redisTemplate;
     }
 
-    private String likesKey(Long songId) { return "likes:" + songId; }
-    private String dislikesKey(Long songId) { return "dislikes:" + songId; }
+    private String likesKey(Long songId) {
+        return "likes:" + songId;
+    }
+
+    private String dislikesKey(Long songId) {
+        return "dislikes:" + songId;
+    }
 
     @Transactional
     public Map<String, Integer> like(Long songId, Long userId) {

@@ -47,7 +47,7 @@ public class OnlineCountHandler extends TextWebSocketHandler {
     }
 
     @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         redisListener.removeSession(session);
 
         String oldSongId = (String) session.getAttributes().get(CURRENT_SONG_ID);
@@ -72,7 +72,7 @@ public class OnlineCountHandler extends TextWebSocketHandler {
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         Map<String, Object> jsonMap = objectMapper.readValue(message.getPayload(), Map.class);
         System.out.println("Received WebSocket message: " + jsonMap);
-        
+
         // 兼容前端可能传数字的情况
         Object songIdObj = jsonMap.get("songId");
         String songId = songIdObj == null ? null : String.valueOf(songIdObj);
@@ -114,6 +114,7 @@ public class OnlineCountHandler extends TextWebSocketHandler {
         try {
             String json = objectMapper.writeValueAsString(data);
             redisTemplate.convertAndSend(REDIS_CHANNEL, json);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 }

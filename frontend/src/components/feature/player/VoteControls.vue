@@ -1,22 +1,26 @@
 <template>
   <div class="vote-controls">
-    <Toast :visible="showToast" :message="toastMessage" />
+    <Toast :visible="showToast" :message="toastMessage"/>
     <button :class="{ active: userVote === 1 }" @click="handleLike">
-      <img :src="likeIcon" alt="点赞" class="vote-icon svg-icon" />
+      <img :src="likeIcon" alt="点赞" class="vote-icon svg-icon"/>
       <span>{{ likes }}</span>
     </button>
     <button :class="{ active: userVote === -1 }" @click="handleDislike">
-      <img :src="dislikeIcon" alt="点踩" class="vote-icon svg-icon" />
+      <img :src="dislikeIcon" alt="点踩" class="vote-icon svg-icon"/>
       <span>{{ dislikes }}</span>
     </button>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
-import { PUBLIC_API_BASE } from '@/constants';
-import { useAuthStore } from '@/store';
+import {onMounted, ref, watch} from 'vue'
+import {PUBLIC_API_BASE} from '@/constants';
+import {useAuthStore} from '@/store';
 import Toast from '@/components/common/Toast.vue';
+// 引入图标
+import likeIcon from '@/assets/icons/like.svg'
+import dislikeIcon from '@/assets/icons/dislike.svg'
+import api from '@/services/auth';
 
 // 使用 props 接收当前歌曲 ID
 const props = defineProps({
@@ -34,11 +38,6 @@ const toastMessage = ref('')
 let toastTimer = null
 
 const authStore = useAuthStore()
-
-// 引入图标
-import likeIcon from '@/assets/icons/like.svg'
-import dislikeIcon from '@/assets/icons/dislike.svg'
-import api from '@/services/auth';
 
 function showToastMessage(msg) {
   toastMessage.value = msg
@@ -145,7 +144,7 @@ onMounted(refreshVotes)
 .vote-controls button.active {
   background-color: var(--vote-btn-active-bg);
   border-color: var(--vote-btn-active-border);
-  box-shadow: 0 0 0 2px rgba(255,202,58,0.3);
+  box-shadow: 0 0 0 2px rgba(255, 202, 58, 0.3);
 }
 
 .vote-icon {

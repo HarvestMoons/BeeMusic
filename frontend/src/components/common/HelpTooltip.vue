@@ -6,7 +6,7 @@
 
     <!-- 浮窗 -->
     <div v-if="show" class="tooltip-box">
-      <slot />
+      <slot/>
     </div>
   </div>
 </template>
@@ -27,7 +27,7 @@ export default {
         const rect = this.$el.getBoundingClientRect()
         tooltip.style.top = `${(rect.bottom + rect.top) / 2}px`
         tooltip.style.right = `${
-          document.documentElement.scrollWidth - (rect.right + rect.left) / 2
+            document.documentElement.scrollWidth - (rect.right + rect.left) / 2
         }px`
       })
     },

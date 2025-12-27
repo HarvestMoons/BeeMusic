@@ -1,17 +1,17 @@
 <template>
   <div class="sidebar-wrapper" :class="{ collapsed: !showComments }">
     <CommentDrawer
-      :visible="showComments"
-      :songId="songId"
-      @close="handleDrawerClose"
-      class="comment-drawer-flex"
+        :visible="showComments"
+        :songId="songId"
+        @close="handleDrawerClose"
+        class="comment-drawer-flex"
     />
-    <SpectrumVisualizer :visible="showSpectrum" />
+    <SpectrumVisualizer :visible="showSpectrum"/>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import {onMounted, ref} from 'vue'
 import CommentDrawer from '@/components/feature/player/CommentDrawer.vue'
 import SpectrumVisualizer from '@/components/feature/spectrum/SpectrumVisualizer.vue'
 
@@ -32,7 +32,8 @@ const showSpectrum = ref(false)
 function persistShowComments() {
   try {
     localStorage.setItem(props.showCommentsStorageKey, String(showComments.value))
-  } catch (e) {}
+  } catch (e) {
+  }
 }
 
 function setCommentsVisibility(next) {
@@ -64,7 +65,8 @@ onMounted(() => {
   try {
     const saved = localStorage.getItem(props.showCommentsStorageKey)
     if (saved !== null) showComments.value = saved === 'true'
-  } catch (e) {}
+  } catch (e) {
+  }
 })
 
 defineExpose({

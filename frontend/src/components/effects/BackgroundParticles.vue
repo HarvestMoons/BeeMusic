@@ -1,18 +1,18 @@
 <script setup>
-import { onMounted, onBeforeUnmount } from 'vue';
+import {onBeforeUnmount, onMounted} from 'vue';
 
 // props: 保持和原脚本能传入的属性等价（字符串或数字都接受）
 const props = defineProps({
-  zIndex: { type: [String, Number], default: -1 },
-  opacity: { type: [String, Number], default: 0.5 },
-  color: { type: String, default: '0,0,0' }, // format: "r,g,b"
-  count: { type: [String, Number], default: 99 }
+  zIndex: {type: [String, Number], default: -1},
+  opacity: {type: [String, Number], default: 0.5},
+  color: {type: String, default: '0,0,0'}, // format: "r,g,b"
+  count: {type: [String, Number], default: 99}
 });
 
 let canvas, ctx, animationId;
 let width = 0, height = 0;
 let particles = [];
-let mouse = { x: null, y: null, max: 20000 };
+let mouse = {x: null, y: null, max: 20000};
 let allParticles = [];
 let mounted = false;
 
@@ -31,7 +31,7 @@ function createParticles(count) {
     const y = Math.random() * height;
     const vx = (Math.random() * 2 - 1);
     const vy = (Math.random() * 2 - 1);
-    particles.push({ x, y, vx, vy, max: 6000 });
+    particles.push({x, y, vx, vy, max: 6000});
   }
   allParticles = particles.concat([mouse]);
 }
@@ -142,27 +142,35 @@ onMounted(() => {
     window.removeEventListener('mousemove', mousemoveHandler);
     window.removeEventListener('mouseout', mouseoutHandler);
     // 移除 canvas
-    try { if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas); } catch (e) {}
+    try {
+      if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas);
+    } catch (e) {
+    }
     // 清空引用
     canvas = null;
     ctx = null;
     particles = [];
     allParticles = [];
-    mouse = { x: null, y: null, max: 20000 };
+    mouse = {x: null, y: null, max: 20000};
   };
 });
 
 onBeforeUnmount(() => {
   // 执行清理
   if (canvas && typeof canvas.__bgParticlesCleanup === 'function') {
-    try { canvas.__bgParticlesCleanup(); } catch (e) { /* ignore */ }
+    try {
+      canvas.__bgParticlesCleanup();
+    } catch (e) { /* ignore */
+    }
     delete canvas.__bgParticlesCleanup;
   } else {
     // 兜底清理
     if (animationId) cancelAnimationFrame(animationId);
     window.removeEventListener('resize', setCanvasSize);
-    window.removeEventListener('mousemove', () => {});
-    window.removeEventListener('mouseout', () => {});
+    window.removeEventListener('mousemove', () => {
+    });
+    window.removeEventListener('mouseout', () => {
+    });
   }
 });
 </script>

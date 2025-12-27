@@ -2,7 +2,7 @@
   <div class="playlist-container">
     <div class="header">
       <h3>当前歌单</h3>
-      <SearchBar placeholder="搜索歌曲..." @search="handleSearch" />
+      <SearchBar placeholder="搜索歌曲..." @search="handleSearch"/>
     </div>
 
     <div class="sort-toolbar">
@@ -14,8 +14,8 @@
         <option value="createdAt">上架日期</option>
       </select>
       <button class="sort-btn" @click="toggleSortOrder" :title="sortOrder === 'asc' ? '升序' : '降序'">
-        <img v-if="sortOrder === 'asc'" :src="upArrowIcon" alt="升序" class="svg-icon" />
-        <img v-else :src="downArrowIcon" alt="降序" class="svg-icon" />
+        <img v-if="sortOrder === 'asc'" :src="upArrowIcon" alt="升序" class="svg-icon"/>
+        <img v-else :src="downArrowIcon" alt="降序" class="svg-icon"/>
       </button>
     </div>
 
@@ -36,14 +36,14 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import {computed, onMounted, ref, watch} from 'vue'
 import SearchBar from "@/components/common/SearchBar.vue";
 import upArrowIcon from '@/assets/icons/up_arrow.svg'
 import downArrowIcon from '@/assets/icons/down_arrow.svg'
 
 const props = defineProps({
-  playlist: { type: Array, required: true },
-  currentSongId: { type: [String, Number], default: null }
+  playlist: {type: Array, required: true},
+  currentSongId: {type: [String, Number], default: null}
 })
 
 const searchQuery = ref('')
@@ -132,7 +132,7 @@ function getSongTitle(name) {
   height: var(--content-height, 750px);
   background: var(--playlist-bg);
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   padding: 16px;
   box-sizing: border-box;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -212,7 +212,7 @@ function getSongTitle(name) {
   transition: all 0.2s ease;
   color: var(--playlist-item-text);
   background: var(--playlist-item-bg);
-  box-shadow: inset 0 0 0 rgba(0,0,0,0);
+  box-shadow: inset 0 0 0 rgba(0, 0, 0, 0);
 }
 
 .playlist li:hover {

@@ -1,21 +1,21 @@
 <template>
-  <Sidebar />
+  <Sidebar/>
   <div class="container">
     <div v-if="loading">
-      <MySpinner />
+      <MySpinner/>
     </div>
-    <div v-else v-html="renderedMarkdown" />
+    <div v-else v-html="renderedMarkdown"/>
   </div>
 </template>
 
 <script>
-import { ref, onMounted } from 'vue'
+import {onMounted, ref} from 'vue'
 import MarkdownIt from 'markdown-it'
 import MySpinner from "@/components/effects/MySpinner.vue";
 import Sidebar from "@/components/layout/Sidebar.vue";
 
 export default {
-  components: {Sidebar, MySpinner },
+  components: {Sidebar, MySpinner},
   setup() {
     const mdParser = new MarkdownIt()
     const renderedMarkdown = ref('')
@@ -27,8 +27,8 @@ export default {
       error.value = null
       try {
         const markdownModule = await import(
-          `@/assets/markdown/zh-CN-privacy.md?raw`
-        )
+            `@/assets/markdown/zh-CN-privacy.md?raw`
+            )
         renderedMarkdown.value = mdParser.render(markdownModule.default)
       } catch (err) {
         console.error('Error loading markdown:', err)
@@ -41,7 +41,7 @@ export default {
     // 用 onMounted 确保组件挂载后加载
     onMounted(loadMarkdown)
 
-    return { renderedMarkdown, loading, error }
+    return {renderedMarkdown, loading, error}
   },
 }
 </script>

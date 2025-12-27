@@ -1,8 +1,8 @@
 <script setup>
-import { onMounted, onBeforeUnmount } from 'vue';
+import {onBeforeUnmount, onMounted} from 'vue';
 
 const props = defineProps({
-  apiBase: { type: String, default: '/api' },
+  apiBase: {type: String, default: '/api'},
 });
 
 let darkenInterval = null;
@@ -15,27 +15,36 @@ let clickCount = 0;
 // -------------------- 播放控制 --------------------
 function stopVideoInternal() {
   if (videoElement) {
-    try { if (videoElement.src?.startsWith('blob:')) URL.revokeObjectURL(videoElement.src); } catch {}
+    try {
+      if (videoElement.src?.startsWith('blob:')) URL.revokeObjectURL(videoElement.src);
+    } catch {
+    }
     videoElement.pause();
     videoElement.remove();
     videoElement = null;
   }
 
-  if (overlay) { overlay.remove(); overlay = null; }
+  if (overlay) {
+    overlay.remove();
+    overlay = null;
+  }
 
   clearInterval(darkenInterval);
   clearTimeout(longPressTimer);
   isTriggered = false;
 
   const mainAudio = document.getElementById('audio-player');
-  if (mainAudio) try { mainAudio.play(); } catch {}
+  if (mainAudio) try {
+    mainAudio.play();
+  } catch {
+  }
 }
 
 async function playVideo(selectedVideo) {
   videoElement = document.createElement('video');
 
   try {
-    const response = await fetch(selectedVideo.url, { credentials: 'omit' });
+    const response = await fetch(selectedVideo.url, {credentials: 'omit'});
     if (!response.ok) throw new Error('Failed to fetch video');
     const blob = await response.blob();
     videoElement.src = URL.createObjectURL(blob);
@@ -61,8 +70,11 @@ async function playVideo(selectedVideo) {
     overlay.classList.add('video-playing'); // 开启事件拦截
 
     // 阻止除点击外的所有穿透事件
-    ['mousedown','mouseup','mousemove','wheel','touchstart','touchmove'].forEach(ev =>
-        overlay.addEventListener(ev, e => { e.stopPropagation(); e.preventDefault(); }, true)
+    ['mousedown', 'mouseup', 'mousemove', 'wheel', 'touchstart', 'touchmove'].forEach(ev =>
+        overlay.addEventListener(ev, e => {
+          e.stopPropagation();
+          e.preventDefault();
+        }, true)
     );
 
     // 监听 overlay 点击实现三次点击退出
@@ -87,7 +99,10 @@ async function playVideo(selectedVideo) {
 function clearOverlay() {
   clearTimeout(longPressTimer);
   clearInterval(darkenInterval);
-  if (overlay) { overlay.remove(); overlay = null; }
+  if (overlay) {
+    overlay.remove();
+    overlay = null;
+  }
 }
 
 onMounted(() => {
@@ -225,9 +240,4 @@ onBeforeUnmount(() => {
   transition: opacity 0.5s ease-in;
 }
 
-.ripple-overlay.fade-out .ripple-circle,
-.ripple-overlay.fade-out .dark-background {
-  opacity: 0 !important;
-  transition: opacity 0.3s ease-in;
-}
 </style>

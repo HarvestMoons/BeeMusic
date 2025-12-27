@@ -38,7 +38,8 @@ public class OnlineCountListener implements MessageListener {
                 if (session.isOpen()) {
                     session.sendMessage(new TextMessage(jsonMessage));
                 }
-            } catch (IOException ignored) {}
+            } catch (IOException ignored) {
+            }
         }
     }
 }

@@ -64,7 +64,7 @@ public class CommentService {
             dto.setId(c.getId());
             dto.setSongId(c.getSongId());
             dto.setUserId(c.getUserId());
-            
+
             User u = userMap.get(c.getUserId());
             if (u != null) {
                 dto.setUsername(u.getUsername());
@@ -73,7 +73,7 @@ public class CommentService {
                 dto.setUsername("Unknown");
                 dto.setUserRole("USER");
             }
-            
+
             dto.setContent(c.getContent());
             dto.setParentId(c.getParentId());
             dto.setReplyToUserId(c.getReplyToUserId());
@@ -119,7 +119,7 @@ public class CommentService {
                 }
             }
         }
-        
+
         // 对子评论排序 (按时间正序，楼层效果)
         for (CommentDTO root : rootComments) {
             root.getReplies().sort(Comparator.comparing(CommentDTO::getCreatedAt));
@@ -136,19 +136,19 @@ public class CommentService {
         comment.setContent(content);
         comment.setParentId(parentId);
         comment.setReplyToUserId(replyToUserId);
-        
+
         comment = commentRepository.save(comment);
-        
+
         // 构造返回 DTO
         CommentDTO dto = new CommentDTO();
         dto.setId(comment.getId());
         dto.setSongId(songId);
         dto.setUserId(userId);
-        
+
         User currentUser = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
         dto.setUsername(currentUser.getUsername());
         dto.setUserRole(currentUser.getRoleEnum().name());
-        
+
         dto.setContent(content);
         dto.setParentId(parentId);
         dto.setReplyToUserId(replyToUserId);

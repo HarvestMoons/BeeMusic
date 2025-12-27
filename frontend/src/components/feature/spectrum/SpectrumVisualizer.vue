@@ -6,9 +6,9 @@
 </template>
 
 <script setup>
-import {onMounted, onBeforeUnmount, ref, watch} from 'vue';
+import {onBeforeUnmount, onMounted, watch} from 'vue';
 import HelpTooltip from "@/components/common/HelpTooltip.vue";
-import { useThemeStore } from '@/store/index.js';
+import {useThemeStore} from '@/store/index.js';
 
 const props = defineProps({
   visible: {
@@ -30,7 +30,6 @@ onMounted(() => {
 
   canvas.width = rect.width;
   canvas.height = rect.height;
-
 
 
   if (!audio || !canvas) {
@@ -97,15 +96,15 @@ onMounted(() => {
   let currentGradientColors = [];
 
   const lightGradient = [
-    { stop: 0, color: "rgba(255,200,180,0.8)" },
-    { stop: 0.5, color: "rgba(255,180,150,0.7)" },
-    { stop: 1, color: "rgba(255,160,120,0.6)" },
+    {stop: 0, color: "rgba(255,200,180,0.8)"},
+    {stop: 0.5, color: "rgba(255,180,150,0.7)"},
+    {stop: 1, color: "rgba(255,160,120,0.6)"},
   ];
 
   const darkGradient = [
-    { stop: 0, color: "rgba(176, 190, 197, 0.8)" },   // 低饱和度蓝灰
-    { stop: 0.5, color: "rgba(144, 164, 174, 0.7)" },
-    { stop: 1, color: "rgba(120, 144, 156, 0.6)" },
+    {stop: 0, color: "rgba(176, 190, 197, 0.8)"},   // 低饱和度蓝灰
+    {stop: 0.5, color: "rgba(144, 164, 174, 0.7)"},
+    {stop: 1, color: "rgba(120, 144, 156, 0.6)"},
   ];
 
   let backgroundColor = "#fff8f0";
@@ -227,9 +226,20 @@ onMounted(() => {
     document.removeEventListener("keydown", modeKeyHandler);
     if (rafId) cancelAnimationFrame(rafId);
 
-    [source, analyser].forEach(node => { try { node?.disconnect(); } catch(e){} });
-    try { audioCtx?.close(); } catch(e){}
-    rafId = null; audioCtx = null; source = null; analyser = null;
+    [source, analyser].forEach(node => {
+      try {
+        node?.disconnect();
+      } catch (e) {
+      }
+    });
+    try {
+      audioCtx?.close();
+    } catch (e) {
+    }
+    rafId = null;
+    audioCtx = null;
+    source = null;
+    analyser = null;
   };
 });
 
@@ -237,7 +247,10 @@ onBeforeUnmount(() => {
   // 执行清理
   const canvas = document.getElementById("spectrumCanvas");
   if (canvas && typeof canvas.__spectrumCleanup === "function") {
-    try { canvas.__spectrumCleanup(); } catch (e) { /* ignore */ }
+    try {
+      canvas.__spectrumCleanup();
+    } catch (e) { /* ignore */
+    }
     delete canvas.__spectrumCleanup;
   } else {
     // 兜底：取消 raf 与关闭 audioCtx
@@ -246,19 +259,20 @@ onBeforeUnmount(() => {
       if (analyser) analyser.disconnect();
       if (source) source.disconnect();
       if (audioCtx && typeof audioCtx.close === 'function') audioCtx.close();
-    } catch (e) {}
+    } catch (e) {
+    }
   }
 });
 </script>
 
 <style>
 .spectrum-container {
-  position: relative;       /* 确保内部绝对定位元素生效 */
-  margin: 0;                /* 去掉居中 */
-  width: 100%;              /* 占满父容器 */
-  max-width: none;          /* 取消 max-width */
+  position: relative; /* 确保内部绝对定位元素生效 */
+  margin: 0; /* 去掉居中 */
+  width: 100%; /* 占满父容器 */
+  max-width: none; /* 取消 max-width */
   padding: 15px 20px;
-  box-sizing: border-box;   /* 让 padding 不增加总宽度 */
+  box-sizing: border-box; /* 让 padding 不增加总宽度 */
   background: var(--spectrum-bg);
   border-radius: 12px;
   overflow: hidden;

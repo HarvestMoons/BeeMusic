@@ -19,7 +19,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(onlineCountHandler, "/ws/online")
-                .setAllowedOriginPatterns("*")  ;// 生产环境改成你的域名
-                //不要使用 .withSockJS(); 否则会导致连接失败
+                .setAllowedOriginPatterns("*");// 生产环境改成你的域名
+        //不要使用 .withSockJS(); 否则会导致连接失败
     }
 }

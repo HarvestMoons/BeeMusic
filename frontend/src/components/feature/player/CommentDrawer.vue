@@ -4,22 +4,24 @@
       <div class="header-left">
         <h3>评论 ({{ totalComments }})</h3>
         <div class="sort-controls" v-show="visible">
-          <button 
-            class="sort-btn" 
-            :class="{ active: sortOrder === 'hot' }" 
-            @click="sortOrder = 'hot'"
-          >最热</button>
+          <button
+              class="sort-btn"
+              :class="{ active: sortOrder === 'hot' }"
+              @click="sortOrder = 'hot'"
+          >最热
+          </button>
           <span class="divider">|</span>
-          <button 
-            class="sort-btn" 
-            :class="{ active: sortOrder === 'time' }" 
-            @click="sortOrder = 'time'"
-          >最新</button>
+          <button
+              class="sort-btn"
+              :class="{ active: sortOrder === 'time' }"
+              @click="sortOrder = 'time'"
+          >最新
+          </button>
         </div>
       </div>
       <button class="close-btn" @click="$emit('close')">
-        <img v-if="visible" :src="foldIcon" class="svg-icon" alt="收起" />
-        <img v-else :src="unfoldIcon" class="svg-icon" alt="展开" />
+        <img v-if="visible" :src="foldIcon" class="svg-icon" alt="收起"/>
+        <img v-else :src="unfoldIcon" class="svg-icon" alt="展开"/>
       </button>
     </div>
 
@@ -27,7 +29,7 @@
       <div class="comment-list" ref="listRef">
         <div v-if="loading" class="loading-state">加载中...</div>
         <div v-else-if="comments.length === 0" class="empty-state">暂无评论，快来抢沙发吧~</div>
-        
+
         <div v-else class="comment-items">
           <div v-for="comment in sortedComments" :key="comment.id" class="comment-item">
             <!-- 主评论 -->
@@ -42,15 +44,16 @@
                 </div>
                 <div class="comment-text">{{ comment.content }}</div>
                 <div class="comment-actions">
-                  <button 
-                    class="action-btn like-btn" 
-                    :class="{ active: comment.liked }"
-                    @click="toggleLike(comment)"
+                  <button
+                      class="action-btn like-btn"
+                      :class="{ active: comment.liked }"
+                      @click="toggleLike(comment)"
                   >
                     <span class="icon">👍</span> {{ comment.likeCount || 0 }}
                   </button>
                   <button class="action-btn" @click="startReply(comment)">回复</button>
-                  <button v-if="comment.owner" class="action-btn delete-btn" @click="handleDelete(comment.id)">删除</button>
+                  <button v-if="comment.owner" class="action-btn delete-btn" @click="handleDelete(comment.id)">删除
+                  </button>
                 </div>
               </div>
             </div>
@@ -71,15 +74,16 @@
                   </div>
                   <div class="comment-text">{{ reply.content }}</div>
                   <div class="comment-actions">
-                    <button 
-                      class="action-btn like-btn" 
-                      :class="{ active: reply.liked }"
-                      @click="toggleLike(reply)"
+                    <button
+                        class="action-btn like-btn"
+                        :class="{ active: reply.liked }"
+                        @click="toggleLike(reply)"
                     >
                       <span class="icon">👍</span> {{ reply.likeCount || 0 }}
                     </button>
                     <button class="action-btn" @click="startReply(comment, reply)">回复</button>
-                    <button v-if="reply.owner" class="action-btn delete-btn" @click="handleDelete(reply.id)">删除</button>
+                    <button v-if="reply.owner" class="action-btn delete-btn" @click="handleDelete(reply.id)">删除
+                    </button>
                   </div>
                 </div>
               </div>
@@ -95,17 +99,17 @@
           <button class="cancel-reply" @click="cancelReply">×</button>
         </div>
         <div class="input-area">
-          <textarea 
-            v-model="inputContent" 
-            :placeholder="authStore.isAuthenticated ? '发一条友善的评论...' : '请先登录后评论'"
-            :disabled="!authStore.isAuthenticated"
-            @keydown.ctrl.enter="submitComment"
-            rows="1"
+          <textarea
+              v-model="inputContent"
+              :placeholder="authStore.isAuthenticated ? '发一条友善的评论...' : '请先登录后评论'"
+              :disabled="!authStore.isAuthenticated"
+              @keydown.ctrl.enter="submitComment"
+              rows="1"
           ></textarea>
-          <button 
-            class="send-btn" 
-            :disabled="!authStore.isAuthenticated || !inputContent.trim()"
-            @click="submitComment"
+          <button
+              class="send-btn"
+              :disabled="!authStore.isAuthenticated || !inputContent.trim()"
+              @click="submitComment"
           >
             发送
           </button>
@@ -116,8 +120,8 @@
 </template>
 
 <script setup>
-import { ref, watch, computed, onMounted } from 'vue'
-import { useAuthStore } from '@/store'
+import {computed, ref, watch} from 'vue'
+import {useAuthStore} from '@/store'
 import api from '@/services/auth'
 import unfoldIcon from '@/assets/icons/unfold.svg'
 import foldIcon from '@/assets/icons/fold.svg'
@@ -157,7 +161,7 @@ function pruneCacheIfNeeded() {
 
 function saveCommentsToCache(songId, list = []) {
   if (!songId) return;
-  commentCache.set(songId, { data: deepCloneComments(list), timestamp: Date.now() });
+  commentCache.set(songId, {data: deepCloneComments(list), timestamp: Date.now()});
   pruneCacheIfNeeded();
 }
 
@@ -174,7 +178,7 @@ let timer = null
 
 watch(() => props.visible, (val) => {
   if (timer) clearTimeout(timer)
-  
+
   if (val) {
     // 展开：延迟显示内容，等待动画完成
     timer = setTimeout(() => {
@@ -252,7 +256,7 @@ async function fetchComments(force = false) {
 
 function formatDate(isoStr) {
   const d = new Date(isoStr)
-  return d.toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  return d.toLocaleString('zh-CN', {month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit'})
 }
 
 // 开始回复
@@ -260,7 +264,7 @@ function formatDate(isoStr) {
 // replyComment: 被回复的子评论对象 (可选)
 function startReply(rootComment, replyComment = null) {
   if (!authStore.isAuthenticated) return
-  
+
   const target = replyComment || rootComment
   replyingTo.value = {
     rootId: rootComment.id,
@@ -278,7 +282,7 @@ function cancelReply() {
 
 async function submitComment() {
   if (!inputContent.value.trim()) return
-  
+
   const payload = {
     songId: props.songId,
     content: inputContent.value,
@@ -289,7 +293,7 @@ async function submitComment() {
   try {
     const res = await api.post('/comments/add', payload)
     const newComment = res.data
-    
+
     if (payload.parentId) {
       // 插入到对应根评论的 replies 中
       const root = comments.value.find(c => c.id === payload.parentId)
@@ -301,7 +305,7 @@ async function submitComment() {
       // 插入到列表顶部
       comments.value.unshift(newComment)
     }
-    
+
     persistCurrentComments()
     inputContent.value = ''
     cancelReply()
@@ -313,7 +317,7 @@ async function submitComment() {
 
 async function toggleLike(comment) {
   if (!authStore.isAuthenticated) return
-  
+
   try {
     if (comment.liked) {
       await api.delete(`/comments/like/${comment.id}`)

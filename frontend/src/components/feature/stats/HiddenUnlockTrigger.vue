@@ -1,15 +1,15 @@
 <template>
   <div class="trigger-container">
     <!-- Interaction Layer -->
-    <div 
-      class="center-trigger" 
-      @click="handleCenterClick"
-      :class="{ 'disabled': unlocked }"
+    <div
+        class="center-trigger"
+        @click="handleCenterClick"
+        :class="{ 'disabled': unlocked }"
     >
-      <div 
-        class="resonance-wave" 
-        v-if="clickCount > 0 && !unlocked"
-        :style="{ 
+      <div
+          class="resonance-wave"
+          v-if="clickCount > 0 && !unlocked"
+          :style="{
           transform: `scale(${0.5 + clickCount * 0.15})`,
           opacity: clickCount * 0.15 
         }"
@@ -29,8 +29,8 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits } from 'vue'
-import { unlockHiddenPlaylist } from '@/services/auth'
+import {defineEmits, defineProps, ref} from 'vue'
+import {unlockHiddenPlaylist} from '@/services/auth'
 
 const props = defineProps({
   unlocked: {
@@ -111,7 +111,7 @@ async function triggerUnlock() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent; 
+  background: transparent;
   -webkit-tap-highlight-color: transparent;
   pointer-events: auto; /* Re-enable clicks for trigger */
 }
@@ -125,7 +125,7 @@ async function triggerUnlock() {
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,215,0,0.4) 0%, rgba(255,215,0,0) 70%);
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.4) 0%, rgba(255, 215, 0, 0) 70%);
   box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
   transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   pointer-events: none;
@@ -146,7 +146,7 @@ async function triggerUnlock() {
   align-items: center;
   justify-content: center;
   z-index: 20;
-  background: rgba(0,0,0,0.6);
+  background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
   animation: fadeIn 0.5s ease;
   pointer-events: auto;
@@ -199,12 +199,22 @@ async function triggerUnlock() {
 }
 
 @keyframes popIn {
-  0% { transform: scale(0); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 </style>

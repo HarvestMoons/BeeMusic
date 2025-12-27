@@ -14,9 +14,9 @@
         <div v-if="isLoading" class="loading-glow"></div>
 
         <!-- Custom Tooltip -->
-        <div 
-          class="chart-tooltip"
-          :style="{ 
+        <div
+            class="chart-tooltip"
+            :style="{
             opacity: tooltipModel.opacity, 
             left: tooltipModel.left + 'px', 
             top: tooltipModel.top + 'px' 
@@ -27,19 +27,19 @@
             {{ line }}
           </div>
         </div>
-        
+
         <!-- Easter Egg Component -->
-        <HiddenUnlockTrigger 
-          :unlocked="authStore.isHiddenPlaylistUnlocked"
-          :playlist-name="hiddenPlaylistName"
-          @on-unlock="handleUnlockSuccess"
+        <HiddenUnlockTrigger
+            :unlocked="authStore.isHiddenPlaylistUnlocked"
+            :playlist-name="hiddenPlaylistName"
+            @on-unlock="handleUnlockSuccess"
         />
       </div>
       <ul class="legend" role="list">
         <li
-          v-for="item in dataset"
-          :key="item.folderKey"
-          class="legend-item"
+            v-for="item in dataset"
+            :key="item.folderKey"
+            class="legend-item"
         >
           <span class="swatch" :style="{ backgroundColor: item.color }"></span>
           <div>
@@ -55,11 +55,11 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, ref, computed, watch } from 'vue'
+import {computed, onBeforeUnmount, ref, watch} from 'vue'
 import Chart from 'chart.js/auto'
-import { PUBLIC_API_BASE, FOLDER_INFO } from '@/constants'
-import { FOLDER_DESCRIPTIONS } from '@/constants/folderDescriptions'
-import { useAuthStore } from '@/store'
+import {FOLDER_INFO, PUBLIC_API_BASE} from '@/constants'
+import {FOLDER_DESCRIPTIONS} from '@/constants/folderDescriptions'
+import {useAuthStore} from '@/store'
 import HiddenUnlockTrigger from './HiddenUnlockTrigger.vue'
 
 const palette = ['#6C63FF', '#FF6584', '#3EC8AF', '#FFB347', '#20A4F3', '#9C27B0', '#FF8CC6', '#00BFA6']
@@ -76,10 +76,10 @@ const hiddenPlaylistName = ref('')
 const totalCount = computed(() => dataset.value.reduce((sum, item) => sum + item.count, 0))
 
 // Tooltip State
-const tooltipModel = ref({ opacity: 0, left: 0, top: 0, title: '', body: [] })
+const tooltipModel = ref({opacity: 0, left: 0, top: 0, title: '', body: []})
 
 const externalTooltipHandler = (context) => {
-  const { chart, tooltip } = context
+  const {chart, tooltip} = context
   if (tooltip.opacity === 0) {
     tooltipModel.value.opacity = 0
     return
@@ -159,7 +159,7 @@ function drawChart() {
         padding: 18
       },
       plugins: {
-        legend: { display: false },
+        legend: {display: false},
         tooltip: {
           enabled: false, // 禁用默认 Canvas Tooltip
           external: externalTooltipHandler, // 使用自定义 HTML Tooltip
@@ -181,7 +181,7 @@ function drawChart() {
 
 watch(() => authStore.isHiddenPlaylistUnlocked, () => {
   fetchCounts()
-}, { immediate: true })
+}, {immediate: true})
 
 onBeforeUnmount(() => {
   if (chartInstance) chartInstance.destroy()
@@ -311,6 +311,7 @@ canvas {
   .chart-body {
     grid-template-columns: 1fr;
   }
+
   .legend {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   }
