@@ -27,7 +27,7 @@
           @click="$emit('select', song.id)"
       >
         <div class="song-item-content">
-          <span class="song-title-text">{{ getSongTitle(song.name) }}</span>
+          <span class="song-title-text" :title="getSongTitle(song.name)">{{ getSongTitle(song.name) }}</span>
           <span v-if="sortField !== 'default'" class="song-meta">{{ formatMeta(song) }}</span>
         </div>
       </li>

@@ -29,6 +29,8 @@
 
 <script setup>
 import { defineProps, defineEmits, computed } from 'vue'
+import { useAuthStore } from '@/store'
+import { FOLDER_INFO } from '@/constants'
 
 // Import images
 import ha_ji_mi from '@/assets/cover/哈基米.jpg'
@@ -37,6 +39,7 @@ import da_si_ma from '@/assets/cover/大司马.jpg'
 import ding_zhen from '@/assets/cover/丁真.jpg'
 import dxl from '@/assets/cover/东雪莲.jpg'
 import DDF from '@/assets/cover/哲学.jpg'
+import true_music from '@/assets/cover/站长推荐.jpg'
 
 const props = defineProps({
   modelValue: {
@@ -46,23 +49,29 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:modelValue', 'change'])
+const authStore = useAuthStore()
 
-const folders = [
-  { value: 'ha_ji_mi', label: '基米天堂', img: ha_ji_mi },
-  { value: 'dian_gun', label: '溜冰密室', img: dian_gun },
-  { value: 'da_si_ma', label: '起飞基地', img: da_si_ma },
-  { value: 'ding_zhen', label: '烟雾缭绕', img: ding_zhen },
-  { value: 'dxl', label: '东洋雪莲', img: dxl },
-  { value: 'DDF', label: '哲学圣地', img: DDF },
+const allFolders = [
+  { value: 'ha_ji_mi', label: FOLDER_INFO.ha_ji_mi, img: ha_ji_mi },
+  { value: 'dian_gun', label: FOLDER_INFO.dian_gun, img: dian_gun },
+  { value: 'da_si_ma', label: FOLDER_INFO.da_si_ma, img: da_si_ma },
+  { value: 'ding_zhen', label: FOLDER_INFO.ding_zhen, img: ding_zhen },
+  { value: 'dxl', label: FOLDER_INFO.dxl, img: dxl },
+  { value: 'DDF', label: FOLDER_INFO.DDF, img: DDF },
+  { value: 'true_music', label: FOLDER_INFO.true_music, img: true_music, hidden: true },
 ]
 
+const folders = computed(() => {
+  return allFolders.filter(f => !f.hidden || authStore.isHiddenPlaylistUnlocked)
+})
+
 const currentIndex = computed(() => {
-  const idx = folders.findIndex(f => f.value === props.modelValue)
+  const idx = folders.value.findIndex(f => f.value === props.modelValue)
   return idx === -1 ? 0 : idx
 })
 
 function getCardStyle(index) {
-  const total = folders.length
+  const total = folders.value.length
   // Calculate circular distance
   let diff = (index - currentIndex.value + total) % total
   if (diff > total / 2) diff -= total

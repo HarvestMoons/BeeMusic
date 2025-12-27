@@ -5,16 +5,19 @@ export const useAuthStore = defineStore('auth', {
     state: () => ({
         isAuthenticated: false,
         username: null,
+        isHiddenPlaylistUnlocked: false,
     }),
     actions: {
         async fetchUserStatus() {
             const response = await getUserStatus();
             this.isAuthenticated = response.success;
             this.username = response.username || null;
+            this.isHiddenPlaylistUnlocked = response.isHiddenPlaylistUnlocked || false;
         },
         logout() {
             this.isAuthenticated = false;
             this.username = null;
+            this.isHiddenPlaylistUnlocked = false;
         },
     },
     getters: {

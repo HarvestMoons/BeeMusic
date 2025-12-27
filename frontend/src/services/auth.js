@@ -23,4 +23,8 @@ export async function register(credentials) {
     return api.post('/auth/register', credentials);
 }
 
+export async function unlockHiddenPlaylist() {
+    return api.post('/users/unlock-hidden-playlist');
+}
+
 export default api;

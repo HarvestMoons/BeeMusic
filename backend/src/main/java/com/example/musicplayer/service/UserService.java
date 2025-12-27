@@ -28,6 +28,7 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(password));
         user.setLastActiveTime(LocalDateTime.now());
         user.setRoleEnum(UserRole.USER);
+        user.setIsHiddenPlaylistUnlocked(false);
         return userRepository.save(user);
     }
 
@@ -38,6 +39,13 @@ public class UserService {
 
     public void updateLastActiveTime(User user) {
         user.setLastActiveTime(LocalDateTime.now());
+        userRepository.save(user);
+    }
+
+    public void unlockHiddenPlaylist(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setIsHiddenPlaylistUnlocked(true);
         userRepository.save(user);
     }
 }

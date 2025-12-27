@@ -22,7 +22,8 @@ public class SongService {
             "da_si_ma", "大司马",
             "ding_zhen", "丁真",
             "dxl", "东洋雪莲",
-            "DDF","哲学"
+            "DDF","哲学",
+            "true_music", "真正的音乐"
     );
 
     private String currentFolderKey = "ha_ji_mi";
@@ -59,27 +60,48 @@ public class SongService {
         String folderChineseName = AVAILABLE_FOLDERS.get(currentFolderKey);
         String prefix = "music/" + folderChineseName + "/";
 
-        // 第一步：先从 OSS 列出当前文件夹所有 mp3 文件的 key
-        List<OSSObjectSummary> ossFiles = ossUtil.listFilesByPrefixAndSuffix(prefix, ".mp3");
+        // 同步该文件夹的歌曲元数据
+        syncSongsFromOss(currentFolderKey);
 
-        // 第二步：从数据库查出当前文件夹所有已持久化的歌曲（按 key 去重）
+        // 从数据库查出当前文件夹所有已持久化的歌曲
         List<Song> dbSongs = songRepository.findByKeyStartingWithAndIsDeleted(prefix, 0);
 
-        // 第三步：生成 signedUrl 并合并（关键！要复用数据库里的 id 和投票数）
-        Map<String, Song> keyToSongMap = new HashMap<>();
+        // 生成 signedUrl
         for (Song song : dbSongs) {
-            keyToSongMap.put(song.getKey(), song);
+            String signedUrl = ossClient.generatePresignedUrl(
+                    "bees-bucket",
+                    song.getKey(),
+                    new Date(System.currentTimeMillis() + 24 * 3600 * 1000)
+            ).toString();
+            song.setUrl(signedUrl);
         }
+        return dbSongs;
+    }
 
-        List<Song> result = new ArrayList<>();
+    /**
+     * 同步指定文件夹的 OSS 文件到数据库
+     */
+    public void syncSongsFromOss(String folderKey) {
+        String folderChineseName = AVAILABLE_FOLDERS.get(folderKey);
+        if (folderChineseName == null) {
+            return;
+        }
+        String prefix = "music/" + folderChineseName + "/";
+
+        // 1. OSS 列出文件
+        List<OSSObjectSummary> ossFiles = ossUtil.listFilesByPrefixAndSuffix(prefix, ".mp3");
+        Set<String> ossKeys = ossFiles.stream().map(OSSObjectSummary::getKey).collect(Collectors.toSet());
+
+        // 2. 数据库查出已有文件
+        List<Song> dbSongs = songRepository.findByKeyStartingWithAndIsDeleted(prefix, 0);
+        Set<String> dbKeys = dbSongs.stream().map(Song::getKey).collect(Collectors.toSet());
+
+        // 3. 找出新文件
+        List<Song> newSongs = new ArrayList<>();
         for (OSSObjectSummary file : ossFiles) {
-            String key = file.getKey();
-
-            // 优先复用数据库已有的记录（包含 id、投票数、创建时间等）
-            Song song = keyToSongMap.getOrDefault(key, new Song());
-
-            // 如果是新文件（数据库没有），则补全基本信息
-            if (song.getId() == null) {
+            if (!dbKeys.contains(file.getKey())) {
+                Song song = new Song();
+                String key = file.getKey();
                 String filename = key.substring(key.lastIndexOf('/') + 1);
                 song.setName(filename);
                 song.setKey(key);
@@ -87,24 +109,23 @@ public class SongService {
                 song.setDislikeCount(0);
                 song.setPlayCount(0);
                 song.setIsDeleted(0);
-                // 注意：这里不要手动 setId，让数据库稍后插入时自动生成
+                newSongs.add(song);
             }
-
-            // 生成临时签名 URL（24小时有效）
-            String signedUrl = ossClient.generatePresignedUrl(
-                    "bees-bucket",
-                    key,
-                    new Date(System.currentTimeMillis() + 24 * 3600 * 1000)
-            ).toString();
-
-            song.setUrl(signedUrl);
-            result.add(song);
         }
-        // 自动保存新歌（幂等操作，没性能问题）
-        songRepository.saveAll(result.stream()
-                .filter(s -> s.getId() == null)
-                .collect(Collectors.toList()));
-        return result;
+
+        // 4. 保存新文件
+        if (!newSongs.isEmpty()) {
+            songRepository.saveAll(newSongs);
+        }
+    }
+
+    /**
+     * 同步所有文件夹
+     */
+    public void syncAllSongs() {
+        for (String key : AVAILABLE_FOLDERS.keySet()) {
+            syncSongsFromOss(key);
+        }
     }
 }
 

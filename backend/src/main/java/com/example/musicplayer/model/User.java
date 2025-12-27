@@ -48,6 +48,9 @@ public class User implements Serializable {
     @Column(nullable = false)
     private Integer role;
 
+    @Column(name = "is_hidden_playlist_unlocked", nullable = false)
+    private Boolean isHiddenPlaylistUnlocked = false;
+
     public UserRole getRoleEnum() {
         return UserRole.fromCode(role);
     }
@@ -66,6 +69,9 @@ public class User implements Serializable {
         }
         if (role == null) {
             role = UserRole.USER.getCode();
+        }
+        if (isHiddenPlaylistUnlocked == null) {
+            isHiddenPlaylistUnlocked = false;
         }
     }
 

@@ -12,6 +12,28 @@
       <div class="canvas-shell" :class="{ loading: isLoading }">
         <canvas ref="canvasRef" aria-label="歌曲分布环形图"></canvas>
         <div v-if="isLoading" class="loading-glow"></div>
+
+        <!-- Custom Tooltip -->
+        <div 
+          class="chart-tooltip"
+          :style="{ 
+            opacity: tooltipModel.opacity, 
+            left: tooltipModel.left + 'px', 
+            top: tooltipModel.top + 'px' 
+          }"
+        >
+          <div class="tooltip-title">{{ tooltipModel.title }}</div>
+          <div v-for="(line, i) in tooltipModel.body" :key="i" class="tooltip-body">
+            {{ line }}
+          </div>
+        </div>
+        
+        <!-- Easter Egg Component -->
+        <HiddenUnlockTrigger 
+          :unlocked="authStore.isHiddenPlaylistUnlocked"
+          :playlist-name="hiddenPlaylistName"
+          @on-unlock="handleUnlockSuccess"
+        />
       </div>
       <ul class="legend" role="list">
         <li
@@ -33,18 +55,49 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted, ref, computed } from 'vue'
+import { onBeforeUnmount, ref, computed, watch } from 'vue'
 import Chart from 'chart.js/auto'
-import { PUBLIC_API_BASE } from '@/constants'
+import { PUBLIC_API_BASE, FOLDER_INFO } from '@/constants'
+import { FOLDER_DESCRIPTIONS } from '@/constants/folderDescriptions'
+import { useAuthStore } from '@/store'
+import HiddenUnlockTrigger from './HiddenUnlockTrigger.vue'
 
+const palette = ['#6C63FF', '#FF6584', '#3EC8AF', '#FFB347', '#20A4F3', '#9C27B0', '#FF8CC6', '#00BFA6']
+
+const authStore = useAuthStore()
 const canvasRef = ref(null)
-const chartInstance = ref(null)
+let chartInstance = null
 const dataset = ref([])
 const isLoading = ref(true)
 const error = ref('')
-const palette = ['#6C63FF', '#FF6584', '#3EC8AF', '#FFB347', '#20A4F3', '#9C27B0', '#FF8CC6', '#00BFA6']
+
+const hiddenPlaylistName = ref('')
 
 const totalCount = computed(() => dataset.value.reduce((sum, item) => sum + item.count, 0))
+
+// Tooltip State
+const tooltipModel = ref({ opacity: 0, left: 0, top: 0, title: '', body: [] })
+
+const externalTooltipHandler = (context) => {
+  const { chart, tooltip } = context
+  if (tooltip.opacity === 0) {
+    tooltipModel.value.opacity = 0
+    return
+  }
+
+  tooltipModel.value = {
+    opacity: 1,
+    left: chart.canvas.offsetLeft + tooltip.caretX,
+    top: chart.canvas.offsetTop + tooltip.caretY,
+    title: tooltip.title[0] || '',
+    // 获取 label 回调返回的数据 (lines: [数量, 描述])
+    body: tooltip.body[0]?.lines || []
+  }
+}
+
+function handleUnlockSuccess() {
+  authStore.isHiddenPlaylistUnlocked = true
+}
 
 async function fetchCounts() {
   isLoading.value = true
@@ -52,9 +105,22 @@ async function fetchCounts() {
   try {
     const res = await fetch(`${PUBLIC_API_BASE}/songs/folder-counts`)
     if (!res.ok) throw new Error('数据加载失败')
-    const raw = await res.json()
+    let raw = await res.json()
+
+    // 处理隐藏歌单逻辑
+    const hiddenIndex = raw.findIndex(item => item.folderKey === 'true_music')
+    if (hiddenIndex !== -1) {
+      hiddenPlaylistName.value = FOLDER_INFO.true_music || raw[hiddenIndex].displayName
+      // 如果未解锁，从数据中移除
+      if (!authStore.isHiddenPlaylistUnlocked) {
+        raw.splice(hiddenIndex, 1)
+      }
+    }
+
     dataset.value = raw.map((entry, idx) => ({
       ...entry,
+      displayName: FOLDER_INFO[entry.folderKey] || entry.displayName,
+      description: FOLDER_DESCRIPTIONS[entry.folderKey] || '...',
       color: palette[idx % palette.length]
     }))
     drawChart()
@@ -68,10 +134,10 @@ async function fetchCounts() {
 
 function drawChart() {
   if (!canvasRef.value || dataset.value.length === 0) return
-  if (chartInstance.value) {
-    chartInstance.value.destroy()
+  if (chartInstance) {
+    chartInstance.destroy()
   }
-  chartInstance.value = new Chart(canvasRef.value, {
+  chartInstance = new Chart(canvasRef.value, {
     type: 'doughnut',
     data: {
       labels: dataset.value.map(item => item.displayName),
@@ -95,13 +161,13 @@ function drawChart() {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: 'rgba(15, 15, 26, 0.9)',
-          padding: 12,
-          cornerRadius: 10,
-          titleFont: { family: 'inherit', size: 13, weight: '600' },
-          bodyFont: { family: 'inherit', size: 13 },
+          enabled: false, // 禁用默认 Canvas Tooltip
+          external: externalTooltipHandler, // 使用自定义 HTML Tooltip
           callbacks: {
-            label: context => `${context.parsed} 首`
+            label: context => {
+              const item = dataset.value[context.dataIndex]
+              return [`${item.count} 首`, `“${item.description}”`]
+            }
           }
         }
       },
@@ -113,10 +179,12 @@ function drawChart() {
   })
 }
 
-onMounted(fetchCounts)
+watch(() => authStore.isHiddenPlaylistUnlocked, () => {
+  fetchCounts()
+}, { immediate: true })
 
 onBeforeUnmount(() => {
-  if (chartInstance.value) chartInstance.value.destroy()
+  if (chartInstance) chartInstance.destroy()
 })
 </script>
 
@@ -246,5 +314,40 @@ canvas {
   .legend {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   }
+}
+
+/* Tooltip Styles */
+.chart-tooltip {
+  position: absolute;
+  background: var(--playlist-item-bg);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 12px;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+  transition: opacity 0.2s ease, left 0.1s ease, top 0.1s ease;
+  z-index: 100;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
+  max-width: 600px;
+  width: max-content;
+}
+
+.tooltip-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-color);
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.tooltip-body {
+  font-size: 13px;
+  color: var(--text-color);
+  opacity: 0.85;
+  line-height: 1.5;
+  white-space: pre-wrap;
 }
 </style>
