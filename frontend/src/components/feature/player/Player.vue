@@ -94,6 +94,7 @@ import PlayerSidebar from "@/components/feature/player/PlayerSidebar.vue";
 import {PUBLIC_API_BASE} from '@/constants';
 import {useKeyboardShortcuts} from "@/composables/useKeyboardShortcuts.js";
 import OnlineStatus from "@/components/common/OnlineStatus.vue";
+import {useAuthStore} from '@/store';
 
 const DEFAULT_FOLDER = 'ha_ji_mi';
 const PLAY_COUNT_THRESHOLD_SECONDS = 10;
@@ -105,6 +106,8 @@ const STORAGE_KEYS = {
   SHOW_COMMENTS: 'music_show_comments',
   PLAY_MODE: 'music_play_mode'
 };
+
+const authStore = useAuthStore();
 
 // Refs
 const audioRef = ref(null)
@@ -570,6 +573,13 @@ onMounted(async () => {
   if (audioRef.value) audioRef.value.playbackRate = playbackRate.value;
 
   window.addEventListener('storage', handleStorageEvent);
+
+  // 验证隐藏歌单权限
+  await authStore.fetchUserStatus();
+  if (selectedFolder.value === 'true_music' && !authStore.isHiddenPlaylistUnlocked) {
+    selectedFolder.value = DEFAULT_FOLDER;
+    saveSelectedFolder('folder-selector', DEFAULT_FOLDER);
+  }
 
   await setFolder(selectedFolder.value, shareSongId);
 
