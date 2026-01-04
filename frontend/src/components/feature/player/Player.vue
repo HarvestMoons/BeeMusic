@@ -110,18 +110,21 @@ import PlayerSidebar from "@/components/feature/player/PlayerSidebar.vue";
 import {PUBLIC_API_BASE} from '@/constants';
 import {useKeyboardShortcuts} from "@/composables/useKeyboardShortcuts.js";
 import OnlineStatus from "@/components/common/OnlineStatus.vue";
-import {API_BASE} from '@/constants';
+import { useStationMaster } from '@/composables/player/useStationMaster.js'
+import { usePlayerStorage } from '@/composables/player/usePlayerStorage.js'
 
 const DEFAULT_FOLDER = 'ha_ji_mi';
 const PLAY_COUNT_THRESHOLD_SECONDS = 10;
-const STORAGE_KEYS = {
-  VOLUME: 'music_volume',
-  PLAYLIST_PREFIX: 'music_playlist_',
-  SELECTED_FOLDER_PREFIX: 'music_selected_folder_',
-  PLAYBACK_RATE_PREFIX: 'music_playback_rate_',
-  SHOW_COMMENTS: 'music_show_comments',
-  PLAY_MODE: 'music_play_mode'
-};
+
+const {
+  STORAGE_KEYS,
+  saveVolumeToStorage,
+  loadVolumeFromStorage,
+  saveSelectedFolder,
+  loadSelectedFolder,
+  savePlaybackRateForFolder,
+  loadPlaybackRateForFolder
+} = usePlayerStorage()
 
 const authStore = useAuthStore();
 
@@ -162,64 +165,21 @@ const toastMessage = ref('')
 const showToast = ref(false)
 const playCountState = ref({ songId: null, reported: false })
 
-// Confirm Modal State
-const showConfirmModal = ref(false)
-const confirmModalTitle = ref('')
-const confirmModalMessage = ref('')
-const pendingAction = ref(null)
-
-// Storage Helpers
-const makeSelectedFolderKey = (id) => STORAGE_KEYS.SELECTED_FOLDER_PREFIX + id
-const makePlaybackRateKey = (folder) => STORAGE_KEYS.PLAYBACK_RATE_PREFIX + folder
-
-function saveVolumeToStorage(vol) {
-  try {
-    localStorage.setItem(STORAGE_KEYS.VOLUME, String(vol));
-  } catch (e) {
-  }
+function showToastMessage(msg) {
+  toastMessage.value = msg
+  showToast.value = true
 }
 
-function loadVolumeFromStorage() {
-  try {
-    const v = parseFloat(localStorage.getItem(STORAGE_KEYS.VOLUME));
-    if (!Number.isNaN(v)) return Math.min(1, Math.max(0, v));
-  } catch (e) {
-  }
-  return null;
-}
+// 站长管理功能
+const {
+  showConfirmModal,
+  confirmModalTitle,
+  confirmModalMessage,
+  handleToggleDeleteStatus,
+  executeDeleteOrRestore
+} = useStationMaster(playlist, currentIndex, showToastMessage)
 
-function saveSelectedFolder(id, folder) {
-  try {
-    localStorage.setItem(makeSelectedFolderKey(id), folder);
-  } catch (e) {
-  }
-}
-
-function loadSelectedFolder(id) {
-  try {
-    return localStorage.getItem(makeSelectedFolderKey(id));
-  } catch (e) {
-  }
-}
-
-function savePlaybackRateForFolder(folder) {
-  try {
-    localStorage.setItem(makePlaybackRateKey(folder), String(playbackRate.value));
-  } catch (e) {
-  }
-}
-
-function loadPlaybackRateForFolder(folder) {
-  try {
-    const raw = localStorage.getItem(makePlaybackRateKey(folder));
-    const v = parseFloat(raw);
-    if (!Number.isNaN(v)) return v;
-  } catch (e) {
-  }
-  return null;
-}
-
-// Event Handlers
+// 事件处理
 function handleVolumeChange() {
   if (audioRef.value) saveVolumeToStorage(audioRef.value.volume)
 }
@@ -227,7 +187,7 @@ function handleVolumeChange() {
 function handleRateChangeNative() {
   if (!audioRef.value) return
   playbackRate.value = audioRef.value.playbackRate
-  savePlaybackRateForFolder(selectedFolder.value)
+  savePlaybackRateForFolder(selectedFolder.value, playbackRate.value)
 }
 
 function handleLoadedMetadata() {
@@ -259,56 +219,17 @@ function handleTimeUpdate() {
   }
 }
 
-// Watchers
+// 监听器
 watch(playbackRate, (val) => {
   if (audioRef.value) audioRef.value.playbackRate = val
-  savePlaybackRateForFolder(selectedFolder.value)
+  savePlaybackRateForFolder(selectedFolder.value, val)
 })
 
 watch(playMode, (val) => {
   localStorage.setItem(STORAGE_KEYS.PLAY_MODE, val)
 })
 
-async function handleToggleDeleteStatus() {
-  const song = playlist.value[currentIndex.value];
-  if (!song) return;
-
-  const isDeleted = song.isDeleted === 1;
-  const action = isDeleted ? '恢复' : '删除';
-  
-  confirmModalTitle.value = `${action}歌曲`
-  confirmModalMessage.value = `确定要${action}当前播放的歌曲 "${song.name}" 吗？`
-  pendingAction.value = { song, isDeleted, action }
-  showConfirmModal.value = true
-}
-
-async function executeDeleteOrRestore() {
-  if (!pendingAction.value) return
-  
-  const { song, isDeleted, action } = pendingAction.value
-  
-  try {
-    const endpoint = isDeleted ? 'restore' : 'delete';
-    const res = await fetch(`${API_BASE}/songs/${endpoint}/${song.id}`, {
-      method: 'POST',
-      credentials: 'include'
-    });
-    
-    if (res.ok) {
-      showToastMessage(`歌曲已${action}`);
-      song.isDeleted = isDeleted ? 0 : 1;
-    } else {
-      showToastMessage(`${action}失败`);
-    }
-  } catch (e) {
-    console.error(e);
-    showToastMessage('操作异常');
-  } finally {
-    pendingAction.value = null
-  }
-}
-
-// Logic
+// 逻辑
 async function handleFolderChange() {
   saveSelectedFolder('folder-selector', selectedFolder.value)
   await setFolder(selectedFolder.value)
@@ -504,7 +425,7 @@ function playPrevInOrder() {
   playSongAtIndex(prev)
 }
 
-// Storage Sync
+// 存储同步
 function handleStorageEvent(e) {
   if (!e.key) return;
 
@@ -514,7 +435,9 @@ function handleStorageEvent(e) {
   }
 
   const curFolder = selectedFolder.value;
-  if (e.key === makePlaybackRateKey(curFolder)) {
+  // 注意：这里需要手动构建 key，或者从 composable 导出 helper
+  // 简单起见，我们假设 key 格式一致
+  if (e.key === STORAGE_KEYS.PLAYBACK_RATE_PREFIX + curFolder) {
     const v = parseFloat(e.newValue);
     if (!Number.isNaN(v)) {
       playbackRate.value = v;
@@ -524,7 +447,7 @@ function handleStorageEvent(e) {
 }
 
 onMounted(async () => {
-  // Init Volume
+  // 初始化音量
   const savedVol = loadVolumeFromStorage();
   if (audioRef.value) audioRef.value.volume = savedVol != null ? savedVol : 0.2;
 
@@ -548,7 +471,7 @@ onMounted(async () => {
     }
   }
 
-  // Init Folder
+  // 初始化文件夹
   if (shareFolder) {
     selectedFolder.value = shareFolder;
   } else {
@@ -556,7 +479,7 @@ onMounted(async () => {
     if (savedFolder) selectedFolder.value = savedFolder;
   }
 
-  // Init Rate
+  // 初始化倍速
   const savedRate = loadPlaybackRateForFolder(selectedFolder.value);
   if (savedRate != null) playbackRate.value = savedRate;
   if (audioRef.value) audioRef.value.playbackRate = playbackRate.value;
