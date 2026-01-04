@@ -8,7 +8,7 @@ public class AuthResponse {
     private boolean success;
     private String message;
     private String username;
-    private String role;
+    private Integer role;
 
     @JsonProperty("isHiddenPlaylistUnlocked")
     private boolean isHiddenPlaylistUnlocked;
@@ -19,7 +19,7 @@ public class AuthResponse {
         this.username = username;
     }
 
-    public AuthResponse(boolean success, String message, String username, String role, boolean isHiddenPlaylistUnlocked) {
+    public AuthResponse(boolean success, String message, String username, Integer role, boolean isHiddenPlaylistUnlocked) {
         this.success = success;
         this.message = message;
         this.username = username;

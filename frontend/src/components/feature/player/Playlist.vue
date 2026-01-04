@@ -23,7 +23,7 @@
       <li
           v-for="song in displayPlaylist"
           :key="song.id"
-          :class="{ active: song.id === currentSongId }"
+          :class="{ active: song.id === currentSongId, 'deleted-song': song.isDeleted === 1 }"
           @click="$emit('select', song.id)"
       >
         <div class="song-item-content">
@@ -40,11 +40,16 @@ import {computed, onMounted, ref, watch} from 'vue'
 import SearchBar from "@/components/common/SearchBar.vue";
 import upArrowIcon from '@/assets/icons/up_arrow.svg'
 import downArrowIcon from '@/assets/icons/down_arrow.svg'
+import {useAuthStore} from '@/store'
+import {API_BASE} from '@/constants'
 
 const props = defineProps({
   playlist: {type: Array, required: true},
   currentSongId: {type: [String, Number], default: null}
 })
+
+const emit = defineEmits(['select', 'refresh'])
+const authStore = useAuthStore()
 
 const searchQuery = ref('')
 const sortField = ref('default')
@@ -60,6 +65,8 @@ onMounted(() => {
   if (savedField) sortField.value = savedField
   if (savedOrder) sortOrder.value = savedOrder
 })
+
+
 
 watch(sortField, (newVal) => {
   localStorage.setItem(STORAGE_KEY_SORT_FIELD, newVal)
@@ -228,6 +235,16 @@ function getSongTitle(name) {
   box-shadow: var(--playlist-active-shadow);
 }
 
+.deleted-song {
+  opacity: 0.6;
+  background-color: #f0f0f0;
+}
+
+.deleted-song .song-title-text {
+  text-decoration: line-through;
+  color: #999;
+}
+
 .song-item-content {
   display: flex;
   justify-content: space-between;
@@ -248,5 +265,33 @@ function getSongTitle(name) {
   margin-left: 8px;
   white-space: nowrap;
   font-weight: normal;
+}
+
+.admin-controls {
+  display: flex;
+  gap: 8px;
+  margin-left: 10px;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2em;
+  padding: 2px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.icon-btn:hover {
+  opacity: 1;
+}
+
+.restore-btn {
+  color: #4caf50;
+}
+
+.delete-btn {
+  color: #f44336;
 }
 </style>

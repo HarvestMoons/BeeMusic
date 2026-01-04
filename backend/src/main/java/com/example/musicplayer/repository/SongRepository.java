@@ -19,6 +19,9 @@ public interface SongRepository extends JpaRepository<Song, Long> {
     @Query("UPDATE Song s SET s.playCount = s.playCount + 1 WHERE s.id = :id")
     void incrementPlayCount(@Param("id") Long id);
 
+    @Query("SELECT s FROM Song s WHERE s.key LIKE :prefix%")
+    List<Song> findByKeyStartingWith(@Param("prefix") String prefix);
+
     @Query("SELECT COUNT(s) FROM Song s WHERE s.isDeleted = 0 AND s.key LIKE CONCAT(:prefix, '%')")
     long countActiveSongsByPrefix(@Param("prefix") String prefix);
 }

@@ -2,6 +2,12 @@
   <div class="player-wrapper">
     <div class="player-container">
       <Toast :visible="showToast" :message="toastMessage"/>
+      <ConfirmModal
+          v-model:visible="showConfirmModal"
+          :title="confirmModalTitle"
+          :message="confirmModalMessage"
+          @confirm="executeDeleteOrRestore"
+      />
       <div class="song-info-container">
         <FolderSelector v-model="selectedFolder" @change="handleFolderChange"/>
         <div class="song-info">
@@ -13,6 +19,12 @@
                  target="_blank" class="portal-link">
                 <img :src="portalIcon" alt="传送门" class="svg-icon"/>
               </a>
+              <button v-if="authStore.isStationMaster"
+                      @click="handleToggleDeleteStatus"
+                      class="delete-current-btn"
+                      :title="playlist[currentIndex]?.isDeleted === 1 ? '恢复当前歌曲' : '删除当前歌曲'">
+                <img :src="playlist[currentIndex]?.isDeleted === 1 ? restoreIcon : deleteIcon" class="svg-icon" alt="操作" />
+              </button>
             </template>
           </h2>
           <div class="meta-info">
@@ -86,7 +98,11 @@ import randomIcon from '@/assets/icons/player_funtion/play_mode/random.svg'
 import loopIcon from '@/assets/icons/player_funtion/play_mode/loop.svg'
 import singleLoopIcon from '@/assets/icons/player_funtion/play_mode/repeat.svg'
 import spectrumIcon from '@/assets/icons/player_funtion/spectrum.svg'
-import VoteControls from "@/components/feature/player/VoteControls.vue";
+import deleteIcon from '@/assets/icons/delete.svg'
+import restoreIcon from '@/assets/icons/restore.svg'
+import VoteControls from './VoteControls.vue'
+import ConfirmModal from '@/components/common/ConfirmModal.vue'
+import { useAuthStore } from '@/store'
 import PlaybackRateControl from "@/components/feature/player/PlaybackRateControl.vue";
 import FolderSelector from "@/components/feature/player/FolderSelector.vue";
 import Toast from "@/components/common/Toast.vue";
@@ -94,7 +110,7 @@ import PlayerSidebar from "@/components/feature/player/PlayerSidebar.vue";
 import {PUBLIC_API_BASE} from '@/constants';
 import {useKeyboardShortcuts} from "@/composables/useKeyboardShortcuts.js";
 import OnlineStatus from "@/components/common/OnlineStatus.vue";
-import {useAuthStore} from '@/store';
+import {API_BASE} from '@/constants';
 
 const DEFAULT_FOLDER = 'ha_ji_mi';
 const PLAY_COUNT_THRESHOLD_SECONDS = 10;
@@ -144,79 +160,13 @@ const selectedFolder = ref(DEFAULT_FOLDER)
 const currentSongInfo = ref({title: '', bv: null})
 const toastMessage = ref('')
 const showToast = ref(false)
-let toastTimer = null
-const playCountState = ref({songId: null, reported: false})
+const playCountState = ref({ songId: null, reported: false })
 
-function showToastMessage(msg) {
-  toastMessage.value = msg
-  showToast.value = true
-  if (toastTimer) clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => {
-    showToast.value = false
-  }, 2000)
-}
-
-function handleToggleSpectrum() {
-  playerSidebarRef.value?.toggleSpectrum()
-}
-
-function handleShare() {
-  if (!playlist.value[currentIndex.value]) {
-    showToastMessage('当前没有播放歌曲');
-    return;
-  }
-  const data = {
-    f: selectedFolder.value,
-    id: playlist.value[currentIndex.value].id
-  };
-  try {
-    const jsonStr = JSON.stringify(data);
-    const encoded = btoa(jsonStr);
-    const url = `${window.location.origin}${window.location.pathname}?share=${encoded}`;
-
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(url).then(() => {
-        showToastMessage('分享链接已复制！');
-      }).catch((err) => {
-        console.error('Clipboard API failed:', err);
-        fallbackCopyText(url);
-      });
-    } else {
-      fallbackCopyText(url);
-    }
-  } catch (e) {
-    console.error('生成分享链接失败', e);
-    showToastMessage('生成链接失败');
-  }
-}
-
-function fallbackCopyText(text) {
-  try {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-
-    // 避免页面滚动
-    textArea.style.position = "fixed";
-    textArea.style.left = "-9999px";
-    textArea.style.top = "0";
-
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-
-    const successful = document.execCommand('copy');
-    document.body.removeChild(textArea);
-
-    if (successful) {
-      showToastMessage('分享链接已复制！');
-    } else {
-      showToastMessage('复制失败，请手动复制');
-    }
-  } catch (err) {
-    console.error('Fallback copy failed', err);
-    showToastMessage('复制失败，请手动复制');
-  }
-}
+// Confirm Modal State
+const showConfirmModal = ref(false)
+const confirmModalTitle = ref('')
+const confirmModalMessage = ref('')
+const pendingAction = ref(null)
 
 // Storage Helpers
 const makeSelectedFolderKey = (id) => STORAGE_KEYS.SELECTED_FOLDER_PREFIX + id
@@ -318,6 +268,45 @@ watch(playbackRate, (val) => {
 watch(playMode, (val) => {
   localStorage.setItem(STORAGE_KEYS.PLAY_MODE, val)
 })
+
+async function handleToggleDeleteStatus() {
+  const song = playlist.value[currentIndex.value];
+  if (!song) return;
+
+  const isDeleted = song.isDeleted === 1;
+  const action = isDeleted ? '恢复' : '删除';
+  
+  confirmModalTitle.value = `${action}歌曲`
+  confirmModalMessage.value = `确定要${action}当前播放的歌曲 "${song.name}" 吗？`
+  pendingAction.value = { song, isDeleted, action }
+  showConfirmModal.value = true
+}
+
+async function executeDeleteOrRestore() {
+  if (!pendingAction.value) return
+  
+  const { song, isDeleted, action } = pendingAction.value
+  
+  try {
+    const endpoint = isDeleted ? 'restore' : 'delete';
+    const res = await fetch(`${API_BASE}/songs/${endpoint}/${song.id}`, {
+      method: 'POST',
+      credentials: 'include'
+    });
+    
+    if (res.ok) {
+      showToastMessage(`歌曲已${action}`);
+      song.isDeleted = isDeleted ? 0 : 1;
+    } else {
+      showToastMessage(`${action}失败`);
+    }
+  } catch (e) {
+    console.error(e);
+    showToastMessage('操作异常');
+  } finally {
+    pendingAction.value = null
+  }
+}
 
 // Logic
 async function handleFolderChange() {
@@ -701,6 +690,8 @@ button:hover {
 .song-info h2 {
   color: var(--song-title-color);
   margin-top: 0;
+  display: flex;
+  align-items: center;
 }
 
 .meta-info {
@@ -717,5 +708,23 @@ audio {
 
 .song-info-container {
   flex: 2 1 auto;
+}
+
+.delete-current-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9em;
+  margin-left: auto;
+  padding: 0;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.delete-current-btn:hover {
+  opacity: 1;
+  transform: scale(1.1);
 }
 </style>

@@ -56,7 +56,7 @@ public class SongService {
                 .collect(Collectors.toList());
     }
 
-    public List<Song> getSongs() {
+    public List<Song> getSongs(boolean includeDeleted) {
         String folderChineseName = AVAILABLE_FOLDERS.get(currentFolderKey);
         String prefix = "music/" + folderChineseName + "/";
 
@@ -64,7 +64,12 @@ public class SongService {
         syncSongsFromOss(currentFolderKey);
 
         // 从数据库查出当前文件夹所有已持久化的歌曲
-        List<Song> dbSongs = songRepository.findByKeyStartingWithAndIsDeleted(prefix, 0);
+        List<Song> dbSongs;
+        if (includeDeleted) {
+            dbSongs = songRepository.findByKeyStartingWith(prefix);
+        } else {
+            dbSongs = songRepository.findByKeyStartingWithAndIsDeleted(prefix, 0);
+        }
 
         // 生成 signedUrl
         for (Song song : dbSongs) {
@@ -76,6 +81,24 @@ public class SongService {
             song.setUrl(signedUrl);
         }
         return dbSongs;
+    }
+
+    public void deleteSong(Long songId) {
+        Optional<Song> songOpt = songRepository.findById(songId);
+        if (songOpt.isPresent()) {
+            Song song = songOpt.get();
+            song.setIsDeleted(1);
+            songRepository.save(song);
+        }
+    }
+
+    public void restoreSong(Long songId) {
+        Optional<Song> songOpt = songRepository.findById(songId);
+        if (songOpt.isPresent()) {
+            Song song = songOpt.get();
+            song.setIsDeleted(0);
+            songRepository.save(song);
+        }
     }
 
     /**

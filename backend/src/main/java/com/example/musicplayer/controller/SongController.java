@@ -1,5 +1,7 @@
 package com.example.musicplayer.controller;
 
+import com.example.musicplayer.enums.UserRole;
+import com.example.musicplayer.model.User;
 import com.example.musicplayer.dto.FolderSongCount;
 import com.example.musicplayer.model.Song;
 import com.example.musicplayer.model.SongVote;
@@ -7,6 +9,8 @@ import com.example.musicplayer.repository.SongVoteRepository;
 import com.example.musicplayer.service.SongService;
 import com.example.musicplayer.service.VoteService;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,8 +32,44 @@ public class SongController {
 
     // 首页歌曲列表
     @GetMapping("/public/songs/get")
-    public List<Song> getSongs() {
-        return songService.getSongs();
+    public List<Song> getSongs(HttpServletRequest request) {
+        boolean includeDeleted = false;
+        Object userObj = request.getSession().getAttribute("user");
+        if (userObj instanceof User u) {
+            UserRole role = u.getRoleEnum();
+            if (role == UserRole.ADMIN || role == UserRole.STATION_MASTER) {
+                includeDeleted = true;
+            }
+        }
+        return songService.getSongs(includeDeleted);
+    }
+
+    // 删除歌曲（软删除）
+    @PostMapping("/songs/delete/{songId}")
+    public ResponseEntity<?> deleteSong(@PathVariable Long songId, HttpServletRequest request) {
+        Object userObj = request.getSession().getAttribute("user");
+        if (userObj instanceof User u) {
+            UserRole role = u.getRoleEnum();
+            if (role == UserRole.STATION_MASTER) {
+                songService.deleteSong(songId);
+                return ResponseEntity.ok(Map.of("status", "ok", "message", "已删除"));
+            }
+        }
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("无权操作");
+    }
+
+    // 恢复歌曲
+    @PostMapping("/songs/restore/{songId}")
+    public ResponseEntity<?> restoreSong(@PathVariable Long songId, HttpServletRequest request) {
+        Object userObj = request.getSession().getAttribute("user");
+        if (userObj instanceof User u) {
+            UserRole role = u.getRoleEnum();
+            if (role == UserRole.STATION_MASTER) {
+                songService.restoreSong(songId);
+                return ResponseEntity.ok(Map.of("status", "ok", "message", "已恢复"));
+            }
+        }
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("无权操作");
     }
 
     @GetMapping("/public/songs/folder-counts")
