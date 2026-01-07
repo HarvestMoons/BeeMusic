@@ -1,5 +1,5 @@
 export const FOLDER_DESCRIPTIONS = {
-    ha_ji_mi: '我们老了跳广场舞会不会都是哈基米音乐?那要扭得很快才行了...',
+    ha_ji_mi: '熟读基米三百首，不会曼波也会哈',
     dian_gun: '把最纯粹的冰带到人世间：入口是一种爆鲜，回味中带着肉香',
     da_si_ma: '我曾带着假设性原则来听这些歌，但是失败了，因为我真设了。',
     ding_zhen: '丁真音乐区在不断解构与重筑中已然是一个概念和象征了。' +
@@ -9,5 +9,5 @@ export const FOLDER_DESCRIPTIONS = {
     dxl: '你只是沉浸在温柔的歌声中无法自拔，只是在歌声中回忆自己的青春，' +
         '幻想曾经有一个白月光般的同学每天陪伴着你，用着同样温柔的歌声安抚着你受伤的心灵',
     DDF: 'The Deep Dark Fantasy',
-    true_music: '恭喜解锁隐藏歌单'
+    true_music: '个人审丑积累中'
 }

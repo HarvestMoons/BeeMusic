@@ -1,13 +1,11 @@
 <template>
   <div class="spectrum-container">
-    <HelpTooltip v-show="visible">- 按 Z 切换频谱模式</HelpTooltip>
     <canvas id="spectrumCanvas"></canvas>
   </div>
 </template>
 
 <script setup>
 import {onBeforeUnmount, onMounted, watch} from 'vue';
-import HelpTooltip from "@/components/common/HelpTooltip.vue";
 import {useThemeStore} from '@/store/index.js';
 
 const props = defineProps({

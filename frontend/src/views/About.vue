@@ -2,13 +2,13 @@
   <Sidebar/>
   <div class="about-page">
     <h1>关于本站</h1>
-    <p>开发者&站长：小蜜蜂 <span style="color: transparent">     特别鸣谢：ChatGPT、DeepSeek、Github Copilot</span></p>
-    <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;本站是一个非营利性的音乐收藏网站，代码已开源在<a href="https://github.com/HarvestMoons/BeeMusic" target="_blank"
+    <p>开发者&站长：小蜜蜂 <span style="color: transparent; margin-left: 6em;">特别鸣谢：ChatGPT、DeepSeek、Github Copilot</span></p>
+    <p style="text-indent: 2em;">本站是一个非营利性的音乐收藏网站，代码已开源在<a href="https://github.com/HarvestMoons/BeeMusic" target="_blank"
         class="link">Github</a>，音乐来源于<a
         href="https://www.bilibili.com/" target="_blank" class="link">Bilibili</a>。点击歌名右侧的视频图标，就能跳转到原视频页观看pv（由于该网站收录的音乐类型特殊，某些视频可能已经被下架，该网站仅用于保留其一缕残魂）。
       由于该网站目前仍处于活跃更新中，某些功能可能暂时不可用或有bug。如果有建议和反馈，欢迎与我交流。账号不是必须的，但还是建议注册———评价歌曲等相关功能需要在登录后进行，预计未来会继续推出更多账号相关功能。
       彩<span style="font-size:0%;">🈷</span>蛋：<span
-          style="color: transparent">在主页面，长按E键可以观看随机逆天视频。在统计图表中，连续敲击中心七次，或许能听到灵魂的共鸣。</span>
+          style="color: transparent">在主页面，长按E键可以观看随机逆天视频。&emsp;&emsp;另外，搞个账号，在统计饼图中连续点击中心看看。</span>
     </p>
     <p>快捷键提示：</p>
     <div
