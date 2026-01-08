@@ -16,6 +16,7 @@
 
 ### 3.1 通用组件 (`src/components/common`)
 - **`ConfirmModal.vue`**: 通用确认模态框（如删除确认）。
+- **`Footnote.vue`**: 书籍样式脚标组件，支持悬停显示详情。
 - **`OnlineStatus.vue`**: 显示当前在线人数。
 - **`SearchBar.vue`**: 搜索栏组件。
 - **`Toast.vue`**: 全局轻量级提示消息组件。
