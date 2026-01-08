@@ -2,7 +2,7 @@
   <Sidebar/>
   <div class="about-page">
     <h1>关于本站</h1>
-    <p>开发者&站长：小蜜蜂
+    <p style="text-indent: 2em;">开发者&站长：小蜜蜂
       <Footnote index="1">资深meme收藏家和亚文化研究员，一个脱离了高级趣味的人</Footnote>
       <span
           style="color: transparent; margin-left: 6em;">特别鸣谢：ChatGPT、DeepSeek、Github Copilot</span></p>
