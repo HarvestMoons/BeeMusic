@@ -14,33 +14,38 @@ export function usePlayerStorage() {
     function saveVolumeToStorage(vol) {
         try {
             localStorage.setItem(STORAGE_KEYS.VOLUME, String(vol));
-        } catch (e) { }
+        } catch (e) {
+        }
     }
 
     function loadVolumeFromStorage() {
         try {
             const v = parseFloat(localStorage.getItem(STORAGE_KEYS.VOLUME));
             if (!Number.isNaN(v)) return Math.min(1, Math.max(0, v));
-        } catch (e) { }
+        } catch (e) {
+        }
         return null;
     }
 
     function saveSelectedFolder(id, folder) {
         try {
             localStorage.setItem(makeSelectedFolderKey(id), folder);
-        } catch (e) { }
+        } catch (e) {
+        }
     }
 
     function loadSelectedFolder(id) {
         try {
             return localStorage.getItem(makeSelectedFolderKey(id));
-        } catch (e) { }
+        } catch (e) {
+        }
     }
 
     function savePlaybackRateForFolder(folder, rate) {
         try {
             localStorage.setItem(makePlaybackRateKey(folder), String(rate));
-        } catch (e) { }
+        } catch (e) {
+        }
     }
 
     function loadPlaybackRateForFolder(folder) {
@@ -48,7 +53,8 @@ export function usePlayerStorage() {
             const raw = localStorage.getItem(makePlaybackRateKey(folder));
             const v = parseFloat(raw);
             if (!Number.isNaN(v)) return v;
-        } catch (e) { }
+        } catch (e) {
+        }
         return null;
     }
 

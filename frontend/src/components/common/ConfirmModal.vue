@@ -16,11 +16,11 @@
 
 <script setup>
 const props = defineProps({
-  visible: { type: Boolean, default: false },
-  title: { type: String, default: '确认' },
-  message: { type: String, default: '' },
-  confirmText: { type: String, default: '确定' },
-  cancelText: { type: String, default: '取消' }
+  visible: {type: Boolean, default: false},
+  title: {type: String, default: '确认'},
+  message: {type: String, default: ''},
+  confirmText: {type: String, default: '确定'},
+  cancelText: {type: String, default: '取消'}
 })
 
 const emit = defineEmits(['update:visible', 'confirm', 'cancel'])
@@ -62,8 +62,14 @@ function confirm() {
 }
 
 @keyframes pop {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .modal-title {

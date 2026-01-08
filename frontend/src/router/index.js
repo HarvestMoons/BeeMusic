@@ -1,15 +1,15 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import {createRouter, createWebHistory} from 'vue-router';
 import HomePage from '@/views/HomePage.vue';
 import PrivacyPage from '@/views/PrivacyPage.vue';
 import About from '@/views/About.vue';
 import MemePage from '@/views/MemePage.vue';
-import { useAuthStore } from '@/store';
+import {useAuthStore} from '@/store';
 
 const routes = [
-    { path: '/', component: HomePage },
-    { path: '/privacy', component: PrivacyPage },
-    { path: '/about', component: About },
-    { path: '/meme', component: MemePage },
+    {path: '/', component: HomePage},
+    {path: '/privacy', component: PrivacyPage},
+    {path: '/about', component: About},
+    {path: '/meme', component: MemePage},
 ];
 
 const router = createRouter({

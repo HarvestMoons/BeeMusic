@@ -69,8 +69,8 @@ const showHome = () => {
 };
 
 const showMeme = () => {
-    router.push('/meme');
-    isOpen.value = false;
+  router.push('/meme');
+  isOpen.value = false;
 };
 
 function showAbout() {

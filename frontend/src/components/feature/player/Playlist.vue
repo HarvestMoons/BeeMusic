@@ -41,7 +41,6 @@ import SearchBar from "@/components/common/SearchBar.vue";
 import upArrowIcon from '@/assets/icons/up_arrow.svg'
 import downArrowIcon from '@/assets/icons/down_arrow.svg'
 import {useAuthStore} from '@/store'
-import {API_BASE} from '@/constants'
 
 const props = defineProps({
   playlist: {type: Array, required: true},
@@ -65,7 +64,6 @@ onMounted(() => {
   if (savedField) sortField.value = savedField
   if (savedOrder) sortOrder.value = savedOrder
 })
-
 
 
 watch(sortField, (newVal) => {

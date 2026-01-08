@@ -10,7 +10,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import {ref} from 'vue'
 
 const props = defineProps({
   index: {
@@ -51,15 +51,15 @@ function toggle() {
   top: 100%;
   left: 50%;
   transform: translateX(-50%) translateY(5px);
-  
+
   width: max-content;
   max-width: 250px;
   padding: 8px 12px;
-  
+
   background: var(--playlist-bg, #ffffff);
   color: var(--playlist-item-text, #333333);
   border: 1px solid var(--border-color, #ccc);
-  
+
   border-radius: 6px;
   font-size: 13px;
   line-height: 1.5;

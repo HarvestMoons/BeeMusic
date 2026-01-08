@@ -38,13 +38,13 @@ public class MemeService {
 
         if (page.hasContent()) {
             Meme meme = page.getContent().getFirst();
-            
+
             String signedUrl = ossClient.generatePresignedUrl(
                     ossUtil.getBucketName(),
                     meme.getKey(),
                     ossUtil.getExpirationDate()
             ).toString();
-            
+
             meme.setUrl(signedUrl);
             return meme;
         }
@@ -55,10 +55,10 @@ public class MemeService {
     public synchronized int syncMemes() {
         // 1. 获取 OSS 上所有文件列表
         List<OSSObjectSummary> ossObjects = ossUtil.listFilesByPrefix(MEME_FOLDER);
-        
+
         // 2. 获取数据库中所有已存在的 Key (只查 Key 字段，性能更高)
         Set<String> dbKeys = new HashSet<>(memeRepository.findAllKeys());
-        
+
         List<Meme> newMemes = new ArrayList<>();
 
         for (OSSObjectSummary obj : ossObjects) {
@@ -74,12 +74,12 @@ public class MemeService {
                 newMemes.add(meme);
             }
         }
-        
+
         // 4. 批量保存
         if (!newMemes.isEmpty()) {
             memeRepository.saveAll(newMemes);
         }
-        
+
         return newMemes.size();
     }
 
@@ -95,10 +95,10 @@ public class MemeService {
 
     private boolean isImage(String key) {
         String lowerKey = key.toLowerCase();
-        return lowerKey.endsWith(".jpg") || 
-               lowerKey.endsWith(".jpeg") || 
-               lowerKey.endsWith(".png") || 
-               lowerKey.endsWith(".gif") || 
-               lowerKey.endsWith(".webp");
+        return lowerKey.endsWith(".jpg") ||
+                lowerKey.endsWith(".jpeg") ||
+                lowerKey.endsWith(".png") ||
+                lowerKey.endsWith(".gif") ||
+                lowerKey.endsWith(".webp");
     }
 }

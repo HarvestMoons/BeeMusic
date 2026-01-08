@@ -3,22 +3,27 @@
     <div class="meme-content" v-if="loading && !currentMeme">
       <div class="loading">正在打捞漂流瓶...</div>
     </div>
-    
+
     <div class="meme-content" v-else-if="currentMeme">
       <div class="image-container">
-        <img 
-          :src="currentMeme.url" 
-          alt="Meme" 
-          @load="loading = false" 
-          @error="handleImageError" 
-          @click="togglePreview"
-          class="meme-main-img"
+        <img
+            :src="currentMeme.url"
+            alt="Meme"
+            @load="loading = false"
+            @error="handleImageError"
+            @click="togglePreview"
+            class="meme-main-img"
         />
         <button class="download-btn" @click.stop="downloadMeme" title="下载收藏">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
         </button>
       </div>
-      
+
       <div class="action-bar">
         <button class="btn accent big-btn" @click="fetchRandomMeme" :disabled="loading">
           {{ loading ? '打捞中...' : '下一个漂流瓶' }}
@@ -38,7 +43,7 @@
         <p>这里空空如也...</p>
         <button class="btn" @click="fetchRandomMeme">再试一次</button>
         <div class="mt-4" v-if="authStore.isStationMaster">
-             <button class="btn warning" @click="handleSync">初始化同步</button>
+          <button class="btn warning" @click="handleSync">初始化同步</button>
         </div>
       </div>
     </div>
@@ -47,7 +52,7 @@
     <Teleport to="body">
       <Transition name="fade">
         <div v-if="showPreview" class="preview-overlay" @click="togglePreview">
-          <img :src="currentMeme.url" alt="Full Preview" @click.stop="togglePreview" />
+          <img :src="currentMeme.url" alt="Full Preview" @click.stop="togglePreview"/>
         </div>
       </Transition>
     </Teleport>
@@ -89,36 +94,36 @@ let nextMemePromise = null;
 // 预加载下一张图片的函数
 const preloadNext = () => {
   nextMemePromise = getRandomMeme()
-    .then(meme => {
-      // 如果获取成功，创建一个隐藏的 Image 对象触发浏览器下载并缓存
-      if (meme && meme.url) {
-        const img = new Image();
-        img.src = meme.url;
-      }
-      return meme;
-    })
-    .catch(err => {
-      console.warn('Preload failed:', err);
-      return null;
-    });
+      .then(meme => {
+        // 如果获取成功，创建一个隐藏的 Image 对象触发浏览器下载并缓存
+        if (meme && meme.url) {
+          const img = new Image();
+          img.src = meme.url;
+        }
+        return meme;
+      })
+      .catch(err => {
+        console.warn('Preload failed:', err);
+        return null;
+      });
 };
 
 const fetchRandomMeme = async () => {
   loading.value = true;
   try {
     let meme = null;
-    
+
     // 1. 如果有正在进行的预加载，优先使用
     if (nextMemePromise) {
       meme = await nextMemePromise;
       nextMemePromise = null; // 消费掉
     }
-    
+
     // 2. 如果没有预加载（首次进入或预加载失败），则直接请求
     if (!meme) {
       meme = await getRandomMeme();
     }
-    
+
     currentMeme.value = meme;
   } catch (error) {
     console.error('Failed to fetch meme:', error);
@@ -142,14 +147,14 @@ const handleImageError = () => {
 
 const downloadMeme = async () => {
   if (!currentMeme.value) return;
-  
+
   try {
     const response = await fetch(currentMeme.value.url);
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    
+
     // 生成文件名：随机哈希 + 时间戳
     const ext = currentMeme.value.key.split('.').pop() || 'jpg';
     const randomHash = Math.random().toString(36).substring(2, 8);
@@ -168,7 +173,7 @@ const downloadMeme = async () => {
 
 const handleDelete = async () => {
   if (!currentMeme.value || !confirm('确定要将这张图片标记为删除吗？')) return;
-  
+
   try {
     await deleteMeme(currentMeme.value.id);
     alert('已删除');
@@ -251,7 +256,7 @@ onMounted(() => {
   background: rgba(30, 30, 30, 0.6);
   backdrop-filter: blur(4px);
   color: white;
-  border: 1px solid rgba(255,255,255,0.2);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   width: 44px;
   height: 44px;
@@ -296,6 +301,7 @@ onMounted(() => {
     flex-direction: column;
     gap: 15px;
   }
+
   .admin-actions {
     position: static;
     width: 100%;
@@ -304,9 +310,9 @@ onMounted(() => {
 }
 
 .big-btn {
-    padding: 12px 40px;
-    font-size: 1.1rem;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  padding: 12px 40px;
+  font-size: 1.1rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .btn {
@@ -409,13 +415,19 @@ onMounted(() => {
   max-width: 95vw;
   max-height: 95vh;
   object-fit: contain;
-  box-shadow: 0 0 30px rgba(0,0,0,0.5);
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
   user-select: none;
   animation: zoomIn 0.3s cubic-bezier(0.2, 0, 0.2, 1);
 }
 
 @keyframes zoomIn {
-  from { transform: scale(0.9); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 </style>

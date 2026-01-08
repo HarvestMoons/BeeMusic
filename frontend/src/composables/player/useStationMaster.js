@@ -1,5 +1,5 @@
-import { ref } from 'vue'
-import { API_BASE } from '@/constants'
+import {ref} from 'vue'
+import {API_BASE} from '@/constants'
 
 export function useStationMaster(playlist, currentIndex, showToastMessage) {
     const showConfirmModal = ref(false)
@@ -16,14 +16,14 @@ export function useStationMaster(playlist, currentIndex, showToastMessage) {
 
         confirmModalTitle.value = `${action}歌曲`
         confirmModalMessage.value = `确定要${action}当前播放的歌曲 "${song.name}" 吗？`
-        pendingAction.value = { song, isDeleted, action }
+        pendingAction.value = {song, isDeleted, action}
         showConfirmModal.value = true
     }
 
     async function executeDeleteOrRestore() {
         if (!pendingAction.value) return
 
-        const { song, isDeleted, action } = pendingAction.value
+        const {song, isDeleted, action} = pendingAction.value
 
         try {
             const endpoint = isDeleted ? 'restore' : 'delete';

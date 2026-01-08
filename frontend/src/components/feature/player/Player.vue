@@ -23,7 +23,8 @@
                       @click="handleToggleDeleteStatus"
                       class="delete-current-btn"
                       :title="playlist[currentIndex]?.isDeleted === 1 ? '恢复当前歌曲' : '删除当前歌曲'">
-                <img :src="playlist[currentIndex]?.isDeleted === 1 ? restoreIcon : deleteIcon" class="svg-icon" alt="操作" />
+                <img :src="playlist[currentIndex]?.isDeleted === 1 ? restoreIcon : deleteIcon" class="svg-icon"
+                     alt="操作"/>
               </button>
             </template>
           </h2>
@@ -102,7 +103,7 @@ import deleteIcon from '@/assets/icons/delete.svg'
 import restoreIcon from '@/assets/icons/restore.svg'
 import VoteControls from './VoteControls.vue'
 import ConfirmModal from '@/components/common/ConfirmModal.vue'
-import { useAuthStore } from '@/store'
+import {useAuthStore} from '@/store'
 import PlaybackRateControl from "@/components/feature/player/PlaybackRateControl.vue";
 import FolderSelector from "@/components/feature/player/FolderSelector.vue";
 import Toast from "@/components/common/Toast.vue";
@@ -110,8 +111,8 @@ import PlayerSidebar from "@/components/feature/player/PlayerSidebar.vue";
 import {PUBLIC_API_BASE} from '@/constants';
 import {useKeyboardShortcuts} from "@/composables/useKeyboardShortcuts.js";
 import OnlineStatus from "@/components/common/OnlineStatus.vue";
-import { useStationMaster } from '@/composables/player/useStationMaster.js'
-import { usePlayerStorage } from '@/composables/player/usePlayerStorage.js'
+import {useStationMaster} from '@/composables/player/useStationMaster.js'
+import {usePlayerStorage} from '@/composables/player/usePlayerStorage.js'
 
 const DEFAULT_FOLDER = 'ha_ji_mi';
 const PLAY_COUNT_THRESHOLD_SECONDS = 10;
@@ -167,7 +168,7 @@ const selectedFolder = ref(DEFAULT_FOLDER)
 const currentSongInfo = ref({title: '', bv: null})
 const toastMessage = ref('')
 const showToast = ref(false)
-const playCountState = ref({ songId: null, reported: false })
+const playCountState = ref({songId: null, reported: false})
 
 function showToastMessage(msg) {
   toastMessage.value = msg
