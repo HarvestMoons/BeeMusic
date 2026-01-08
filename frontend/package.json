@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@vueform/toggle": "^2.1.4",
     "axios": "^1.12.2",
     "chart.js": "^4.4.6",
     "markdown-it": "^14.1.0",
