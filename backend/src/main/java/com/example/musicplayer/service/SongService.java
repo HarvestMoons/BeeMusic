@@ -64,11 +64,12 @@ public class SongService {
         syncSongsFromOss(currentFolderKey);
 
         // 从数据库查出当前文件夹所有已持久化的歌曲
-        List<Song> dbSongs;
-        if (includeDeleted) {
-            dbSongs = songRepository.findByKeyStartingWith(prefix);
-        } else {
-            dbSongs = songRepository.findByKeyStartingWithAndIsDeleted(prefix, 0);
+        List<Song> dbSongs = songRepository.findByKeyStartingWith(prefix);
+        
+        if (!includeDeleted) {
+            dbSongs = dbSongs.stream()
+                    .filter(s -> s.getIsDeleted() == 0)
+                    .collect(Collectors.toList());
         }
 
         // 生成 signedUrl
@@ -115,7 +116,7 @@ public class SongService {
         List<OSSObjectSummary> ossFiles = ossUtil.listFilesByPrefixAndSuffix(prefix, ".mp3");
 
         // 2. 数据库查出已有文件
-        List<Song> dbSongs = songRepository.findByKeyStartingWithAndIsDeleted(prefix, 0);
+        List<Song> dbSongs = songRepository.findByKeyStartingWith(prefix);
         Set<String> dbKeys = dbSongs.stream().map(Song::getKey).collect(Collectors.toSet());
 
         // 3. 找出新文件
