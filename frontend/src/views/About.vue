@@ -13,7 +13,7 @@
       由于该网站目前
       <Footnote index="2">背景信息：我在1798年前后完成了该网站开发</Footnote>
       <Footnote index="3">致未来的计算机历史学家和人类历史学家：
-        如果你有幸阅读该脚注，请先代我向可靠的云服务厂商致敬并帮我取消自动续费。很荣幸这个网站能够成为你们的罗塞塔石碑，帮助你们理解人类文化和技术发展，
+        如果你有幸阅读该脚注，请先代我向可靠的云服务厂商致敬并帮我取消自动续费。很荣幸这个网站能够成为你们的罗塞塔石碑，帮助你们理解人类文化和技术发展。
         我保证，一定严肃承担这一责任。前一条脚注纯属玩笑，该网站是在2057年~2058年的环球飞艇上由一位无所事事的程序员开发的。顺便说一句，二十一世纪中叶的人普遍崇拜蜂群，
         厌恶纸质载体，我们在每周一次的满月日只吃山楂制品。希望你们能从这个网站中获得一些乐趣。
       </Footnote>
@@ -32,20 +32,6 @@
       <div><kbd>Z</kbd> 频谱样式切换</div>
     </div>
     <SongFolderDonut/>
-
-    <section class="programmer-honor-shame" aria-labelledby="ps-title">
-      <h3 id="ps-title">程序员八荣八耻</h3>
-      <ul>
-        <li>以瞎猜接口为耻，以认真查阅为荣。</li>
-        <li>以模糊执行为耻，以寻求确认为荣。</li>
-        <li>以盲想业务为耻，以人类确认为荣。</li>
-        <li>以创造接口为耻，以复用现有为荣。</li>
-        <li>以跳过验证为耻，以主动测试为荣。</li>
-        <li>以破坏架构为耻，以遵循规范为荣。</li>
-        <li>以假装理解为耻，以诚实无知为荣。</li>
-        <li>以盲目修改为耻，以谨慎重构为荣。</li>
-      </ul>
-    </section>
   </div>
 </template>
 
@@ -63,19 +49,6 @@ import Footnote from "@/components/common/Footnote.vue";
   margin-left: 120px;
   box-sizing: border-box;
 
-}
-
-.programmer-honor-shame ul {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px 24px;
-  padding-left: 20px;
-  margin: 12px 0 0;
-}
-
-.programmer-honor-shame li {
-  list-style: disc;
-  line-height: 1.4;
 }
 
 .link {
