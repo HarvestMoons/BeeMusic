@@ -110,14 +110,4 @@ onUnmounted(() => {
   border-color: var(--primary-color);
   box-shadow: 0 0 4px rgba(249, 168, 37, 0.4);
 }
-
-/* 输入框淡入淡出动画 */
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
-  transform: translateY(-5px);
-}
 </style>

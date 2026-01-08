@@ -74,9 +74,9 @@ public class SongService {
         // 生成 signedUrl
         for (Song song : dbSongs) {
             String signedUrl = ossClient.generatePresignedUrl(
-                    "bees-bucket",
+                    ossUtil.getBucketName(),
                     song.getKey(),
-                    new Date(System.currentTimeMillis() + 24 * 3600 * 1000)
+                    ossUtil.getExpirationDate()
             ).toString();
             song.setUrl(signedUrl);
         }
@@ -113,7 +113,6 @@ public class SongService {
 
         // 1. OSS 列出文件
         List<OSSObjectSummary> ossFiles = ossUtil.listFilesByPrefixAndSuffix(prefix, ".mp3");
-        Set<String> ossKeys = ossFiles.stream().map(OSSObjectSummary::getKey).collect(Collectors.toSet());
 
         // 2. 数据库查出已有文件
         List<Song> dbSongs = songRepository.findByKeyStartingWithAndIsDeleted(prefix, 0);

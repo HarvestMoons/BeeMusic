@@ -10,6 +10,7 @@
 ## 2. 视图 (Views)
 - **`src/views/HomePage.vue`**: 首页，包含播放器核心功能。
 - **`src/views/About.vue`**: 关于页面，展示项目信息和彩蛋。
+- **`src/views/MemePage.vue`**: 迷因漂流瓶页面，随机展示图片。
 - **`src/views/PrivacyPage.vue`**: 隐私政策页面，渲染 Markdown 内容。
 
 ## 3. 组件 (Components)
@@ -57,6 +58,7 @@
 
 ## 6. 服务与工具 (Services & Utils)
 - **`src/services/auth.js`**: 认证相关的 API 请求封装。
+- **`src/services/meme.js`**: 迷因漂流瓶相关的 API 请求封装。
 - **`src/utils/eventBus.js`**: 简单的事件总线，用于组件间通信。
 
 ## 7. 常量与配置 (Constants)

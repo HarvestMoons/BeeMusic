@@ -35,9 +35,9 @@
     --input-text: #333333;
     --input-border: #ccc;
 
-    /* Sidebar */
+    /* Sidebar & UI Elements */
     --sidebar-bg: #fff9d6;
-    --sidebar-text: #5d4037;
+    --secondary-text-color: #5d4037;
     --sidebar-text-hover: #f57f17;
     --hamburger-color: #5d4037;
     --sidebar-shadow: 2px 0 8px rgba(0, 0, 0, 0.08);
@@ -59,6 +59,11 @@
     --rate-display-bg: linear-gradient(135deg, #ffca28, #ffb300);
     --rate-display-text: #5d4037;
     --rate-display-hover-bg: linear-gradient(135deg, #ffd54f, #ffca28);
+
+    /* Status Colors (Light) */
+    --danger-color: #ff4757;
+    --warning-color: #ffa502;
+    --success-color: #2ed573;
 }
 
 /* Global Icon Style */
@@ -107,9 +112,9 @@
     --input-text: #e0e0e0;
     --input-border: #555;
 
-    /* Sidebar */
+    /* Sidebar & UI Elements */
     --sidebar-bg: #1a1a1a;
-    --sidebar-text: #ccc;
+    --secondary-text-color: #ccc;
     --sidebar-text-hover: #ffffff;
     --hamburger-color: #ccc;
     --sidebar-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
@@ -138,7 +143,13 @@
 
     /* Folder Name */
     --folder-name-bg: #333333;
+
+    /* Status Colors */
+    --danger-color: #ef5350;
+    --warning-color: #ffa726;
+    --success-color: #66bb6a;
 }
+
 
 html,
 body,
@@ -172,4 +183,15 @@ body,
 .portal-icon:hover {
     transform: translateY(-3px) scale(1.1);
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* 全局过渡动画 - Fade */
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
 }

@@ -3,10 +3,8 @@ package com.example.musicplayer.service;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.example.musicplayer.model.Video;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,12 +14,7 @@ public class VideoService {
     private final OSS ossClient;
     private final OssUtil ossUtil;
 
-    @Value("${aliyun.oss.bucket-name:bees-bucket}")
-    private String bucketName;
-
     private static final String VIDEO_PREFIX = "videos/";
-    // 签名链接有效期 24 小时
-    private static final long URL_EXPIRE_HOURS = 24;
 
     // 构造函数注入（推荐写法）
     public VideoService(OSS ossClient, OssUtil ossUtil) {
@@ -42,9 +35,9 @@ public class VideoService {
                     String filename = key.substring(key.lastIndexOf('/') + 1);
 
                     String signedUrl = ossClient.generatePresignedUrl(
-                            bucketName,
+                            ossUtil.getBucketName(),
                             key,
-                            new Date(System.currentTimeMillis() + URL_EXPIRE_HOURS * 60 * 60 * 1000)
+                            ossUtil.getExpirationDate()
                     ).toString();
 
                     Video video = new Video();

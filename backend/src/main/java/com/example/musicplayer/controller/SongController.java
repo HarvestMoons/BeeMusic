@@ -1,10 +1,10 @@
 package com.example.musicplayer.controller;
 
-import com.example.musicplayer.enums.UserRole;
-import com.example.musicplayer.model.User;
 import com.example.musicplayer.dto.FolderSongCount;
+import com.example.musicplayer.enums.UserRole;
 import com.example.musicplayer.model.Song;
 import com.example.musicplayer.model.SongVote;
+import com.example.musicplayer.model.User;
 import com.example.musicplayer.repository.SongVoteRepository;
 import com.example.musicplayer.service.SongService;
 import com.example.musicplayer.service.VoteService;

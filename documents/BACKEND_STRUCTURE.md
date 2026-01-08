@@ -16,6 +16,7 @@
 ## 3. 控制器 (Controller)
 - **`AuthController.java`**: 处理用户登录、注册、状态检查等认证请求。
 - **`SongController.java`**: 处理歌曲相关的 API（列表、播放、删除/恢复、切换文件夹）。
+- **`MemeController.java`**: 处理迷因漂流瓶相关的 API（随机获取、同步、删除）。
 - **`CommentController.java`**: 处理评论相关的 API（获取、发表、点赞）。
 - **`UserController.java`**: 用户管理相关 API。
 - **`VideoController.java`**: 视频相关 API。
@@ -25,15 +26,17 @@
 ## 4. 服务 (Service)
 - **`UserService.java`**: 用户业务逻辑（注册、登录验证）。
 - **`SongService.java`**: 歌曲业务逻辑（文件扫描、数据库同步、软删除）。
+- **`MemeService.java`**: 迷因业务逻辑（随机获取、OSS 前缀扫描同步）。
 - **`CommentService.java`**: 评论业务逻辑。
 - **`VoteService.java`**: 投票（点赞/点踩）业务逻辑。
 - **`VideoService.java`**: 视频业务逻辑。
 - **`CustomUserDetailsService.java`**: Spring Security 用户详情加载服务。
 - **`OssUtil.java`**: OSS 工具类。
 
-## 5. 数据模型 (Model)
 - **`User.java`**: 用户实体类。
 - **`Song.java`**: 歌曲实体类（包含播放量、删除状态等）。
+- **`Meme.java`**: 迷因实体类。
+- **`Comment.java`**: 评论实体类。放量、删除状态等）。
 - **`Comment.java`**: 评论实体类。
 - **`CommentLike.java`**: 评论点赞关联实体。
 - **`SongVote.java`**: 歌曲投票关联实体。
@@ -42,6 +45,7 @@
 ## 6. 数据访问 (Repository)
 - **`UserRepository.java`**: 用户表 DAO。
 - **`SongRepository.java`**: 歌曲表 DAO。
+- **`MemeRepository.java`**: 迷因表 DAO。
 - **`CommentRepository.java`**: 评论表 DAO。
 - **`CommentLikeRepository.java`**: 评论点赞表 DAO。
 - **`SongVoteRepository.java`**: 歌曲投票表 DAO。

@@ -36,8 +36,5 @@ build/
 ### Mac OS ###
 .DS_Store
 
-# Local TODO list
-TODO.md
-
 # Python
 __pycache__/

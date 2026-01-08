@@ -18,6 +18,7 @@
         </li>
         <li><a href="#" @click.prevent="showHome">首页</a></li>
         <li><a href="#" @click.prevent="showAbout">关于本站</a></li>
+        <li><a href="#" @click.prevent="showMeme">迷因漂流瓶</a></li>
         <li><a href="#" @click.prevent="showPrivacy">隐私政策</a></li>
         <li>
           <a href="#" @click.prevent="showAuthor" class="theme-toggle-link">
@@ -62,18 +63,23 @@ function toggleTheme() {
 }
 
 // 路由跳转
-function showHome() {
-  router.push('/')
+const showHome = () => {
+  router.push('/');
+  isOpen.value = false;
+};
+
+const showMeme = () => {
+    router.push('/meme');
+    isOpen.value = false;
+};
+
+function showAbout() {
+  router.push('/about')
   isOpen.value = false
 }
 
 function showPrivacy() {
   router.push('/privacy')
-  isOpen.value = false
-}
-
-function showAbout() {
-  router.push('/about')
   isOpen.value = false
 }
 
@@ -176,7 +182,7 @@ function onAuthClick() {
 }
 
 .menu a {
-  color: var(--sidebar-text, #e0e0e0);
+  color: var(--secondary-text-color, #e0e0e0);
   text-decoration: none;
   font-weight: 500;
   font-size: 16px;

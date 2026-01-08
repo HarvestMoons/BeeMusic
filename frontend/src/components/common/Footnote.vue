@@ -68,16 +68,4 @@ function toggle() {
   z-index: 1000;
   pointer-events: none;
 }
-
-/* 简单的淡入淡出动画 */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s, transform 0.2s;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-  transform: translateX(-50%) translateY(0);
-}
 </style>

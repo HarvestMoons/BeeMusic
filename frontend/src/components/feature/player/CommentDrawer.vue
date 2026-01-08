@@ -604,17 +604,27 @@ async function handleDelete(commentId) {
   height: 36px;
   padding: 0 16px;
   border-radius: 18px;
-  background: var(--primary-color);
-  color: #fff;
-  border: none;
+  background: var(--playlist-item-bg);
+  border: 1px solid var(--secondary-text-color);
+  color: var(--secondary-text-color);
   cursor: pointer;
   font-size: 14px;
   flex-shrink: 0;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.send-btn:hover:not(:disabled) {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: #fff;
 }
 
 .send-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  border-color: var(--border-color);
+  color: var(--text-color);
 }
 
 .role-badge {

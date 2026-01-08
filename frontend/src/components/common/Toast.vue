@@ -39,14 +39,4 @@ defineProps({
   white-space: nowrap;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
-
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
 </style>
