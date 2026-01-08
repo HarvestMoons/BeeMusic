@@ -14,7 +14,7 @@
       </div>
     </div>
 
-    <BackgroundParticles zIndex="0" opacity="0.4" color="0,0,0" :count="99"/>
+    <BackgroundParticles v-if="themeStore.showParticles" zIndex="0" opacity="0.4" color="0,0,0" :count="99"/>
     <BackgroundRipple apiBase="/api"/>
     <div v-if="loading">
       <MySpinner/>
@@ -29,7 +29,9 @@ import Playlist from '@/components/feature/player/Playlist.vue'
 import BackgroundParticles from '@/components/effects/BackgroundParticles.vue'
 import BackgroundRipple from '@/components/effects/BackgroundRipple.vue'
 import MySpinner from "@/components/effects/MySpinner.vue";
+import {useThemeStore} from '@/store/index.js'
 
+const themeStore = useThemeStore()
 const playerRef = ref(null)
 
 const safePlaylist = computed(() => playerRef.value?.playlist ?? [])

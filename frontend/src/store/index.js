@@ -1,5 +1,5 @@
 import {defineStore} from 'pinia';
-import {getUserStatus} from '@/services/auth'; // 假设已定义
+import {getUserStatus} from '@/services/auth';
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({
@@ -34,6 +34,7 @@ export const useAuthStore = defineStore('auth', {
 export const useThemeStore = defineStore('theme', {
     state: () => ({
         isDarkMode: localStorage.getItem('theme') === 'dark',
+        showParticles: localStorage.getItem('show_particles') !== 'false'
     }),
     actions: {
         toggleTheme() {
@@ -41,6 +42,14 @@ export const useThemeStore = defineStore('theme', {
             const theme = this.isDarkMode ? 'dark' : 'light';
             localStorage.setItem('theme', theme);
             document.documentElement.setAttribute('data-theme', theme);
+        },
+        toggleParticles() {
+            this.showParticles = !this.showParticles;
+            localStorage.setItem('show_particles', String(this.showParticles));
+        },
+        setParticles(value) {
+            this.showParticles = value;
+            localStorage.setItem('show_particles', String(value));
         },
         initTheme() {
             const theme = this.isDarkMode ? 'dark' : 'light';

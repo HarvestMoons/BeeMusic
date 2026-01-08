@@ -26,11 +26,30 @@
             关于小蜜蜂
           </a>
         </li>
-        <li>
-          <a href="#" @click.prevent="toggleTheme" class="theme-toggle-link">
-            <img :src="themeStore.isDarkMode ? sunIcon : moonIcon" class="svg-icon" alt="切换模式"/>
-            {{ themeStore.isDarkMode ? '日间模式' : '夜间模式' }}
+
+        <li class="settings-group">
+          <a href="#" @click.prevent="toggleDisplaySettings" class="theme-toggle-link">
+            <img :src="settingsIcon" class="svg-icon" alt="显示设置"/>
+            <span>显示设置</span>
+            <span class="chevron" :class="{ rotated: showDisplaySettings }">›</span>
           </a>
+
+          <ul v-show="showDisplaySettings" class="sub-menu">
+            <li class="sub-item" @click.stop>
+              <span>夜间模式</span>
+              <ToggleSwitch
+                  v-model="isDarkMode"
+                  @change="handleThemeToggle"
+              />
+            </li>
+            <li class="sub-item" @click.stop>
+              <span>背景粒子</span>
+              <ToggleSwitch
+                  v-model="showParticles"
+                  @change="handleParticlesToggle"
+              />
+            </li>
+          </ul>
         </li>
       </ul>
     </nav>
@@ -38,18 +57,27 @@
 </template>
 
 <script setup>
-import {ref} from 'vue'
+import {ref, watch} from 'vue'
 import {useRouter} from 'vue-router'
 import {useAuthStore, useThemeStore} from '@/store/index.js'
 import {eventBus} from "@/utils/eventBus.js";
-import sunIcon from '@/assets/icons/theme/sun.svg'
-import moonIcon from '@/assets/icons/theme/moon.svg'
+import settingsIcon from '@/assets/icons/settings.svg'
 import linkIcon from '@/assets/icons/link.svg'
+import ToggleSwitch from '@/components/common/ToggleSwitch.vue'
 
 const isOpen = ref(false)
+const showDisplaySettings = ref(false)
 const router = useRouter()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
+
+// Local state proxies for toggles
+const isDarkMode = ref(themeStore.isDarkMode)
+const showParticles = ref(themeStore.showParticles)
+
+// Watch store changes to sync local state (e.g. if changed elsewhere)
+watch(() => themeStore.isDarkMode, (val) => isDarkMode.value = val)
+watch(() => themeStore.showParticles, (val) => showParticles.value = val)
 
 // 定义父组件通信事件
 const emit = defineEmits(['open-login', 'open-register', 'request-logout'])
@@ -58,8 +86,18 @@ function toggleSidebar() {
   isOpen.value = !isOpen.value
 }
 
-function toggleTheme() {
-  themeStore.toggleTheme()
+function toggleDisplaySettings() {
+  showDisplaySettings.value = !showDisplaySettings.value
+}
+
+function handleThemeToggle(val) {
+  if (val !== themeStore.isDarkMode) {
+    themeStore.toggleTheme()
+  }
+}
+
+function handleParticlesToggle(val) {
+  themeStore.setParticles(val)
 }
 
 // 路由跳转
@@ -163,6 +201,8 @@ function onAuthClick() {
   visibility: hidden;
   pointer-events: none;
   transition: opacity 0.2s ease, visibility 0s linear 0.3s;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .menu.visible {
@@ -196,9 +236,69 @@ function onAuthClick() {
   text-decoration: underline;
 }
 
+.menu a.theme-toggle-link:hover {
+  text-decoration: none;
+  color: var(--sidebar-text-hover, #ffffff);
+}
+
+.menu a.theme-toggle-link:hover span:not(.chevron) {
+  text-decoration: underline;
+}
+
 .theme-toggle-link {
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
+  cursor: pointer;
+}
+
+.settings-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.chevron {
+  margin-left: auto;
+  transition: transform 0.3s ease;
+  font-size: 1.2em;
+  line-height: 1;
+}
+
+.chevron.rotated {
+  transform: rotate(90deg);
+}
+
+.sub-menu {
+  list-style: none;
+  padding-left: 32px;
+  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sub-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  color: var(--secondary-text-color, #e0e0e0);
+}
+
+.sub-item span {
+  flex: 1;
 }
 </style>
