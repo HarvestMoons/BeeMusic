@@ -136,7 +136,7 @@ const historyStack = ref([])
 const playbackRate = ref(1.0)
 const playMode = ref(localStorage.getItem(STORAGE_KEYS.PLAY_MODE) || 'random')
 const playerSidebarRef = ref(null)
-const isSpectrumVisible = computed(() => playerSidebarRef.value?.showSpectrum?.value ?? false)
+const isSpectrumVisible = computed(() => playerSidebarRef.value?.showSpectrum ?? false)
 
 const playModeIcons = {
   'random': randomIcon,
@@ -157,6 +157,10 @@ function cyclePlayMode() {
   const modes = ['random', 'loop-list', 'single-loop']
   const nextIndex = (modes.indexOf(playMode.value) + 1) % modes.length
   playMode.value = modes[nextIndex]
+}
+
+function handleToggleSpectrum() {
+  playerSidebarRef.value?.toggleSpectrum()
 }
 
 const selectedFolder = ref(DEFAULT_FOLDER)
