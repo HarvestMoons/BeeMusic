@@ -209,7 +209,7 @@ onMounted(() => {
 
   // 按 Z 切换模式（保留原逻辑）
   const modeKeyHandler = (e) => {
-    if (e.key.toLowerCase() !== "z") return;
+    if (!e.key || e.key.toLowerCase() !== "z") return;
     mode = mode === "spectrum" ? "waveform" : mode === "waveform" ? "circle" : "spectrum";
   };
   document.addEventListener("keydown", modeKeyHandler);
@@ -287,11 +287,4 @@ onBeforeUnmount(() => {
   /* 添加过渡效果 */
   transition: opacity 0.3s ease;
 }
-
-.spectrum-container .help-tooltip-wrapper {
-  position: absolute;
-  top: 18px;
-  right: 23px;
-}
-
 </style>

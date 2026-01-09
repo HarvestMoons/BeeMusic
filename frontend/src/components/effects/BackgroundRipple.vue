@@ -110,7 +110,7 @@ onMounted(() => {
 
   // -------------------- 长按E键触发 --------------------
   const keydownHandler = (e) => {
-    if (e.key.toLowerCase() !== 'e' || mainAudio && videoElement || e.repeat) return;
+    if (!e.key || e.key.toLowerCase() !== 'e' || mainAudio && videoElement || e.repeat) return;
 
     // 清理旧 overlay（未触发状态）
     if (!isTriggered) clearOverlay();
@@ -139,7 +139,10 @@ onMounted(() => {
 
         try {
           const res = await fetch(`${props.apiBase}/public/videos/random`);
-          if (!res.ok) throw new Error('HTTP ' + res.status);
+          if (!res.ok) {
+            clearOverlay();
+            return;
+          }
           const videos = await res.json();
           if (!videos || videos.length === 0) {
             clearOverlay();
@@ -158,7 +161,7 @@ onMounted(() => {
 
   // -------------------- keyup --------------------
   const keyupHandler = (e) => {
-    if (e.key.toLowerCase() === 'e' && !isTriggered) clearOverlay();
+    if (e.key && e.key.toLowerCase() === 'e' && !isTriggered) clearOverlay();
   };
 
   document.addEventListener('keydown', keydownHandler);
