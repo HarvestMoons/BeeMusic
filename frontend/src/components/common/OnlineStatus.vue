@@ -51,7 +51,8 @@ onMounted(() => {
   ws.onclose = () => {
     console.log('WebSocket 断开，3秒后重连...')
     setTimeout(() => {
-      ws = new WebSocket(`ws://${location.host}/ws/online`)
+      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      ws = new WebSocket(`${protocol}//${location.host}/ws/online`)
     }, 3000)
   }
 })
