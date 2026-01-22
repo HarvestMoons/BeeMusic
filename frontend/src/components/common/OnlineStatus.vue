@@ -19,7 +19,8 @@ const currentSongName = ref('')
 let ws = null
 
 onMounted(() => {
-  ws = new WebSocket(`ws://${location.host}/ws/online`)
+  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(`${protocol}//${location.host}/ws/online`)
 
   window.ws = ws;
 

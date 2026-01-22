@@ -27,7 +27,10 @@ services:
     container_name: nginx_frontend
     restart: always
     ports:
-      - "8081:80"
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./certs:/etc/nginx/certs
     depends_on:
       - spring
     networks:
