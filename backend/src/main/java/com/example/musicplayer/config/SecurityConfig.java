@@ -74,6 +74,8 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.addAllowedOrigin("http://localhost:8081");
         configuration.addAllowedOrigin("http://8.155.47.138:8081");
+        configuration.addAllowedOrigin("http://beemusic.fun");
+        configuration.addAllowedOrigin("http://www.beemusic.fun");
         configuration.addAllowedMethod("*");
         configuration.addAllowedHeader("*");
         configuration.setAllowCredentials(true);

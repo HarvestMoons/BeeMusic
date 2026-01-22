@@ -29,7 +29,10 @@ services:
     container_name: frontend_nginx
     restart: always
     ports:
-      - "8081:80"              # 外部访问前端的端口（原先 nginx 映射 8081）
+      - "80:80"              # HTTP
+      - "443:443"            # HTTPS
+    volumes:
+      - ./certs:/etc/nginx/certs  # 挂载证书目录到容器内
     depends_on:
       - spring
     logging:
