@@ -20,6 +20,10 @@ public class OssConfig {
 
     @Bean
     public OSS ossClient() {
+        // 如果 endpoint 不带协议头，手动加上 https://
+        if (!endpoint.startsWith("http://") && !endpoint.startsWith("https://")) {
+            endpoint = "https://" + endpoint;
+        }
         return new OSSClientBuilder().build(endpoint, accessKey, secretKey);
     }
 }
