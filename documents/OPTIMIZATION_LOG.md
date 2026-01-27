@@ -29,15 +29,36 @@
 | 95% Response Time | 27000 ms |
 | Failure Rate | 0% |
 
-### 现象分析
-当前实现中，`getSongs` 每次请求都会执行 `syncSongsFromOss -> ossClient.listObjects` 并循环生成签名 URL。这会导致：
-1. 网络 I/O 延迟高。
-2. 频繁调用阿里云 OSS API（可能涉及费用）。
-3. 随着并发增加，响应时间线性或指数级增长。
+### 测试结果 (中间优化 - 仅缓存元数据)
+*(引入 Redis 缓存元数据，但仍实时生成签名 URL)*
+| Metric | Value |
+| :--- | :--- |
+| RPS | ~3.46 (Peak 4.4) |
+| Min Response Time | 1318 ms |
+| Average Response Time | 6691 ms |
+| Max Response Time | 28295 ms |
+| Median Response Time | 5100 ms |
 
-## 3. 优化方案
-1. **引入 Redis 缓存**：缓存计算好的歌曲列表数据。
-2. **异步同步**：将 OSS 同步逻辑移除出主请求链路，改为定时任务或独立触发。
-3. **缓存策略**：
-   - Key: `songs:folder:{folderName}`
-   - TTL: 30分钟
+### 现象分析 (中间阶段)
+虽然引入了 Redis，响应时间从 17s 降到了 6s 左右，这节省了 `ossClient.listObjects` 的网络开销。
+**但是 6s 依然太慢！**
+原因分析：代码中每次缓存命中后，**依然遍历整个歌曲列表** 并逐个调用 `ossClient.generatePresignedUrl` 生成签名链接。
+如果歌单中有数百首歌曲，这个 CPU 密集型的签名操作（或者潜在的 SDK 内部处理）依然耗时巨大（推测每首签名耗时约 5-10ms，几百首累积达到数秒）。
+
+### 进一步优化方案
+**策略**：将“已生成的签名 URL”也一并缓存。
+- OSS 签名链接有效期默认为 24 小时。
+- 我们配置 Redis 缓存有效期为 6 小时（远小于签名有效期）。
+- 这样，缓存命中时，**直接返回缓存的 JSON，无需任何计算**。
+- 预计响应时间将降至 < 50ms。
+
+### 测试结果 (最终优化 - 缓存全量数据)
+*(待填入)*
+| Metric | Value |
+| :--- | :--- |
+| RPS | - |
+| Min Response Time | - |
+| Average Response Time | - |
+| Max Response Time | - |
+| Median Response Time | - |
+

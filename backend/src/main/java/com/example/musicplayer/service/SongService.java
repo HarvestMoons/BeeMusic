@@ -12,10 +12,8 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
 
 @Service
-@Slf4j
 public class SongService {
 
     private final OSS ossClient;
@@ -66,7 +64,6 @@ public class SongService {
 
     @SuppressWarnings("unchecked")
     public List<Song> getSongs(boolean includeDeleted) {
-        long start = System.currentTimeMillis();
         String folderChineseName = AVAILABLE_FOLDERS.get(currentFolderKey);
         String prefix = "music/" + folderChineseName + "/";
         String cacheKey = "songs:folder:" + currentFolderKey + (includeDeleted ? ":all" : ":active");
@@ -74,22 +71,11 @@ public class SongService {
         // 1. 查缓存
         List<Song> cachedSongs = (List<Song>) redisTemplate.opsForValue().get(cacheKey);
         if (cachedSongs != null) {
-            log.info("Cache hit for key: {}", cacheKey);
-            // 缓存命中，重新生成签名 URL (因为 URL 有有效期，缓存可能存活久，但 URL 过期)
-            for (Song song : cachedSongs) {
-                String signedUrl = ossClient.generatePresignedUrl(
-                        ossUtil.getBucketName(),
-                        song.getKey(),
-                        ossUtil.getExpirationDate()
-                ).toString();
-                song.setUrl(signedUrl);
-            }
-            log.info("Served from cache in {}ms", System.currentTimeMillis() - start);
+            // 缓存命中，直接返回 (缓存中已经包含了有效的 Signed URL)
             return cachedSongs;
         }
-        log.info("Cache miss for key: {}", cacheKey);
 
-        // 2. 缓存未命中，查数据库 (不再同步调用 OSS sync)
+        // 2. 缓存未命中，查数据库
         List<Song> dbSongs = songRepository.findByKeyStartingWith(prefix);
         
         if (!includeDeleted) {
@@ -98,19 +84,23 @@ public class SongService {
                     .collect(Collectors.toList());
         }
 
-        // 3. 写入缓存 (10分钟)
-        redisTemplate.opsForValue().set(cacheKey, dbSongs, 10, TimeUnit.MINUTES);
-        
-        // 生成 signedUrl
+        // 3. 生成 signedUrl
+        // 注意：这里生成的 URL 必须有效期足够长，至少要覆盖 Redis 的缓存时间
+        Date expiration = ossUtil.getExpirationDate(); // 默认为24小时后
         for (Song song : dbSongs) {
             String signedUrl = ossClient.generatePresignedUrl(
                     ossUtil.getBucketName(),
                     song.getKey(),
-                    ossUtil.getExpirationDate()
+                    expiration
             ).toString();
             song.setUrl(signedUrl);
         }
-        log.info("Served from DB in {}ms", System.currentTimeMillis() - start);
+
+        // 4. 写入缓存 (设置过期时间为 6 小时，远小于 OSS 签名的 24 小时，确保取出的 URL 总是有效的)
+        if (!dbSongs.isEmpty()) {
+            redisTemplate.opsForValue().set(cacheKey, dbSongs, 6, TimeUnit.HOURS);
+        }
+
         return dbSongs;
     }
 
