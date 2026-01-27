@@ -12,8 +12,10 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 public class SongService {
 
     private final OSS ossClient;
@@ -64,6 +66,7 @@ public class SongService {
 
     @SuppressWarnings("unchecked")
     public List<Song> getSongs(boolean includeDeleted) {
+        long start = System.currentTimeMillis();
         String folderChineseName = AVAILABLE_FOLDERS.get(currentFolderKey);
         String prefix = "music/" + folderChineseName + "/";
         String cacheKey = "songs:folder:" + currentFolderKey + (includeDeleted ? ":all" : ":active");
@@ -71,6 +74,7 @@ public class SongService {
         // 1. 查缓存
         List<Song> cachedSongs = (List<Song>) redisTemplate.opsForValue().get(cacheKey);
         if (cachedSongs != null) {
+            log.info("Cache hit for key: {}", cacheKey);
             // 缓存命中，重新生成签名 URL (因为 URL 有有效期，缓存可能存活久，但 URL 过期)
             for (Song song : cachedSongs) {
                 String signedUrl = ossClient.generatePresignedUrl(
@@ -80,8 +84,10 @@ public class SongService {
                 ).toString();
                 song.setUrl(signedUrl);
             }
+            log.info("Served from cache in {}ms", System.currentTimeMillis() - start);
             return cachedSongs;
         }
+        log.info("Cache miss for key: {}", cacheKey);
 
         // 2. 缓存未命中，查数据库 (不再同步调用 OSS sync)
         List<Song> dbSongs = songRepository.findByKeyStartingWith(prefix);
@@ -94,7 +100,7 @@ public class SongService {
 
         // 3. 写入缓存 (10分钟)
         redisTemplate.opsForValue().set(cacheKey, dbSongs, 10, TimeUnit.MINUTES);
-
+        
         // 生成 signedUrl
         for (Song song : dbSongs) {
             String signedUrl = ossClient.generatePresignedUrl(
@@ -104,6 +110,7 @@ public class SongService {
             ).toString();
             song.setUrl(signedUrl);
         }
+        log.info("Served from DB in {}ms", System.currentTimeMillis() - start);
         return dbSongs;
     }
 
