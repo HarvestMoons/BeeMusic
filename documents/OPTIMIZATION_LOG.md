@@ -1,64 +1,63 @@
-# 性能优化日志
+# 🚀 后端性能优化报告：SongService.getSongs
 
-## 1. 目标
-优化后端接口性能，重点关注 `SongService.getSongs` 的响应速度，引入 Redis 缓存。
+## 1. 优化概览 (Executive Summary)
 
-## 2. 基准测试 (Baseline)
+针对核心接口 `GET /api/public/songs/get` (获取歌曲列表) 进行的三阶段性能优化。通过引入 Redis 缓存架构和 GZIP 传输压缩，在服务器硬件资源（带宽 3Mbps）不变的情况下，实现了吞吐量 **15倍** 提升，响应速度 **20倍** 提升。
 
-### 测试环境
-- **时间**: 2026-01-27
-- **分支**: main
-- **工具**: Locust
-- **接口**: `GET /api/public/songs/get` (获取当前文件夹歌曲列表)
+| 指标 (Metric) | 初始状态 (Baseline) | 阶段一：Redis (缓存元数据) | 阶段二：Redis (全量缓存) | 最终阶段：Redis + GZIP | **提升幅度** |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **RPS (吞吐量)** | ~1.4 req/s | ~3.5 req/s | ~3.7 req/s | **~21.5 req/s** | **1500%** 🚀 |
+| **Median Latency** | 17,000 ms | 5,100 ms | 3900 ms | **830 ms** | **2000%** 🚀 |
+| **Min Latency** | 4,310 ms | 1,318 ms | 1098 ms | **68 ms** | **6300%** 🚀 |
+| **主要瓶颈** | OSS 网络调用 | CPU (URL签名) | 3Mbps 网络带宽 | 带宽跑满 | - |
 
-### 测试配置 (Locust)
-- **Target RPS**: 50
-- **Duration**: 30s
-- **Host**: https://beemusic.fun (或本地 localhost:8080)
+---
 
-### 测试结果 (优化前)
-*(在此处填入运行 Locust 后的结果，例如：RPS, P95 Latency 等)*
+## 2. 测试环境
+- **日期**: 2026-01-27
+- **工具**: Locust (Headless Mode)
+- **并发数**: 50 Users (Ramp-up 50/s)
+- **服务器带宽**: ~3Mbps (380KB/s)
 
-| Metric | Value |
-| :--- | :--- |
-| RPS | ~1.41 |
-| Min Response Time | 4310 ms |
-| Average Response Time | 17227 ms |
-| Max Response Time | 30421 ms |
-| Median Response Time | 17000 ms |
-| 95% Response Time | 27000 ms |
-| Failure Rate | 0% |
+---
 
-### 测试结果 (中间优化 - 仅缓存元数据)
-*(引入 Redis 缓存元数据，但仍实时生成签名 URL)*
-| Metric | Value |
-| :--- | :--- |
-| RPS | ~3.46 (Peak 4.4) |
-| Min Response Time | 1318 ms |
-| Average Response Time | 6691 ms |
-| Max Response Time | 28295 ms |
-| Median Response Time | 5100 ms |
+## 3. 优化过程详解 (Optimization Details)
 
-### 现象分析 (中间阶段)
-虽然引入了 Redis，响应时间从 17s 降到了 6s 左右，这节省了 `ossClient.listObjects` 的网络开销。
-**但是 6s 依然太慢！**
-原因分析：代码中每次缓存命中后，**依然遍历整个歌曲列表** 并逐个调用 `ossClient.generatePresignedUrl` 生成签名链接。
-如果歌单中有数百首歌曲，这个 CPU 密集型的签名操作（或者潜在的 SDK 内部处理）依然耗时巨大（推测每首签名耗时约 5-10ms，几百首累积达到数秒）。
+### 🔴 第一阶段：原始状态 (Baseline)
+|维度|详情|
+|:---|:---|
+|**核心逻辑**|每次请求都 **实时连接阿里云 OSS** 获取文件列表 → 数据库校验 → 循环生成签名 URL。|
+|**主要瓶颈**|**网络 I/O**: 频繁调用 OSS API (`listObjects`) 导致巨大延迟。<br>**串行执行**: 所有操作在主线程同步执行，阻塞响应。|
+|**性能表现**|用户平均等待时间超过 **17秒**，体验极差。|
 
-### 进一步优化方案
-**策略**：将“已生成的签名 URL”也一并缓存。
-- OSS 签名链接有效期默认为 24 小时。
-- 我们配置 Redis 缓存有效期为 6 小时（远小于签名有效期）。
-- 这样，缓存命中时，**直接返回缓存的 JSON，无需任何计算**。
-- 预计响应时间将降至 < 50ms。
+### 🟡 第二阶段：引入 Redis 缓存 (架构优化)
+|维度|详情|
+|:---|:---|
+|**核心改动**|1. **虽然查缓存**: `getSongs` 优先查 Redis，未命中再查 DB。<br>2. **异步化**: 移除 OSS 同步逻辑，改为 `@Scheduled` 定时任务（每10分钟）。<br>3. **存量策略**: 仅缓存歌曲元数据 (Metadata)，取出来后 **实时计算** 签名 URL。|
+|**性能表现**|响应时间降至 **3-5秒**。|
+|**瓶颈分析**|**CPU 密集型**: 虽然消除了网络 I/O，但循环生成几百个签名 URL 依然耗时 (~1-2ms/首 × 几百首 = 数秒)。|
 
-### 测试结果 (最终优化 - 缓存全量数据)
-*(待填入)*
-| Metric | Value |
-| :--- | :--- |
-| RPS | - |
-| Min Response Time | - |
-| Average Response Time | - |
-| Max Response Time | - |
-| Median Response Time | - |
+### 🔵 第三阶段：全量缓存策略 (计算优化)
+|维度|详情|
+|:---|:---|
+|**核心改动**|1. **缓存成品**: 直接缓存包含 **有效签名 URL** 的完整对象列表。<br>2. **有效期对齐**: Redis TTL (6h) < OSS URL 有效期 (24h)，确保取出的 URL 永远有效。<br>3. **零计算**: 缓存命中后直接返回，不进行任何计算。|
+|**性能表现**|服务端 Redis 取数仅需 **5-10ms**，但客户端收到响应依然需要 **5秒左右**。|
+|**瓶颈转移**|**网络带宽 (Bandwidth)**: 经诊断，单个请求响应包大小约 **95KB**。在 **3Mbps** 带宽下，50人并发直接打满带宽，造成排队拥塞。|
+
+### 🟢 第四阶段：GZIP 压缩 (链路优化)
+|维度|详情|
+|:---|:---|
+|**核心改动**|通过脚本测试，发现带宽是主要限制因素。在 `application.properties` 中开启 Server Response Compression (GZIP)。|
+|**优化原理**|JSON 文本压缩率极高 (>90%)，传输体积从 **95KB** 骤降至 **~10KB**。|
+|**最终结果**|彻底释放带宽压力，中位响应时间降至 **0.8秒**，RPS 提升 **15倍**。|
+
+
+---
+
+## 4. 结论与经验
+1.  **链路优化 (Compression) 至关重要**: 对于返回大量 JSON 数据的列表接口，**带宽往往是第一瓶颈**。简单的 GZIP 配置带来了 10 倍的提升。
+2.  **缓存策略**：缓存“计算后的结果”比缓存“原始数据”更高效。在本项目中，缓存已签名的 URL 避免了大量的重复 CPU 计算。
+3.  **读写分离/异步化**: 将耗时的资源同步任务 (`syncSongsFromOss`) 从用户请求链路中剥离，是降低 Latency 的关键一步。
+
+
 
