@@ -5,9 +5,12 @@ import com.aliyun.oss.model.OSSObjectSummary;
 import com.example.musicplayer.dto.FolderSongCount;
 import com.example.musicplayer.model.Song;
 import com.example.musicplayer.repository.SongRepository;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -16,6 +19,8 @@ public class SongService {
     private final OSS ossClient;
     private final OssUtil ossUtil;
     private final SongRepository songRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
+
     private final Map<String, String> AVAILABLE_FOLDERS = Map.of(
             "ha_ji_mi", "哈基米",
             "dian_gun", "溜冰场",
@@ -28,10 +33,11 @@ public class SongService {
 
     private String currentFolderKey = "ha_ji_mi";
 
-    public SongService(OSS ossClient, OssUtil ossUtil, SongRepository songRepository) {
+    public SongService(OSS ossClient, OssUtil ossUtil, SongRepository songRepository, RedisTemplate<String, Object> jsonRedisTemplate) {
         this.ossClient = ossClient;
         this.ossUtil = ossUtil;
         this.songRepository = songRepository;
+        this.redisTemplate = jsonRedisTemplate;
     }
 
     public Map<String, String> setFolder(String folder) {
@@ -56,14 +62,28 @@ public class SongService {
                 .collect(Collectors.toList());
     }
 
+    @SuppressWarnings("unchecked")
     public List<Song> getSongs(boolean includeDeleted) {
         String folderChineseName = AVAILABLE_FOLDERS.get(currentFolderKey);
         String prefix = "music/" + folderChineseName + "/";
+        String cacheKey = "songs:folder:" + currentFolderKey + (includeDeleted ? ":all" : ":active");
 
-        // 同步该文件夹的歌曲元数据
-        syncSongsFromOss(currentFolderKey);
+        // 1. 查缓存
+        List<Song> cachedSongs = (List<Song>) redisTemplate.opsForValue().get(cacheKey);
+        if (cachedSongs != null) {
+            // 缓存命中，重新生成签名 URL (因为 URL 有有效期，缓存可能存活久，但 URL 过期)
+            for (Song song : cachedSongs) {
+                String signedUrl = ossClient.generatePresignedUrl(
+                        ossUtil.getBucketName(),
+                        song.getKey(),
+                        ossUtil.getExpirationDate()
+                ).toString();
+                song.setUrl(signedUrl);
+            }
+            return cachedSongs;
+        }
 
-        // 从数据库查出当前文件夹所有已持久化的歌曲
+        // 2. 缓存未命中，查数据库 (不再同步调用 OSS sync)
         List<Song> dbSongs = songRepository.findByKeyStartingWith(prefix);
         
         if (!includeDeleted) {
@@ -71,6 +91,9 @@ public class SongService {
                     .filter(s -> s.getIsDeleted() == 0)
                     .collect(Collectors.toList());
         }
+
+        // 3. 写入缓存 (10分钟)
+        redisTemplate.opsForValue().set(cacheKey, dbSongs, 10, TimeUnit.MINUTES);
 
         // 生成 signedUrl
         for (Song song : dbSongs) {
@@ -90,6 +113,7 @@ public class SongService {
             Song song = songOpt.get();
             song.setIsDeleted(1);
             songRepository.save(song);
+            evictAllFolderCaches();
         }
     }
 
@@ -99,8 +123,17 @@ public class SongService {
             Song song = songOpt.get();
             song.setIsDeleted(0);
             songRepository.save(song);
+            evictAllFolderCaches();
         }
     }
+
+    private void evictAllFolderCaches() {
+        Set<String> keys = redisTemplate.keys("songs:folder:*");
+        if (keys != null && !keys.isEmpty()) {
+            redisTemplate.delete(keys);
+        }
+    }
+
 
     /**
      * 同步指定文件夹的 OSS 文件到数据库
@@ -139,12 +172,16 @@ public class SongService {
         // 4. 保存新文件
         if (!newSongs.isEmpty()) {
             songRepository.saveAll(newSongs);
+            // 只有当有新歌时才清除缓存
+            redisTemplate.delete("songs:folder:" + folderKey + ":all");
+            redisTemplate.delete("songs:folder:" + folderKey + ":active");
         }
     }
 
     /**
-     * 同步所有文件夹
+     * 同步所有文件夹 (定时任务：每10分钟一次)
      */
+    @Scheduled(fixedRate = 600000)
     public void syncAllSongs() {
         for (String key : AVAILABLE_FOLDERS.keySet()) {
             syncSongsFromOss(key);

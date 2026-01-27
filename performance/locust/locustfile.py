@@ -2,10 +2,10 @@ from locust import HttpUser, task, constant
 
 class WebsiteUser(HttpUser):
     wait_time = constant(0.01)
-    host = "http://8.155.47.138:8081"
+    host = "https://beemusic.fun/"
     @task
-    def play(self):
-        self.client.post("/api/public/songs/play/1")
+    def get_songs(self):
+        self.client.get("/api/public/songs/get")
 
 from locust import LoadTestShape
 
