@@ -9,9 +9,13 @@
     />
 
     <!-- 主体部分 -->
-    <div class="flex-1">
-      <HomePage v-show="route.path === '/'"/>
-      <router-view v-if="route.path !== '/'"/>
+    <div class="flex-1 main-content-column">
+      <div class="content-area">
+        <HomePage v-show="route.path === '/'"/>
+        <router-view v-if="route.path !== '/'"/>
+      </div>
+
+      <SiteFooter />
     </div>
 
     <!-- 登录弹窗 -->
@@ -44,6 +48,7 @@ import Toast from '@/components/common/Toast.vue'
 import {logout} from '@/services/auth.js'
 import {useAuthStore, useThemeStore} from '@/store/index.js'
 import {eventBus} from "@/utils/eventBus.js";
+import SiteFooter from '@/components/layout/SiteFooter.vue'
 
 const route = useRoute()
 const showLogin = ref(false)
@@ -113,5 +118,15 @@ async function handleLogout() {
   width: 100vw !important;
   height: 100vh !important;
   z-index: 4000 !important;
+}
+
+.main-content-column {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.content-area {
+  flex: 1;
 }
 </style>
