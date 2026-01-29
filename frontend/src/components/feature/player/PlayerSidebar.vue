@@ -68,7 +68,6 @@ function toggleSpectrum() {
     showSpectrum.value = false
   } else {
     showSpectrum.value = true
-    // Only open comments if allowed
     if (canShowComments.value) {
       showComments.value = true
     }
