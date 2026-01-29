@@ -51,15 +51,33 @@
             </li>
           </ul>
         </li>
+
+        <li v-if="authStore.isStationMaster" class="settings-group">
+          <a href="#" @click.prevent="toggleSiteSettings" class="theme-toggle-link">
+            <img :src="settingsIcon" class="svg-icon" alt="站长设置"/>
+            <span>站长设置</span>
+            <span class="chevron" :class="{ rotated: showSiteSettings }">›</span>
+          </a>
+
+          <ul v-show="showSiteSettings" class="sub-menu">
+            <li class="sub-item" @click.stop>
+              <span>全站评论</span>
+              <ToggleSwitch
+                  v-model="commentsEnabledProxy"
+                  @change="handleCommentsToggle"
+              />
+            </li>
+          </ul>
+        </li>
       </ul>
     </nav>
   </div>
 </template>
 
 <script setup>
-import {ref, watch} from 'vue'
+import {ref, watch, onMounted} from 'vue'
 import {useRouter} from 'vue-router'
-import {useAuthStore, useThemeStore} from '@/store/index.js'
+import {useAuthStore, useThemeStore, useSiteConfigStore} from '@/store/index.js'
 import {eventBus} from "@/utils/eventBus.js";
 import settingsIcon from '@/assets/icons/settings.svg'
 import linkIcon from '@/assets/icons/link.svg'
@@ -67,20 +85,28 @@ import ToggleSwitch from '@/components/common/ToggleSwitch.vue'
 
 const isOpen = ref(false)
 const showDisplaySettings = ref(false)
+const showSiteSettings = ref(false)
 const router = useRouter()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
+const siteConfigStore = useSiteConfigStore()
 
 // Local state proxies for toggles
 const isDarkMode = ref(themeStore.isDarkMode)
 const showParticles = ref(themeStore.showParticles)
+const commentsEnabledProxy = ref(false)
 
 // Watch store changes to sync local state (e.g. if changed elsewhere)
 watch(() => themeStore.isDarkMode, (val) => isDarkMode.value = val)
 watch(() => themeStore.showParticles, (val) => showParticles.value = val)
+watch(() => siteConfigStore.commentsEnabled, (val) => commentsEnabledProxy.value = val)
 
 // 定义父组件通信事件
 const emit = defineEmits(['open-login', 'open-register', 'request-logout'])
+
+onMounted(() => {
+  siteConfigStore.fetchConfig()
+})
 
 function toggleSidebar() {
   isOpen.value = !isOpen.value
@@ -88,6 +114,10 @@ function toggleSidebar() {
 
 function toggleDisplaySettings() {
   showDisplaySettings.value = !showDisplaySettings.value
+}
+
+function toggleSiteSettings() {
+  showSiteSettings.value = !showSiteSettings.value
 }
 
 function handleThemeToggle(val) {
@@ -98,6 +128,10 @@ function handleThemeToggle(val) {
 
 function handleParticlesToggle(val) {
   themeStore.setParticles(val)
+}
+
+function handleCommentsToggle(val) {
+   siteConfigStore.updateCommentsEnabled(val)
 }
 
 // 路由跳转

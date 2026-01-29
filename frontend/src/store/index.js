@@ -1,5 +1,6 @@
-import {defineStore} from 'pinia';
-import {getUserStatus} from '@/services/auth';
+import { defineStore } from 'pinia';
+import { getUserStatus } from '@/services/auth';
+import { getCommentsEnabled, setCommentsEnabled } from '@/services/siteConfig';
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({
@@ -29,6 +30,31 @@ export const useAuthStore = defineStore('auth', {
         isAdmin: (state) => state.role === 2,
         canManageSongs: (state) => state.role === 3 || state.role === 2, // 站长或管理员
     },
+});
+
+export const useSiteConfigStore = defineStore('siteConfig', {
+    state: () => ({
+        commentsEnabled: false
+    }),
+    actions: {
+        async fetchConfig() {
+            try {
+                const res = await getCommentsEnabled();
+                this.commentsEnabled = res.enabled;
+            } catch (e) {
+                console.error("Failed to load site config", e);
+            }
+        },
+        async updateCommentsEnabled(enabled) {
+            try {
+                await setCommentsEnabled(enabled);
+                this.commentsEnabled = enabled;
+            } catch (e) {
+                console.error("Failed to update site config", e);
+                throw e;
+            }
+        }
+    }
 });
 
 export const useThemeStore = defineStore('theme', {

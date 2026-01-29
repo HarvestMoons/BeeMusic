@@ -11,9 +11,17 @@
 </template>
 
 <script setup>
-import {onMounted, ref} from 'vue'
+import {computed, onMounted, ref, watch} from 'vue'
 import CommentDrawer from '@/components/feature/player/CommentDrawer.vue'
 import SpectrumVisualizer from '@/components/feature/spectrum/SpectrumVisualizer.vue'
+import {useAuthStore, useSiteConfigStore} from '@/store'
+
+const authStore = useAuthStore()
+const siteConfigStore = useSiteConfigStore()
+
+const canShowComments = computed(() => {
+  return authStore.isStationMaster || siteConfigStore.commentsEnabled
+})
 
 const props = defineProps({
   songId: {
@@ -52,10 +60,20 @@ function toggleSpectrum() {
     showSpectrum.value = false
   } else {
     showSpectrum.value = true
-    showComments.value = true
+    // Only open comments if allowed
+    if (canShowComments.value) {
+      showComments.value = true
+    }
     persistShowComments()
   }
 }
+
+// Watch for permission changes to close drawer if access is lost
+watch(canShowComments, (allowed) => {
+  if (!allowed && showComments.value) {
+    showComments.value = false
+  }
+})
 
 function handleDrawerClose() {
   toggleComments()
