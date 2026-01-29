@@ -1,6 +1,7 @@
 <template>
-  <div class="sidebar-wrapper" :class="{ collapsed: !showComments }">
+  <div class="sidebar-wrapper" :class="wrapperClasses">
     <CommentDrawer
+        v-if="canShowComments"
         :visible="showComments"
         :songId="songId"
         @close="handleDrawerClose"
@@ -21,6 +22,13 @@ const siteConfigStore = useSiteConfigStore()
 
 const canShowComments = computed(() => {
   return authStore.isStationMaster || siteConfigStore.commentsEnabled
+})
+
+const wrapperClasses = computed(() => {
+  if (!canShowComments.value) {
+    return 'hidden'
+  }
+  return { collapsed: !showComments.value }
 })
 
 const props = defineProps({
@@ -110,6 +118,11 @@ defineExpose({
 
 .sidebar-wrapper.collapsed {
   width: 60px;
+}
+
+.sidebar-wrapper.hidden {
+  width: 0;
+  border-left: none;
 }
 
 .sidebar-wrapper.collapsed :deep(.drawer-header h3) {
