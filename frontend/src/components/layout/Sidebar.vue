@@ -67,6 +67,12 @@
                   @change="handleCommentsToggle"
               />
             </li>
+            <li class="sub-item">
+              <a href="#" @click.prevent="handleSyncDatabase" class="theme-toggle-link" style="padding:0;">
+                <img :src="restoreIcon" class="svg-icon" alt="同步" style="width:16px;height:16px;"/>
+                <span>同步数据库</span>
+              </a>
+            </li>
           </ul>
         </li>
       </ul>
@@ -82,6 +88,8 @@ import {eventBus} from "@/utils/eventBus.js";
 import settingsIcon from '@/assets/icons/settings.svg'
 import linkIcon from '@/assets/icons/link.svg'
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue'
+import {syncDatabase} from "@/services/siteConfig.js";
+import restoreIcon from '@/assets/icons/restore.svg'
 
 const isOpen = ref(false)
 const showDisplaySettings = ref(false)
@@ -132,6 +140,17 @@ function handleParticlesToggle(val) {
 
 function handleCommentsToggle(val) {
    siteConfigStore.updateCommentsEnabled(val)
+}
+
+async function handleSyncDatabase() {
+  if(!confirm("确定要立即从OSS同步数据库吗？")) return;
+  try {
+    await syncDatabase();
+    eventBus.emit('show-toast', "数据库同步触发成功！");
+  } catch (error) {
+    console.error("Sync failed", error);
+    eventBus.emit('show-toast', "同步失败，请重试。");
+  }
 }
 
 // 路由跳转

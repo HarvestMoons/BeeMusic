@@ -1,6 +1,5 @@
 <template>
   <div class="vote-controls">
-    <Toast :visible="showToast" :message="toastMessage"/>
     <button :class="{ active: userVote === 1 }" @click="handleLike">
       <img :src="likeIcon" alt="点赞" class="vote-icon svg-icon"/>
       <span>{{ likes }}</span>
@@ -16,7 +15,7 @@
 import {onMounted, ref, watch} from 'vue'
 import {PUBLIC_API_BASE} from '@/constants';
 import {useAuthStore} from '@/store';
-import Toast from '@/components/common/Toast.vue';
+import {eventBus} from '@/utils/eventBus.js';
 // 引入图标
 import likeIcon from '@/assets/icons/like.svg'
 import dislikeIcon from '@/assets/icons/dislike.svg'
@@ -33,19 +32,11 @@ const props = defineProps({
 const likes = ref(0)
 const dislikes = ref(0)
 const userVote = ref(0) // 1=已点赞, -1=已点踩, 0=无
-const showToast = ref(false)
-const toastMessage = ref('')
-let toastTimer = null
 
 const authStore = useAuthStore()
 
 function showToastMessage(msg) {
-  toastMessage.value = msg
-  showToast.value = true
-  if (toastTimer) clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => {
-    showToast.value = false
-  }, 2000)
+  eventBus.emit('show-toast', msg)
 }
 
 // 刷新投票数

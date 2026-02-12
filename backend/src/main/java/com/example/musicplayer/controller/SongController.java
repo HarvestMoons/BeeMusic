@@ -138,4 +138,15 @@ public class SongController {
         }
         throw new IllegalStateException("未登录");
     }
+
+    // 手动触发 OSS 同步 (站长专用)
+    @PostMapping("/admin/songs/sync")
+    public ResponseEntity<?> syncSongs(HttpServletRequest request) {
+        Object userObj = request.getSession().getAttribute("user");
+        if (userObj instanceof User u && u.getRoleEnum() == UserRole.STATION_MASTER) {
+            songService.syncAllSongs();
+            return ResponseEntity.ok(Map.of("status", "ok", "message", "数据库同步已触发"));
+        }
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only Station Master can sync database");
+    }
 }

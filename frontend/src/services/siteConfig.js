@@ -13,3 +13,7 @@ export const getCommentsEnabled = async () => {
 export const setCommentsEnabled = async (enabled) => {
     return (await api.post('/admin/config/comments-enabled', { enabled })).data;
 };
+
+export const syncDatabase = async () => {
+    return (await api.post('/admin/songs/sync')).data;
+};

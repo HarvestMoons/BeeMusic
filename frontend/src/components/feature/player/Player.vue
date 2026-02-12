@@ -1,7 +1,6 @@
 <template>
   <div class="player-wrapper">
     <div class="player-container">
-      <Toast :visible="showToast" :message="toastMessage"/>
       <ConfirmModal
           v-model:visible="showConfirmModal"
           :title="confirmModalTitle"
@@ -106,13 +105,13 @@ import ConfirmModal from '@/components/common/ConfirmModal.vue'
 import {useAuthStore} from '@/store'
 import PlaybackRateControl from "@/components/feature/player/PlaybackRateControl.vue";
 import FolderSelector from "@/components/feature/player/FolderSelector.vue";
-import Toast from "@/components/common/Toast.vue";
 import PlayerSidebar from "@/components/feature/player/PlayerSidebar.vue";
 import {PUBLIC_API_BASE} from '@/constants';
 import {useKeyboardShortcuts} from "@/composables/useKeyboardShortcuts.js";
 import OnlineStatus from "@/components/common/OnlineStatus.vue";
 import {useStationMaster} from '@/composables/player/useStationMaster.js'
 import {usePlayerStorage} from '@/composables/player/usePlayerStorage.js'
+import {eventBus} from '@/utils/eventBus.js'
 
 const DEFAULT_FOLDER = 'ha_ji_mi';
 const PLAY_COUNT_THRESHOLD_SECONDS = 10;
@@ -166,13 +165,10 @@ function handleToggleSpectrum() {
 
 const selectedFolder = ref(DEFAULT_FOLDER)
 const currentSongInfo = ref({title: '', bv: null})
-const toastMessage = ref('')
-const showToast = ref(false)
 const playCountState = ref({songId: null, reported: false})
 
 function showToastMessage(msg) {
-  toastMessage.value = msg
-  showToast.value = true
+  eventBus.emit('show-toast', msg)
 }
 
 // 站长管理功能
