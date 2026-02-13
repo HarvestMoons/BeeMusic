@@ -188,6 +188,14 @@ onMounted(() => {
 
   function draw() {
     rafId = requestAnimationFrame(draw);
+
+    if (canvas.clientWidth && canvas.clientHeight) {
+      if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+      }
+    }
+
     if (!props.visible) {
       clearCanvas();
       return;
