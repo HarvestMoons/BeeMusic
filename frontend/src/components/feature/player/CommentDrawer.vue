@@ -125,6 +125,7 @@ import {useAuthStore} from '@/store'
 import api from '@/services/auth'
 import unfoldIcon from '@/assets/icons/unfold.svg'
 import foldIcon from '@/assets/icons/fold.svg'
+import { eventBus } from '@/utils/eventBus'
 
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 const MAX_CACHE_ENTRIES = 50;
@@ -282,6 +283,13 @@ function cancelReply() {
 
 async function submitComment() {
   if (!inputContent.value.trim()) return
+
+  // TODO:校验权限：仅管理员或站长可以评论
+  // 1=USER, 2=ADMIN, 3=STATION_MASTER
+  if (authStore.role !== 2 && authStore.role !== 3) {
+    eventBus.emit('show-toast', '根据相关法规，暂时仅支持管理员发布评论')
+    return
+  }
 
   const payload = {
     songId: props.songId,
