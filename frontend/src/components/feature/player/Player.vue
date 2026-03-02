@@ -505,10 +505,13 @@ onMounted(async () => {
       playRandomSong,
       handlePlayClick
   )
+
+  eventBus.on('song-vote-updated', handleSongVoteUpdate)
 });
 
 onUnmounted(() => {
   window.removeEventListener('storage', handleStorageEvent)
+  eventBus.off('song-vote-updated', handleSongVoteUpdate)
 })
 
 defineExpose({
@@ -517,6 +520,14 @@ defineExpose({
   playSongAtIndex,
   handleSelectSong
 })
+
+function handleSongVoteUpdate({ songId, likes, dislikes }) {
+  const song = playlist.value.find(s => s.id === songId)
+  if (song) {
+    if (likes !== undefined) song.likeCount = likes
+    if (dislikes !== undefined) song.dislikeCount = dislikes
+  }
+}
 </script>
 
 <style scoped>

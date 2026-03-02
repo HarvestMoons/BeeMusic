@@ -6,6 +6,7 @@ import com.example.musicplayer.dto.FolderSongCount;
 import com.example.musicplayer.model.Song;
 import com.example.musicplayer.repository.SongRepository;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +21,7 @@ public class SongService {
     private final OssUtil ossUtil;
     private final SongRepository songRepository;
     private final RedisTemplate<String, Object> redisTemplate;
+    private final StringRedisTemplate stringRedisTemplate;
 
     private final Map<String, String> AVAILABLE_FOLDERS = Map.of(
             "ha_ji_mi", "哈基米",
@@ -33,11 +35,14 @@ public class SongService {
 
     private String currentFolderKey = "ha_ji_mi";
 
-    public SongService(OSS ossClient, OssUtil ossUtil, SongRepository songRepository, RedisTemplate<String, Object> jsonRedisTemplate) {
+    public SongService(OSS ossClient, OssUtil ossUtil, SongRepository songRepository,
+                       RedisTemplate<String, Object> jsonRedisTemplate,
+                       org.springframework.data.redis.core.StringRedisTemplate stringRedisTemplate) {
         this.ossClient = ossClient;
         this.ossUtil = ossUtil;
         this.songRepository = songRepository;
         this.redisTemplate = jsonRedisTemplate;
+        this.stringRedisTemplate = stringRedisTemplate;
     }
 
     public Map<String, String> setFolder(String folder) {
@@ -71,7 +76,17 @@ public class SongService {
         // 1. 查缓存
         List<Song> cachedSongs = (List<Song>) redisTemplate.opsForValue().get(cacheKey);
         if (cachedSongs != null) {
-            // 缓存命中，直接返回 (缓存中已经包含了有效的 Signed URL)
+            // 缓存命中，虽然缓存里有 Song 数据，但缓存里的点赞数可能是旧的(即使缓存只存6小时)
+            // 所以我们需要遍历缓存里的 Song，用 Redis 里的最新票数覆盖一下
+            for (Song song : cachedSongs) {
+                Long songId = song.getId();
+                if (songId != null) {
+                    Long redisLikes = stringRedisTemplate.opsForSet().size("likes:" + songId);
+                    Long redisDislikes = stringRedisTemplate.opsForSet().size("dislikes:" + songId);
+                    song.setLikeCount(redisLikes != null ? redisLikes.intValue() : 0);
+                    song.setDislikeCount(redisDislikes != null ? redisDislikes.intValue() : 0);
+                }
+            }
             return cachedSongs;
         }
 
@@ -96,7 +111,24 @@ public class SongService {
             song.setUrl(signedUrl);
         }
 
-        // 4. 写入缓存 (设置过期时间为 6 小时，远小于 OSS 签名的 24 小时，确保取出的 URL 总是有效的)
+        // 4. 实时修正票数：用 Redis 里的最新票数覆盖 DB/缓存里的旧数据
+        for (Song song : dbSongs) {
+            Long songId = song.getId();
+            if (songId != null) {
+                // 读取 redis 集合大小
+                Long redisLikes = stringRedisTemplate.opsForSet().size("likes:" + songId);
+                Long redisDislikes = stringRedisTemplate.opsForSet().size("dislikes:" + songId);
+                
+                // 只有当 redis 有数据时才覆盖 (避免 redis 挂了导致显示为 0)
+                // VoteService 里如果 redis 没数据会返回 0，这里也遵循一样的逻辑，
+                // 但要考虑一种情况：新歌没点赞 redis 是空的吗？是的。
+                // 只要 redis 不崩，redis 里的数据就是权威的实时的。
+                song.setLikeCount(redisLikes != null ? redisLikes.intValue() : 0);
+                song.setDislikeCount(redisDislikes != null ? redisDislikes.intValue() : 0);
+            }
+        }
+
+        // 5. 写入缓存 (设置过期时间为 6 小时，远小于 OSS 签名的 24 小时，确保取出的 URL 总是有效的)
         if (!dbSongs.isEmpty()) {
             redisTemplate.opsForValue().set(cacheKey, dbSongs, 6, TimeUnit.HOURS);
         }

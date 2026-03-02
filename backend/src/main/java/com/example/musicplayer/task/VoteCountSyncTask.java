@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import com.example.musicplayer.repository.SongVoteRepository;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -19,6 +20,7 @@ public class VoteCountSyncTask {
 
     private final SongRepository songRepository;
     private final StringRedisTemplate redisTemplate;
+    private final SongVoteRepository songVoteRepository;
 
     /**
      * 每5分钟把 Redis 实时票数回写到数据库 songs.like_count / dislike_count

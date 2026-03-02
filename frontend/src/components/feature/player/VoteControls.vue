@@ -42,8 +42,8 @@ function showToastMessage(msg) {
 // 刷新投票数
 async function refreshVotes() {
   try {
-    const res = await fetch(`${PUBLIC_API_BASE}/songs/votes/${props.songId}`)
-    const data = await res.json()
+    const res = await api.get(`/public/songs/votes/${props.songId}`)
+    const data = res.data
     likes.value = data.likes
     dislikes.value = data.dislikes
     if (typeof data.userVote === 'number') {
@@ -68,14 +68,24 @@ async function handleLike() {
       likes.value = res.data.likes
       dislikes.value = res.data.dislikes
       userVote.value = 0
+      eventBus.emit('song-vote-updated', { 
+        songId: props.songId, 
+        likes: likes.value, 
+        dislikes: dislikes.value 
+      })
       return
     }
     const res = await api.post(`/songs/like/${props.songId}`)
     likes.value = res.data.likes
     dislikes.value = res.data.dislikes
     userVote.value = 1
+    eventBus.emit('song-vote-updated', { 
+      songId: props.songId, 
+      likes: likes.value, 
+      dislikes: dislikes.value 
+    })
   } catch (err) {
-    console.error('点赞失败', err.response?.data || err.message)
+    console.error('点赞失败', err)
   }
 }
 
@@ -91,14 +101,24 @@ async function handleDislike() {
       likes.value = res.data.likes
       dislikes.value = res.data.dislikes
       userVote.value = 0
+      eventBus.emit('song-vote-updated', { 
+        songId: props.songId, 
+        likes: likes.value, 
+        dislikes: dislikes.value 
+      })
       return
     }
     const res = await api.post(`/songs/dislike/${props.songId}`)
     likes.value = res.data.likes
     dislikes.value = res.data.dislikes
     userVote.value = -1
+    eventBus.emit('song-vote-updated', { 
+      songId: props.songId, 
+      likes: likes.value, 
+      dislikes: dislikes.value 
+    })
   } catch (err) {
-    console.error('点踩失败', err.response?.data || err.message)
+    console.error('点踩失败', err)
   }
 }
 
