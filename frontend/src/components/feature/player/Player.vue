@@ -411,6 +411,64 @@ function handleSelectSong(songId) {
   }
 }
 
+function handleShare() {
+  if (!playlist.value[currentIndex.value]) {
+    showToastMessage('当前没有播放歌曲');
+    return;
+  }
+  const data = {
+    f: selectedFolder.value,
+    id: playlist.value[currentIndex.value].id
+  };
+  try {
+    const jsonStr = JSON.stringify(data);
+    const encoded = btoa(jsonStr);
+    const url = `${window.location.origin}${window.location.pathname}?share=${encoded}`;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(() => {
+        showToastMessage('分享链接已复制！');
+      }).catch((err) => {
+        console.error('Clipboard API failed:', err);
+        fallbackCopyText(url);
+      });
+    } else {
+      fallbackCopyText(url);
+    }
+  } catch (e) {
+    console.error('生成分享链接失败', e);
+    showToastMessage('生成链接失败');
+  }
+}
+
+function fallbackCopyText(text) {
+  try {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    
+    // 避免页面滚动
+    textArea.style.position = "fixed";
+    textArea.style.left = "-9999px";
+    textArea.style.top = "0";
+    
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    const successful = document.execCommand('copy');
+    document.body.removeChild(textArea);
+    
+    if (successful) {
+      showToastMessage('分享链接已复制！');
+    } else {
+      showToastMessage('复制失败，请手动复制');
+    }
+  } catch (err) {
+    console.error('Fallback copy failed', err);
+    showToastMessage('复制失败，请手动复制');
+  }
+}
+
 // Keyboard shortcuts helpers
 function playNextInOrder() {
   if (playlist.value.length === 0) return

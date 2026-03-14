@@ -207,13 +207,9 @@ public class SongService {
         }
     }
 
-    /**
-     * 同步所有文件夹 (定时任务：每10分钟一次)
-     */
-    @Scheduled(fixedRate = 600000)
     public void syncAllSongs() {
-        for (String key : AVAILABLE_FOLDERS.keySet()) {
-            syncSongsFromOss(key);
+        for (String folderKey : AVAILABLE_FOLDERS.keySet()) {
+            syncSongsFromOss(folderKey);
         }
     }
 }
