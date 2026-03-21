@@ -296,6 +296,55 @@ function shuffleArray(array) {
   return newArr;
 }
 
+function parseSongNameWithBv(name) {
+  const clean = name.replace(/\.mp3$/, '');
+  const match = clean.match(/^(.*?)_?(BV[0-9A-Za-z]+)/);
+  return match ? {title: match[1], bv: match[2]} : {title: clean, bv: null};
+}
+
+function playPreviousSong() {
+  if (historyStack.value.length === 0) {
+    showToastMessage("没有上一首了");
+    return;
+  }
+  const prev = historyStack.value.pop();
+  playSongAtIndex(prev, true);
+}
+
+function handlePlaybackEnd() {
+  if (playMode.value === 'single-loop') {
+    playSongAtIndex(currentIndex.value, false);
+  } else if (playMode.value === 'loop-list') {
+    playNextInOrder();
+  } else if(playMode.value === 'random') {
+    playRandomSong();
+  }
+}
+
+function playRandomSong() {
+  const rand = Math.floor(Math.random() * playlist.value.length);
+  playSongAtIndex(rand);
+}
+
+function handleSelectSong(songId) {
+  const idx = playlist.value.findIndex(s => s.id === songId)
+  playSongAtIndex(idx)
+}
+
+function playNextInOrder() {
+  if (playlist.value.length === 0) return
+  const next = (currentIndex.value + 1) % playlist.value.length
+  playSongAtIndex(next)
+}
+
+function playPrevInOrder() {
+  if (playlist.value.length === 0 || currentIndex.value === -1) return
+  const prev = currentIndex.value === 0
+      ? playlist.value.length - 1
+      : currentIndex.value - 1
+  playSongAtIndex(prev)
+}
+
 function playSongAtIndex(index, fromHistory = false) {
   if (!playlist.value || playlist.value.length === 0) {
     currentSongInfo.value = {title: '播放失败：歌曲列表为空', bv: null}
@@ -335,31 +384,6 @@ function playSongAtIndex(index, fromHistory = false) {
   }
 }
 
-function parseSongNameWithBv(name) {
-  const clean = name.replace(/\.mp3$/, '');
-  const match = clean.match(/^(.*?)_?(BV[0-9A-Za-z]+)/);
-  return match ? {title: match[1], bv: match[2]} : {title: clean, bv: null};
-}
-
-function playPreviousSong() {
-  if (historyStack.value.length === 0) {
-    showToastMessage("没有上一首了");
-    return;
-  }
-  const prev = historyStack.value.pop();
-  playSongAtIndex(prev, true);
-}
-
-function handlePlaybackEnd() {
-  if (playMode.value === 'single-loop') {
-    playSongAtIndex(currentIndex.value, false);
-  } else if (playMode.value === 'loop-list') {
-    playNextInOrder();
-  } else if(playMode.value === 'random') {
-    playRandomSong();
-  }
-}
-
 function handleAudioError() {
   console.warn(`❌ 无法播放：${playlist.value[currentIndex.value]?.name}，尝试下一首`);
   setTimeout(() => {
@@ -369,16 +393,6 @@ function handleAudioError() {
       playRandomSong();
     }
   }, 1000);
-}
-
-function playRandomSong() {
-  const rand = Math.floor(Math.random() * playlist.value.length);
-  playSongAtIndex(rand);
-}
-
-function handleSelectSong(songId) {
-  const idx = playlist.value.findIndex(s => s.id === songId)
-  playSongAtIndex(idx)
 }
 
 function handleShare() {
@@ -439,41 +453,6 @@ function fallbackCopyText(text) {
   }
 }
 
-function playNextInOrder() {
-  if (playlist.value.length === 0) return
-  const next = (currentIndex.value + 1) % playlist.value.length
-  playSongAtIndex(next)
-}
-
-function playPrevInOrder() {
-  if (playlist.value.length === 0 || currentIndex.value === -1) return
-  const prev = currentIndex.value === 0
-      ? playlist.value.length - 1
-      : currentIndex.value - 1
-  playSongAtIndex(prev)
-}
-
-// 存储同步
-function handleStorageEvent(e) {
-  if (!e.key) return;
-
-  if (e.key === STORAGE_KEYS.VOLUME) {
-    const v = parseFloat(e.newValue);
-    if (!Number.isNaN(v) && audioRef.value) audioRef.value.volume = v;
-  }
-
-  const curFolder = selectedFolder.value;
-  // 注意：这里需要手动构建 key，或者从 composable 导出 helper
-  // 简单起见，我们假设 key 格式一致
-  if (e.key === STORAGE_KEYS.PLAYBACK_RATE_PREFIX + curFolder) {
-    const v = parseFloat(e.newValue);
-    if (!Number.isNaN(v)) {
-      playbackRate.value = v;
-      if (audioRef.value) audioRef.value.playbackRate = v;
-    }
-  }
-}
-
 onMounted(async () => {
   // 初始化音量
   const savedVol = loadVolumeFromStorage();
@@ -512,8 +491,6 @@ onMounted(async () => {
   if (savedRate != null) playbackRate.value = savedRate;
   if (audioRef.value) audioRef.value.playbackRate = playbackRate.value;
 
-  window.addEventListener('storage', handleStorageEvent);
-
   // 验证隐藏歌单权限
   await authStore.fetchUserStatus();
   if (selectedFolder.value === 'true_music' && !authStore.isHiddenPlaylistUnlocked) {
@@ -536,7 +513,6 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  window.removeEventListener('storage', handleStorageEvent)
   eventBus.off('song-vote-updated', handleSongVoteUpdate)
 })
 
