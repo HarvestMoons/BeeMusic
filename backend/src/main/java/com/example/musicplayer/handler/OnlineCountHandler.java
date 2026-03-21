@@ -1,6 +1,7 @@
 package com.example.musicplayer.handler;
 
 import com.example.musicplayer.listener.OnlineCountListener;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -69,7 +70,9 @@ public class OnlineCountHandler extends TextWebSocketHandler {
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-        Map<String, Object> jsonMap = objectMapper.readValue(message.getPayload(), Map.class);
+        Map<String, Object> jsonMap = objectMapper.readValue(message.getPayload(),
+                new TypeReference<Map<String, Object>>() {
+                });
         System.out.println("Received WebSocket message: " + jsonMap);
 
         // 兼容前端可能传数字的情况
@@ -107,8 +110,7 @@ public class OnlineCountHandler extends TextWebSocketHandler {
 
         Map<String, Object> data = Map.of(
                 "onlineCount", total,
-                "songListeners", songMap
-        );
+                "songListeners", songMap);
 
         try {
             String json = objectMapper.writeValueAsString(data);

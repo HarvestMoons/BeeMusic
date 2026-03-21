@@ -23,13 +23,12 @@ public class VoteCountSyncTask {
 
     private final SongRepository songRepository;
     private final StringRedisTemplate redisTemplate;
-    private final SongVoteRepository songVoteRepository;
 
     /**
      * 定时把 Redis 实时票数回写到数据库 songs.like_count / dislike_count
      * 加上这个任务后：就算 Redis 整个挂掉/重启/清空，票数也永远不会丢
      */
-    @Scheduled(fixedDelay = 60, timeUnit = TimeUnit.MINUTES)  // 每60分钟执行一次
+    @Scheduled(fixedDelay = 60, timeUnit = TimeUnit.MINUTES) // 每60分钟执行一次
     // 也可以用 cron： @Scheduled(cron = "0 */5 * * * ?")
     public void syncVoteCountsFromRedisToDatabase() {
         log.info("【投票同步任务】开始执行 Redis → MySQL 票数回写");
@@ -76,7 +75,7 @@ public class VoteCountSyncTask {
     /**
      * 项目启动时强制同步一次（防止 Redis 冷启动后票数为0）
      */
-    @PostConstruct   // 启动时也同步一次
+    @PostConstruct // 启动时也同步一次
     public void syncOnStartup() {
         log.warn("【投票同步任务】项目启动，执行一次强制同步");
         syncVoteCountsFromRedisToDatabase();
@@ -90,8 +89,8 @@ public class VoteCountSyncTask {
                 if (songId == null) {
                     continue;
                 }
-                connection.sCard(serializer.serialize("likes:" + songId));
-                connection.sCard(serializer.serialize("dislikes:" + songId));
+                connection.setCommands().sCard(serializer.serialize("likes:" + songId));
+                connection.setCommands().sCard(serializer.serialize("dislikes:" + songId));
             }
             return null;
         });
