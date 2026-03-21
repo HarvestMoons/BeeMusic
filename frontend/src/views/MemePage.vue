@@ -63,12 +63,17 @@
 import {onMounted, onUnmounted, ref, watch} from 'vue';
 import {deleteMeme, getRandomMeme, syncMemes} from '@/services/meme';
 import {useAuthStore} from '@/store';
+import {eventBus} from '@/utils/eventBus.js'
 
 const authStore = useAuthStore();
 const currentMeme = ref(null);
 const loading = ref(true);
 const syncing = ref(false);
 const showPreview = ref(false);
+
+const showToastMessage = (msg) => {
+  eventBus.emit('show-toast', msg)
+}
 
 watch(showPreview, (val) => {
   if (val) {
@@ -176,10 +181,10 @@ const handleDelete = async () => {
 
   try {
     await deleteMeme(currentMeme.value.id);
-    alert('已删除');
+    showToastMessage('已删除');
     fetchRandomMeme();
   } catch (error) {
-    alert('删除失败');
+    showToastMessage('删除失败');
   }
 };
 
@@ -187,10 +192,10 @@ const handleSync = async () => {
   syncing.value = true;
   try {
     const res = await syncMemes();
-    alert(`同步完成! 新增了 ${res.added} 张图片。`);
+    showToastMessage(`同步完成! 新增了 ${res.added} 张图片。`);
     if (!currentMeme.value) fetchRandomMeme();
   } catch (error) {
-    alert('同步失败: ' + error.message);
+    showToastMessage('同步失败: ' + error.message);
   } finally {
     syncing.value = false;
   }
