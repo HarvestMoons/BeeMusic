@@ -395,7 +395,7 @@ function handleAudioError() {
   }, 1000);
 }
 
-function handleShare() {
+async function handleShare() {
   if (!playlist.value[currentIndex.value]) {
     showToastMessage('当前没有播放歌曲');
     return;
@@ -409,15 +409,11 @@ function handleShare() {
     const encoded = btoa(jsonStr);
     const url = `${window.location.origin}${window.location.pathname}?share=${encoded}`;
 
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(url).then(() => {
-        showToastMessage('分享链接已复制！');
-      }).catch((err) => {
-        console.error('Clipboard API failed:', err);
-        fallbackCopyText(url);
-      });
+    const successful = await copyTextToClipboard(url);
+    if (successful) {
+      showToastMessage('分享链接已复制！');
     } else {
-      fallbackCopyText(url);
+      showToastMessage('复制失败，请手动复制');
     }
   } catch (e) {
     console.error('生成分享链接失败', e);
@@ -425,31 +421,17 @@ function handleShare() {
   }
 }
 
-function fallbackCopyText(text) {
+async function copyTextToClipboard(text) {
+  if (!navigator.clipboard || !navigator.clipboard.writeText) {
+    return false;
+  }
+
   try {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-
-    // 避免页面滚动
-    textArea.style.position = "fixed";
-    textArea.style.left = "-9999px";
-    textArea.style.top = "0";
-
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-
-    const successful = document.execCommand('copy');
-    document.body.removeChild(textArea);
-
-    if (successful) {
-      showToastMessage('分享链接已复制！');
-    } else {
-      showToastMessage('复制失败，请手动复制');
-    }
+    await navigator.clipboard.writeText(text);
+    return true;
   } catch (err) {
-    console.error('Fallback copy failed', err);
-    showToastMessage('复制失败，请手动复制');
+    console.error('Clipboard API failed:', err);
+    return false;
   }
 }
 
