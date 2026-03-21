@@ -364,18 +364,14 @@ function playSongAtIndex(index, fromHistory = false) {
   const song = playlist.value[index];
   playCountState.value = {songId: song.id, reported: false};
 
-  // Global state for OnlineStatus
-  window.currentSongId = String(song.id)
   const parsed = parseSongNameWithBv(song.name);
-  window.currentSongName = parsed.title || song.name.replace(/\.mp3$/, '')
+  const songName = parsed.title || song.name.replace(/\.mp3$/, '')
   currentSongInfo.value = parsed
 
-  if (window.ws && window.ws.readyState === WebSocket.OPEN) {
-    window.ws.send(JSON.stringify({
-      songId: String(song.id),
-      songName: window.currentSongName
-    }))
-  }
+  eventBus.emit('player-song-changed', {
+    songId: String(song.id),
+    songName
+  })
 
   if (audioRef.value) {
     audioRef.value.src = song.url;

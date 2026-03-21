@@ -11,21 +11,44 @@
 <!-- OnlineStatus.vue -->
 <script setup>
 import {onMounted, onUnmounted, ref} from 'vue'
+import {eventBus} from '@/utils/eventBus.js'
 
 const onlineCount = ref('-')
 const sameSongCount = ref('-')
 const currentSongName = ref('')
+const currentSongId = ref('')
 
 let ws = null
+let reconnectTimer = null
 
-onMounted(() => {
-  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  ws = new WebSocket(`${protocol}//${location.host}/ws/online`)
+function getOnlineWsUrl() {
+  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
+  return `${protocol}//${location.host}/ws/online`
+}
 
-  window.ws = ws;
+function sendCurrentSongToServer() {
+  if (!ws || ws.readyState !== WebSocket.OPEN || !currentSongId.value) {
+    return
+  }
+
+  ws.send(JSON.stringify({
+    songId: currentSongId.value,
+    songName: currentSongName.value
+  }))
+}
+
+function handleSongChanged({songId, songName} = {}) {
+  currentSongId.value = songId ? String(songId) : ''
+  currentSongName.value = songName || ''
+  sendCurrentSongToServer()
+}
+
+function connectWebSocket() {
+  ws = new WebSocket(getOnlineWsUrl())
 
   ws.onopen = () => {
     console.log('实时在线人数连接成功！')
+    sendCurrentSongToServer()
   }
 
   ws.onmessage = (e) => {
@@ -33,9 +56,8 @@ onMounted(() => {
       const data = JSON.parse(e.data)
       onlineCount.value = data.onlineCount || 0
 
-      if (window.currentSongId && data.songListeners?.[window.currentSongId]) {
-        sameSongCount.value = Number(data.songListeners[window.currentSongId])
-        currentSongName.value = window.currentSongName || '这首歌'
+      if (currentSongId.value && data.songListeners?.[currentSongId.value]) {
+        sameSongCount.value = Number(data.songListeners[currentSongId.value])
       } else {
         sameSongCount.value = 0
       }
@@ -50,17 +72,27 @@ onMounted(() => {
 
   ws.onclose = () => {
     console.log('WebSocket 断开，3秒后重连...')
-    setTimeout(() => {
-      const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-      ws = new WebSocket(`${protocol}//${location.host}/ws/online`)
+    reconnectTimer = setTimeout(() => {
+      connectWebSocket()
     }, 3000)
   }
+}
+
+onMounted(() => {
+  eventBus.on('player-song-changed', handleSongChanged)
+  connectWebSocket()
 })
 
 onUnmounted(() => {
-  if (ws && ws.readyState === WebSocket.OPEN) {
+  eventBus.off('player-song-changed', handleSongChanged)
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer)
+    reconnectTimer = null
+  }
+  if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
     ws.close()
   }
+  ws = null
 })
 </script>
 
