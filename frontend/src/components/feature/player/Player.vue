@@ -55,7 +55,7 @@
 
         <div class="controls-section">
           <div class="buttons-row">
-            <button id="play-btn" @click="handlePlayClick" title="随便听听 (R)">
+            <button id="play-btn" @click="playRandomSong" title="随便听听 (R)">
               <img :src="playRandomBtnIcon" alt="随便听听 (R)" class="svg-icon"/>
             </button>
             <button id="prev-btn" @click="playPreviousSong" title="上一首 (←/A)">
@@ -193,10 +193,7 @@ function handleRateChangeNative() {
 
 function handleLoadedMetadata() {
   if (audioRef.value) {
-    try {
-      audioRef.value.playbackRate = playbackRate.value
-    } catch (e) {
-    }
+    audioRef.value.playbackRate = playbackRate.value
   }
 }
 
@@ -300,6 +297,11 @@ function shuffleArray(array) {
 }
 
 function playSongAtIndex(index, fromHistory = false) {
+  if (!playlist.value || playlist.value.length === 0) {
+    currentSongInfo.value = {title: '播放失败：歌曲列表为空', bv: null}
+    return;
+  }
+
   if (index < 0 || index >= playlist.value.length) {
     currentSongInfo.value = {title: '播放失败：索引越界', bv: null}
     return;
@@ -328,15 +330,8 @@ function playSongAtIndex(index, fromHistory = false) {
 
   if (audioRef.value) {
     audioRef.value.src = song.url;
-    // Ensure rate is applied
-    try {
-      audioRef.value.playbackRate = playbackRate.value;
-    } catch (e) {
-    }
-
-    audioRef.value.play().catch(err => {
-      console.warn('播放未启动：', err);
-    });
+    audioRef.value.playbackRate = playbackRate.value;
+    audioRef.value.play();
   }
 }
 
@@ -366,8 +361,7 @@ function handlePlaybackEnd() {
       }
       audioRef.value.play();
     } else if (playMode.value === 'loop-list') {
-      const next = (currentIndex.value + 1) % playlist.value.length;
-      playSongAtIndex(next);
+      playNextInOrder();
     } else {
       playRandomSong();
     }
@@ -378,8 +372,7 @@ function handleAudioError() {
   console.warn(`❌ 无法播放：${playlist.value[currentIndex.value]?.name}，尝试下一首`);
   setTimeout(() => {
     if (playMode.value === 'loop-list') {
-      const next = (currentIndex.value + 1) % playlist.value.length;
-      playSongAtIndex(next);
+      playNextInOrder();
     } else {
       playRandomSong();
     }
@@ -387,28 +380,13 @@ function handleAudioError() {
 }
 
 function playRandomSong() {
-  if (!playlist.value || playlist.value.length === 0) {
-    currentSongInfo.value = {title: '播放失败：歌曲列表为空', bv: null}
-    return;
-  }
   const rand = Math.floor(Math.random() * playlist.value.length);
   playSongAtIndex(rand);
 }
 
-function handlePlayClick() {
-  if (playMode.value === 'loop-list' && playlist.value.length > 0) {
-    const next = (currentIndex.value + 1) % playlist.value.length;
-    playSongAtIndex(next);
-  } else {
-    playRandomSong();
-  }
-}
-
 function handleSelectSong(songId) {
   const idx = playlist.value.findIndex(s => s.id === songId)
-  if (idx !== -1) {
-    playSongAtIndex(idx)
-  }
+  playSongAtIndex(idx)
 }
 
 function handleShare() {
@@ -469,7 +447,6 @@ function fallbackCopyText(text) {
   }
 }
 
-// Keyboard shortcuts helpers
 function playNextInOrder() {
   if (playlist.value.length === 0) return
   const next = (currentIndex.value + 1) % playlist.value.length
@@ -560,8 +537,7 @@ onMounted(async () => {
       playNextInOrder,
       playPrevInOrder,
       () => audioRef.value && (audioRef.value.muted = !audioRef.value.muted),
-      playRandomSong,
-      handlePlayClick
+      playRandomSong
   )
 
   eventBus.on('song-vote-updated', handleSongVoteUpdate)

@@ -7,7 +7,7 @@ export function useKeyboardShortcuts(
     prev,
     toggleMute,
     random = null
-    , handlePlayClick) {
+    ) {
     // 清理旧的监听器（防止重复绑定）
     if (handler) {
         window.removeEventListener('keydown', handler)
