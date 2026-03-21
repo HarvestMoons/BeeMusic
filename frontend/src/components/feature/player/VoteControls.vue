@@ -13,7 +13,6 @@
 
 <script setup>
 import {onMounted, ref, watch} from 'vue'
-import {PUBLIC_API_BASE} from '@/constants';
 import {useAuthStore} from '@/store';
 import {eventBus} from '@/utils/eventBus.js';
 // 引入图标
@@ -68,10 +67,10 @@ async function handleLike() {
       likes.value = res.data.likes
       dislikes.value = res.data.dislikes
       userVote.value = 0
-      eventBus.emit('song-vote-updated', { 
-        songId: props.songId, 
-        likes: likes.value, 
-        dislikes: dislikes.value 
+      eventBus.emit('song-vote-updated', {
+        songId: props.songId,
+        likes: likes.value,
+        dislikes: dislikes.value
       })
       return
     }
@@ -79,10 +78,10 @@ async function handleLike() {
     likes.value = res.data.likes
     dislikes.value = res.data.dislikes
     userVote.value = 1
-    eventBus.emit('song-vote-updated', { 
-      songId: props.songId, 
-      likes: likes.value, 
-      dislikes: dislikes.value 
+    eventBus.emit('song-vote-updated', {
+      songId: props.songId,
+      likes: likes.value,
+      dislikes: dislikes.value
     })
   } catch (err) {
     console.error('点赞失败', err)
@@ -101,10 +100,10 @@ async function handleDislike() {
       likes.value = res.data.likes
       dislikes.value = res.data.dislikes
       userVote.value = 0
-      eventBus.emit('song-vote-updated', { 
-        songId: props.songId, 
-        likes: likes.value, 
-        dislikes: dislikes.value 
+      eventBus.emit('song-vote-updated', {
+        songId: props.songId,
+        likes: likes.value,
+        dislikes: dislikes.value
       })
       return
     }
@@ -112,10 +111,10 @@ async function handleDislike() {
     likes.value = res.data.likes
     dislikes.value = res.data.dislikes
     userVote.value = -1
-    eventBus.emit('song-vote-updated', { 
-      songId: props.songId, 
-      likes: likes.value, 
-      dislikes: dislikes.value 
+    eventBus.emit('song-vote-updated', {
+      songId: props.songId,
+      likes: likes.value,
+      dislikes: dislikes.value
     })
   } catch (err) {
     console.error('点踩失败', err)

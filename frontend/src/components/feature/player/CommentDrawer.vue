@@ -125,7 +125,7 @@ import {useAuthStore} from '@/store'
 import api from '@/services/auth'
 import unfoldIcon from '@/assets/icons/unfold.svg'
 import foldIcon from '@/assets/icons/fold.svg'
-import { eventBus } from '@/utils/eventBus'
+import {eventBus} from '@/utils/eventBus'
 
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 const MAX_CACHE_ENTRIES = 50;

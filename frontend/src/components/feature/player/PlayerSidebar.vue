@@ -28,7 +28,7 @@ const wrapperClasses = computed(() => {
   if (!canShowComments.value) {
     return 'hidden'
   }
-  return { collapsed: !showComments.value }
+  return {collapsed: !showComments.value}
 })
 
 const props = defineProps({

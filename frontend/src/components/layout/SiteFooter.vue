@@ -1,7 +1,8 @@
 <template>
   <footer class="site-footer">
     <div class="copyright">© 2026 小蜜蜂. All rights reserved.</div>
-    <a href="https://beian.mps.gov.cn/#/query/webSearch?code=35012202350348" rel="noreferrer" target="_blank" class="icp-link">
+    <a href="https://beian.mps.gov.cn/#/query/webSearch?code=35012202350348" rel="noreferrer" target="_blank"
+       class="icp-link">
       <img :src="icpIcon" alt="" class="icp-icon"/>
       <span>闽公网安备35012202350348号</span>
     </a>

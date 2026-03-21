@@ -15,7 +15,7 @@
         <router-view v-if="route.path !== '/'"/>
       </div>
 
-      <SiteFooter />
+      <SiteFooter/>
     </div>
 
     <!-- 登录弹窗 -->

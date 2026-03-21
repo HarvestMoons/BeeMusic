@@ -445,19 +445,19 @@ function fallbackCopyText(text) {
   try {
     const textArea = document.createElement("textarea");
     textArea.value = text;
-    
+
     // 避免页面滚动
     textArea.style.position = "fixed";
     textArea.style.left = "-9999px";
     textArea.style.top = "0";
-    
+
     document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();
-    
+
     const successful = document.execCommand('copy');
     document.body.removeChild(textArea);
-    
+
     if (successful) {
       showToastMessage('分享链接已复制！');
     } else {
@@ -579,7 +579,7 @@ defineExpose({
   handleSelectSong
 })
 
-function handleSongVoteUpdate({ songId, likes, dislikes }) {
+function handleSongVoteUpdate({songId, likes, dislikes}) {
   const song = playlist.value.find(s => s.id === songId)
   if (song) {
     if (likes !== undefined) song.likeCount = likes

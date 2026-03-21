@@ -7,7 +7,6 @@ import com.example.musicplayer.model.Song;
 import com.example.musicplayer.repository.SongRepository;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -92,7 +91,7 @@ public class SongService {
 
         // 2. 缓存未命中，查数据库
         List<Song> dbSongs = songRepository.findByKeyStartingWith(prefix);
-        
+
         if (!includeDeleted) {
             dbSongs = dbSongs.stream()
                     .filter(s -> s.getIsDeleted() == 0)
@@ -118,7 +117,7 @@ public class SongService {
                 // 读取 redis 集合大小
                 Long redisLikes = stringRedisTemplate.opsForSet().size("likes:" + songId);
                 Long redisDislikes = stringRedisTemplate.opsForSet().size("dislikes:" + songId);
-                
+
                 // 只有当 redis 有数据时才覆盖 (避免 redis 挂了导致显示为 0)
                 // VoteService 里如果 redis 没数据会返回 0，这里也遵循一样的逻辑，
                 // 但要考虑一种情况：新歌没点赞 redis 是空的吗？是的。

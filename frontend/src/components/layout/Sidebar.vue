@@ -81,9 +81,9 @@
 </template>
 
 <script setup>
-import {ref, watch, onMounted} from 'vue'
+import {onMounted, ref, watch} from 'vue'
 import {useRouter} from 'vue-router'
-import {useAuthStore, useThemeStore, useSiteConfigStore} from '@/store/index.js'
+import {useAuthStore, useSiteConfigStore, useThemeStore} from '@/store/index.js'
 import {eventBus} from "@/utils/eventBus.js";
 import settingsIcon from '@/assets/icons/settings.svg'
 import linkIcon from '@/assets/icons/link.svg'
@@ -139,11 +139,11 @@ function handleParticlesToggle(val) {
 }
 
 function handleCommentsToggle(val) {
-   siteConfigStore.updateCommentsEnabled(val)
+  siteConfigStore.updateCommentsEnabled(val)
 }
 
 async function handleSyncDatabase() {
-  if(!confirm("确定要立即从OSS同步数据库吗？")) return;
+  if (!confirm("确定要立即从OSS同步数据库吗？")) return;
   try {
     await syncDatabase();
     eventBus.emit('show-toast', "数据库同步触发成功！");

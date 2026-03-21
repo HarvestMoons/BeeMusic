@@ -1,6 +1,6 @@
-import { defineStore } from 'pinia';
-import { getUserStatus } from '@/services/auth';
-import { getCommentsEnabled, setCommentsEnabled } from '@/services/siteConfig';
+import {defineStore} from 'pinia';
+import {getUserStatus} from '@/services/auth';
+import {getCommentsEnabled, setCommentsEnabled} from '@/services/siteConfig';
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({
