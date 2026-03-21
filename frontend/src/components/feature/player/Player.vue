@@ -351,20 +351,12 @@ function playPreviousSong() {
 }
 
 function handlePlaybackEnd() {
-  if (!audioRef.value) return
-  const diff = Math.abs(audioRef.value.currentTime - audioRef.value.duration);
-  if (audioRef.value.duration > 0 && diff < 0.5) {
-    if (playMode.value === 'single-loop') {
-      audioRef.value.currentTime = 0;
-      if (playCountState.value.songId) {
-        playCountState.value.reported = false;
-      }
-      audioRef.value.play();
-    } else if (playMode.value === 'loop-list') {
-      playNextInOrder();
-    } else {
-      playRandomSong();
-    }
+  if (playMode.value === 'single-loop') {
+    playSongAtIndex(currentIndex.value, false);
+  } else if (playMode.value === 'loop-list') {
+    playNextInOrder();
+  } else if(playMode.value === 'random') {
+    playRandomSong();
   }
 }
 
