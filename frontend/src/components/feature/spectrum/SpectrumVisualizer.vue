@@ -101,7 +101,7 @@ onMounted(() => {
   ];
 
   const darkGradient = [
-    {stop: 0, color: "rgba(176, 190, 197, 0.8)"},   // 低饱和度蓝灰
+    {stop: 0, color: "rgba(176, 190, 197, 0.8)"},
     {stop: 0.5, color: "rgba(144, 164, 174, 0.7)"},
     {stop: 1, color: "rgba(120, 144, 156, 0.6)"},
   ];
@@ -232,7 +232,7 @@ onMounted(() => {
     removeAudioResumeListeners = null;
   };
 
-  // 按 Z 切换模式（保留原逻辑）
+  // 按 Z 切换模式
   const modeKeyHandler = (e) => {
     if (!e.key || e.key.toLowerCase() !== "z") return;
     mode = mode === "spectrum" ? "waveform" : mode === "waveform" ? "circle" : "spectrum";
@@ -242,7 +242,7 @@ onMounted(() => {
   // 启动绘制循环
   draw();
 
-  // 存放清理函数到 element 上，便于卸载时找到（可选）
+  // 存放清理函数到 element 上，便于卸载时找到
   canvas.__spectrumCleanup = () => {
     document.removeEventListener("click", clickResumeHandler);
     document.removeEventListener("keydown", keydownResumeHandler);
@@ -292,12 +292,12 @@ onBeforeUnmount(() => {
 
 <style>
 .spectrum-container {
-  position: relative; /* 确保内部绝对定位元素生效 */
-  margin: 0; /* 去掉居中 */
-  width: 100%; /* 占满父容器 */
-  max-width: none; /* 取消 max-width */
+  position: relative;
+  margin: 0;
+  width: 100%;
+  max-width: none;
   padding: 15px 20px;
-  box-sizing: border-box; /* 让 padding 不增加总宽度 */
+  box-sizing: border-box;
   background: var(--spectrum-bg);
   border-radius: 12px;
   overflow: hidden;
@@ -311,7 +311,6 @@ onBeforeUnmount(() => {
   height: 280px;
   border-radius: 8px;
   background-color: #fff8f0;
-  /* 添加过渡效果 */
   transition: opacity 0.3s ease;
 }
 </style>
