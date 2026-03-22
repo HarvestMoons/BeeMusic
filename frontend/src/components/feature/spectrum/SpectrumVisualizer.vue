@@ -20,6 +20,7 @@ let rafId = null;
 let audioCtx = null;
 let source = null;
 let analyser = null;
+let removeAudioResumeListeners = null;
 
 onMounted(() => {
   const audio = document.getElementById("audio-player");
@@ -206,7 +207,10 @@ onMounted(() => {
   }
 
   function resumeAudioContext() {
-    if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+    if (audioCtx && audioCtx.state === "suspended") {
+      audioCtx.resume().catch(() => {
+      })
+    }
   }
 
   const clickResumeHandler = () => resumeAudioContext();
@@ -214,6 +218,19 @@ onMounted(() => {
 
   document.addEventListener("click", clickResumeHandler);
   document.addEventListener("keydown", keydownResumeHandler);
+
+  // 重要：用户第一次点播放器控件时，也要同步唤醒频谱使用的 AudioContext，避免必须额外点页面其他位置。
+  const audioResumeEvents = ["play", "playing", "pointerdown", "mousedown", "touchstart"];
+  const audioResumeHandler = () => resumeAudioContext();
+  audioResumeEvents.forEach((eventName) => {
+    audio.addEventListener(eventName, audioResumeHandler);
+  });
+  removeAudioResumeListeners = () => {
+    audioResumeEvents.forEach((eventName) => {
+      audio.removeEventListener(eventName, audioResumeHandler);
+    });
+    removeAudioResumeListeners = null;
+  };
 
   // 按 Z 切换模式（保留原逻辑）
   const modeKeyHandler = (e) => {
@@ -230,6 +247,7 @@ onMounted(() => {
     document.removeEventListener("click", clickResumeHandler);
     document.removeEventListener("keydown", keydownResumeHandler);
     document.removeEventListener("keydown", modeKeyHandler);
+    removeAudioResumeListeners?.();
     if (rafId) cancelAnimationFrame(rafId);
 
     [source, analyser].forEach(node => {
@@ -261,6 +279,7 @@ onBeforeUnmount(() => {
   } else {
     // 兜底：取消 raf 与关闭 audioCtx
     if (rafId) cancelAnimationFrame(rafId);
+    removeAudioResumeListeners?.();
     try {
       if (analyser) analyser.disconnect();
       if (source) source.disconnect();
