@@ -345,6 +345,22 @@ function playPrevInOrder() {
   playSongAtIndex(prev)
 }
 
+async function safePlayAudio(audioElement) {
+  if (!audioElement) return false
+
+  try {
+    await audioElement.play()
+    return true
+  } catch (error) {
+    if (error?.name === 'NotAllowedError') {
+      return false
+    }
+
+    console.warn('音频播放失败', error)
+    return false
+  }
+}
+
 function playSongAtIndex(index, fromHistory = false) {
   if (!playlist.value || playlist.value.length === 0) {
     currentSongInfo.value = {title: '播放失败：歌曲列表为空', bv: null}
@@ -376,7 +392,7 @@ function playSongAtIndex(index, fromHistory = false) {
   if (audioRef.value) {
     audioRef.value.src = song.url;
     audioRef.value.playbackRate = playbackRate.value;
-    audioRef.value.play();
+    safePlayAudio(audioRef.value);
   }
 }
 
@@ -480,7 +496,7 @@ onMounted(async () => {
 
   useKeyboardShortcuts(
       () => audioRef.value,
-      () => audioRef.value && (audioRef.value.paused ? audioRef.value.play() : audioRef.value.pause()),
+      () => audioRef.value && (audioRef.value.paused ? safePlayAudio(audioRef.value) : audioRef.value.pause()),
       playNextInOrder,
       playPrevInOrder,
       () => audioRef.value && (audioRef.value.muted = !audioRef.value.muted),
@@ -610,7 +626,7 @@ button:hover {
 }
 
 .song-title {
-  font-family: var(--round-font);
+  font-family: var(--round-font),serif;
 }
 
 .meta-info {
