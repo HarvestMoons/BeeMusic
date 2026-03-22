@@ -547,8 +547,8 @@ function handleSongVoteUpdate({songId, likes, dislikes}) {
   transition: background-color 0.3s ease, border-color 0.3s ease;
   display: flex;
   flex-direction: column;
-  min-width: 0; /* 防止 flex 子项溢出 */
-  overflow-y: auto; /* 允许左侧滚动，如果内容超出 */
+  min-width: 0;
+  overflow-y: auto;
 }
 
 .controls-section {

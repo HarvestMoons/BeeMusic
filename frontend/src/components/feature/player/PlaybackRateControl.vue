@@ -102,15 +102,6 @@ onMounted(() => {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
-/* Firefox */
-.rate-slider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--rate-slider-thumb);
-  border: 1px solid var(--rate-slider-thumb-border);
-}
-
 .rate-display {
   background: var(--rate-display-bg);
   color: var(--rate-display-text);

@@ -64,18 +64,12 @@ onMounted(() => {
     source.connect(analyser);
     analyser.connect(audioCtx.destination);
   } else {
-    // 若 source 无法建立，仍把 analyser 连接到输出（尽力而为）
-    try {
-      analyser.connect(audioCtx.destination);
-    } catch (e) {
-      // ignore
-    }
+    analyser.connect(audioCtx.destination);
   }
 
   // 初始设置容器高度
   const container = canvas.parentElement;
   if (container) {
-    // Initialize based on prop
     const height = props.visible ? "310px" : "0";
     const opacity = props.visible ? "1" : "0";
     container.style.height = height;
@@ -271,21 +265,15 @@ onBeforeUnmount(() => {
   // 执行清理
   const canvas = document.getElementById("spectrumCanvas");
   if (canvas && typeof canvas.__spectrumCleanup === "function") {
-    try {
-      canvas.__spectrumCleanup();
-    } catch (e) { /* ignore */
-    }
+    canvas.__spectrumCleanup();
     delete canvas.__spectrumCleanup;
   } else {
     // 兜底：取消 raf 与关闭 audioCtx
     if (rafId) cancelAnimationFrame(rafId);
     removeAudioResumeListeners?.();
-    try {
-      if (analyser) analyser.disconnect();
-      if (source) source.disconnect();
-      if (audioCtx && typeof audioCtx.close === 'function') audioCtx.close();
-    } catch (e) {
-    }
+    if (analyser) analyser.disconnect();
+    if (source) source.disconnect();
+    if (audioCtx && typeof audioCtx.close === 'function') audioCtx.close();
   }
 });
 </script>
@@ -301,7 +289,9 @@ onBeforeUnmount(() => {
   background: var(--spectrum-bg);
   border-radius: 12px;
   overflow: hidden;
-  transition: height 0.3s ease, background 0.3s ease;
+  transition-property: height, background;
+  transition-duration: 0.3s;
+  transition-timing-function: ease;
   min-height: 15px;
 }
 
@@ -311,6 +301,8 @@ onBeforeUnmount(() => {
   height: 280px;
   border-radius: 8px;
   background-color: #fff8f0;
-  transition: opacity 0.3s ease;
+  transition-property: opacity;
+  transition-duration: 0.3s;
+  transition-timing-function: ease;
 }
 </style>
