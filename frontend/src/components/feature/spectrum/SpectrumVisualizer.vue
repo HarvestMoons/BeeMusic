@@ -95,9 +95,9 @@ onMounted(() => {
   let currentGradientColors = [];
 
   const lightGradient = [
-    {stop: 0, color: "rgba(255,200,180,0.8)"},
-    {stop: 0.5, color: "rgba(255,180,150,0.7)"},
-    {stop: 1, color: "rgba(255,160,120,0.6)"},
+    {stop: 0, color: "rgba(228, 216, 181, 0.64)"},
+    {stop: 0.5, color: "rgba(214, 199, 161, 0.55)"},
+    {stop: 1, color: "rgba(194, 176, 138, 0.48)"},
   ];
 
   const darkGradient = [
@@ -106,11 +106,11 @@ onMounted(() => {
     {stop: 1, color: "rgba(120, 144, 156, 0.6)"},
   ];
 
-  let backgroundColor = "#fff8f0";
+  let backgroundColor = "#fefae8";
 
   function updateGradientColors() {
     currentGradientColors = themeStore.isDarkMode ? darkGradient : lightGradient;
-    backgroundColor = themeStore.isDarkMode ? "#222222" : "#fff8f0";
+    backgroundColor = themeStore.isDarkMode ? "#222222" : "#fefae8";
   }
 
   // 初始化并监听主题变化
