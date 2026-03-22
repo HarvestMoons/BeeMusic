@@ -55,12 +55,12 @@ function toggle() {
   width: 100%;
   height: 100%;
   border-radius: 999px;
-  background-color: #d1d5db; /* Gray-300 */
+  background-color: var(--toggle-track-bg, #d1d5db);
   transition: background-color 0.2s ease-in-out;
 }
 
 .toggle-switch.is-checked .toggle-track {
-  background-color: var(--primary-color, #f9a825);
+  background-color: var(--toggle-checked-bg, var(--primary-color, #f9a825));
 }
 
 .toggle-thumb {
@@ -79,11 +79,4 @@ function toggle() {
   transform: translateX(22px);
 }
 
-[data-theme="dark"] .toggle-track {
-  background-color: #4b5563; /* Gray-600 */
-}
-
-[data-theme="dark"] .toggle-switch.is-checked .toggle-track {
-  background-color: #b8924f;
-}
 </style>

@@ -1,3 +1,11 @@
+@font-face {
+    font-family: 'HanChanRounded';
+    src: url('../fonts/%E5%AF%92%E8%9D%89%E5%85%A8%E5%9C%86%E4%BD%93.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
 :root {
     /* Light Mode Variables */
     --bg-color: #f1f1b8;
@@ -41,12 +49,17 @@
     --sidebar-text-hover: #f57f17;
     --hamburger-color: #5d4037;
     --sidebar-shadow: 2px 0 8px rgba(0, 0, 0, 0.08);
+    --toggle-track-bg: #d1d5db;
+    --toggle-checked-bg: var(--primary-color);
+    --folder-card-active-border: var(--primary-color);
+    --folder-card-active-shadow: rgba(var(--primary-color-rgb), 0.4);
 
     /* Spectrum */
     --spectrum-bg: linear-gradient(180deg, #fff8dd, #f7e8b8, #ead7a2);
 
-    /* Song Title */
-    --song-title-color: #333333;
+    /* Titles */
+    --round-font: 'HanChanRounded', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    --title-color: #4e4a42;
 
     /* Rate Control */
     --rate-control-bg: #fff8c4;
@@ -118,13 +131,18 @@
     --sidebar-text-hover: #ffffff;
     --hamburger-color: #ccc;
     --sidebar-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+    --toggle-track-bg: #4b5563;
+    --toggle-checked-bg: #b8924f;
+    --folder-card-active-border: rgba(218, 226, 236, 0.88);
+    --folder-card-active-shadow: rgba(188, 202, 220, 0.16);
 
     /* Spectrum */
     --spectrum-bg: linear-gradient(180deg, #37474f, #546e7a, #78909c);
     /* 冷色调渐变，匹配夜间模式 */
 
-    /* Song Title */
-    --song-title-color: #ffffff;
+    /* Titles */
+    --round-font: 'HanChanRounded', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+    --title-color: #d8dde3;
 
     /* Rate Control */
     --rate-control-bg: #333333;

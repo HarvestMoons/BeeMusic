@@ -156,13 +156,8 @@ function selectFolder(val) {
 }
 
 .folder-card.active .card-inner {
-  border-color: var(--primary-color);
-  box-shadow: 0 15px 30px rgba(var(--primary-color-rgb), 0.4);
-}
-
-[data-theme="dark"] .folder-card.active .card-inner {
-  border-color: rgba(218, 226, 236, 0.88);
-  box-shadow: 0 15px 30px rgba(188, 202, 220, 0.16);
+  border-color: var(--folder-card-active-border, var(--primary-color));
+  box-shadow: 0 15px 30px var(--folder-card-active-shadow, rgba(var(--primary-color-rgb), 0.4));
 }
 
 .image-container {
@@ -196,7 +191,9 @@ function selectFolder(val) {
 .folder-name {
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-color);
+  font-family: var(--round-font);
+  letter-spacing: 0.1em;
+  color: var(--title-color);
   background-color: var(--folder-name-bg);
   padding: 6px 16px;
   border-radius: 20px;

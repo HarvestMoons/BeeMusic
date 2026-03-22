@@ -603,10 +603,14 @@ button:hover {
 }
 
 .song-info h2 {
-  color: var(--song-title-color);
+  color: var(--title-color);
   margin-top: 0;
   display: flex;
   align-items: center;
+}
+
+.song-title {
+  font-family: var(--round-font);
 }
 
 .meta-info {
