@@ -82,4 +82,8 @@ function toggle() {
 [data-theme="dark"] .toggle-track {
   background-color: #4b5563; /* Gray-600 */
 }
+
+[data-theme="dark"] .toggle-switch.is-checked .toggle-track {
+  background-color: #b8924f;
+}
 </style>

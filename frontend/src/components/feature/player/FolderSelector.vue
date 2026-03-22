@@ -160,6 +160,11 @@ function selectFolder(val) {
   box-shadow: 0 15px 30px rgba(var(--primary-color-rgb), 0.4);
 }
 
+[data-theme="dark"] .folder-card.active .card-inner {
+  border-color: rgba(218, 226, 236, 0.88);
+  box-shadow: 0 15px 30px rgba(188, 202, 220, 0.16);
+}
+
 .image-container {
   width: 100%;
   aspect-ratio: 1146 / 716;
