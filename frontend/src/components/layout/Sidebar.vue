@@ -20,12 +20,6 @@
         <li><a href="#" @click.prevent="showAbout">关于本站</a></li>
         <li><a href="#" @click.prevent="showMeme">迷因漂流瓶</a></li>
         <li><a href="#" @click.prevent="showPrivacy">隐私政策</a></li>
-        <li>
-          <a href="#" @click.prevent="showAuthor" class="theme-toggle-link">
-            <img :src="linkIcon" class="svg-icon" alt="链接"/>
-            关于小蜜蜂
-          </a>
-        </li>
 
         <li class="settings-group">
           <a href="#" @click.prevent="toggleDisplaySettings" class="theme-toggle-link">
@@ -86,7 +80,6 @@ import {useRouter} from 'vue-router'
 import {useAuthStore, useSiteConfigStore, useThemeStore} from '@/store/index.js'
 import {eventBus} from "@/utils/eventBus.js";
 import settingsIcon from '@/assets/icons/settings.svg'
-import linkIcon from '@/assets/icons/link.svg'
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue'
 import {syncDatabase} from "@/services/siteConfig.js";
 import restoreIcon from '@/assets/icons/restore.svg'
@@ -171,11 +164,6 @@ function showAbout() {
 
 function showPrivacy() {
   router.push('/privacy')
-  isOpen.value = false
-}
-
-function showAuthor() {
-  window.open('https://github.com/HarvestMoons/HarvestMoons', '_blank')
   isOpen.value = false
 }
 
