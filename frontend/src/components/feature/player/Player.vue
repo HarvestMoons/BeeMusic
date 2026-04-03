@@ -275,11 +275,6 @@ async function setFolder(folder, targetSongId = null) {
   }
 }
 
-async function handleMediaAccessModeUpdated() {
-  const targetSongId = playlist.value[currentIndex.value]?.id ?? null
-  await setFolder(selectedFolder.value, targetSongId)
-}
-
 async function fetchSongList() {
   try {
     const res = await fetch(`${PUBLIC_API_BASE}/songs/get`);
@@ -509,12 +504,10 @@ onMounted(async () => {
   )
 
   eventBus.on('song-vote-updated', handleSongVoteUpdate)
-  eventBus.on('media-access-mode-updated', handleMediaAccessModeUpdated)
 });
 
 onUnmounted(() => {
   eventBus.off('song-vote-updated', handleSongVoteUpdate)
-  eventBus.off('media-access-mode-updated', handleMediaAccessModeUpdated)
 })
 
 defineExpose({

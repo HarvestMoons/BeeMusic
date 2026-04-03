@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { API_BASE } from '@/constants/index.js';
+import {API_BASE} from '@/constants/index.js';
 
 const api = axios.create({
     baseURL: API_BASE,
@@ -11,15 +11,7 @@ export const getCommentsEnabled = async () => {
 };
 
 export const setCommentsEnabled = async (enabled) => {
-    return (await api.post('/admin/config/comments-enabled', { enabled })).data;
-};
-
-export const getCdnEnabled = async () => {
-    return (await api.get('/public/config/cdn-enabled')).data;
-};
-
-export const setCdnEnabled = async (enabled) => {
-    return (await api.post('/admin/config/cdn-enabled', { enabled })).data;
+    return (await api.post('/admin/config/comments-enabled', {enabled})).data;
 };
 
 export const syncDatabase = async () => {

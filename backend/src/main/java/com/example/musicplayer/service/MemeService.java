@@ -1,5 +1,6 @@
 package com.example.musicplayer.service;
 
+import com.aliyun.oss.OSS;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.example.musicplayer.model.Meme;
 import com.example.musicplayer.repository.MemeRepository;
@@ -16,12 +17,14 @@ public class MemeService {
 
     private final MemeRepository memeRepository;
     private final OssUtil ossUtil;
+    private final OSS ossClient;
 
     private static final String MEME_FOLDER = "meme/";
 
-    public MemeService(MemeRepository memeRepository, OssUtil ossUtil) {
+    public MemeService(MemeRepository memeRepository, OssUtil ossUtil, OSS ossClient) {
         this.memeRepository = memeRepository;
         this.ossUtil = ossUtil;
+        this.ossClient = ossClient;
     }
 
     public Meme getRandomMeme() {
@@ -36,7 +39,13 @@ public class MemeService {
         if (page.hasContent()) {
             Meme meme = page.getContent().getFirst();
 
-            meme.setUrl(ossUtil.buildPublicUrl(meme.getKey()));
+            String signedUrl = ossClient.generatePresignedUrl(
+                    ossUtil.getBucketName(),
+                    meme.getKey(),
+                    ossUtil.getExpirationDate()
+            ).toString();
+
+            meme.setUrl(signedUrl);
             return meme;
         }
         return null;

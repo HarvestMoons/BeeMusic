@@ -1,6 +1,6 @@
-import { defineStore } from 'pinia';
-import { getUserStatus } from '@/services/auth';
-import { getCdnEnabled, getCommentsEnabled, setCdnEnabled, setCommentsEnabled } from '@/services/siteConfig';
+import {defineStore} from 'pinia';
+import {getUserStatus} from '@/services/auth';
+import {getCommentsEnabled, setCommentsEnabled} from '@/services/siteConfig';
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({
@@ -34,18 +34,13 @@ export const useAuthStore = defineStore('auth', {
 
 export const useSiteConfigStore = defineStore('siteConfig', {
     state: () => ({
-        commentsEnabled: false,
-        cdnEnabled: true
+        commentsEnabled: false
     }),
     actions: {
         async fetchConfig() {
             try {
-                const [commentsRes, cdnRes] = await Promise.all([
-                    getCommentsEnabled(),
-                    getCdnEnabled()
-                ]);
-                this.commentsEnabled = commentsRes.enabled;
-                this.cdnEnabled = cdnRes.enabled;
+                const res = await getCommentsEnabled();
+                this.commentsEnabled = res.enabled;
             } catch (e) {
                 console.error("Failed to load site config", e);
             }
@@ -56,15 +51,6 @@ export const useSiteConfigStore = defineStore('siteConfig', {
                 this.commentsEnabled = enabled;
             } catch (e) {
                 console.error("Failed to update site config", e);
-                throw e;
-            }
-        },
-        async updateCdnEnabled(enabled) {
-            try {
-                await setCdnEnabled(enabled);
-                this.cdnEnabled = enabled;
-            } catch (e) {
-                console.error("Failed to update CDN config", e);
                 throw e;
             }
         }
