@@ -61,6 +61,13 @@
                   @change="handleCommentsToggle"
               />
             </li>
+            <li class="sub-item" @click.stop>
+              <span>CDN加速</span>
+              <ToggleSwitch
+                  v-model="cdnEnabledProxy"
+                  @change="handleCdnToggle"
+              />
+            </li>
             <li class="sub-item">
               <a href="#" @click.prevent="handleSyncDatabase" class="theme-toggle-link" style="padding:0;">
                 <img :src="restoreIcon" class="svg-icon" alt="同步" style="width:16px;height:16px;"/>
@@ -96,11 +103,13 @@ const siteConfigStore = useSiteConfigStore()
 const isDarkMode = ref(themeStore.isDarkMode)
 const showParticles = ref(themeStore.showParticles)
 const commentsEnabledProxy = ref(false)
+const cdnEnabledProxy = ref(true)
 
 // Watch store changes to sync local state (e.g. if changed elsewhere)
 watch(() => themeStore.isDarkMode, (val) => isDarkMode.value = val)
 watch(() => themeStore.showParticles, (val) => showParticles.value = val)
 watch(() => siteConfigStore.commentsEnabled, (val) => commentsEnabledProxy.value = val)
+watch(() => siteConfigStore.cdnEnabled, (val) => cdnEnabledProxy.value = val)
 
 // 定义父组件通信事件
 const emit = defineEmits(['open-login', 'open-register', 'request-logout'])
@@ -133,6 +142,18 @@ function handleParticlesToggle(val) {
 
 function handleCommentsToggle(val) {
   siteConfigStore.updateCommentsEnabled(val)
+}
+
+async function handleCdnToggle(val) {
+  try {
+    await siteConfigStore.updateCdnEnabled(val)
+    eventBus.emit('media-access-mode-updated')
+    eventBus.emit('show-toast', val ? '已切换为 CDN 加速' : '已切换为 OSS 直连')
+  } catch (error) {
+    console.error('Failed to update CDN mode', error)
+    cdnEnabledProxy.value = siteConfigStore.cdnEnabled
+    eventBus.emit('show-toast', '切换资源访问模式失败，请重试。')
+  }
 }
 
 async function handleSyncDatabase() {

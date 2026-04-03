@@ -1,6 +1,5 @@
 package com.example.musicplayer.service;
 
-import com.aliyun.oss.OSS;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.example.musicplayer.dto.FolderSongCount;
 import com.example.musicplayer.model.Song;
@@ -16,7 +15,6 @@ import java.util.stream.Collectors;
 @Service
 public class SongService {
 
-    private final OSS ossClient;
     private final OssUtil ossUtil;
     private final SongRepository songRepository;
     private final RedisTemplate<String, Object> redisTemplate;
@@ -29,15 +27,13 @@ public class SongService {
             "ding_zhen", "丁真",
             "dxl", "东洋雪莲",
             "DDF", "哲学",
-            "true_music", "真正的音乐"
-    );
+            "true_music", "真正的音乐");
 
     private String currentFolderKey = "ha_ji_mi";
 
-    public SongService(OSS ossClient, OssUtil ossUtil, SongRepository songRepository,
-                       RedisTemplate<String, Object> jsonRedisTemplate,
-                       org.springframework.data.redis.core.StringRedisTemplate stringRedisTemplate) {
-        this.ossClient = ossClient;
+    public SongService(OssUtil ossUtil, SongRepository songRepository,
+            RedisTemplate<String, Object> jsonRedisTemplate,
+            org.springframework.data.redis.core.StringRedisTemplate stringRedisTemplate) {
         this.ossUtil = ossUtil;
         this.songRepository = songRepository;
         this.redisTemplate = jsonRedisTemplate;
@@ -78,6 +74,9 @@ public class SongService {
             // 缓存命中，虽然缓存里有 Song 数据，但缓存里的点赞数可能是旧的(即使缓存只存6小时)
             // 所以我们需要遍历缓存里的 Song，用 Redis 里的最新票数覆盖一下
             for (Song song : cachedSongs) {
+                // URL 不信任缓存值，始终按当前配置重建，避免切换 OSS/CDN 后仍返回旧签名链接。
+                song.setUrl(ossUtil.buildPublicUrl(song.getKey()));
+
                 Long songId = song.getId();
                 if (songId != null) {
                     Long redisLikes = stringRedisTemplate.opsForSet().size("likes:" + songId);
@@ -98,16 +97,9 @@ public class SongService {
                     .collect(Collectors.toList());
         }
 
-        // 3. 生成 signedUrl
-        // 注意：这里生成的 URL 必须有效期足够长，至少要覆盖 Redis 的缓存时间
-        Date expiration = ossUtil.getExpirationDate(); // 默认为24小时后
+        // 3. 为前端填充可公开访问的 CDN URL
         for (Song song : dbSongs) {
-            String signedUrl = ossClient.generatePresignedUrl(
-                    ossUtil.getBucketName(),
-                    song.getKey(),
-                    expiration
-            ).toString();
-            song.setUrl(signedUrl);
+            song.setUrl(ossUtil.buildPublicUrl(song.getKey()));
         }
 
         // 4. 实时修正票数：用 Redis 里的最新票数覆盖 DB/缓存里的旧数据
@@ -127,7 +119,7 @@ public class SongService {
             }
         }
 
-        // 5. 写入缓存 (设置过期时间为 6 小时，远小于 OSS 签名的 24 小时，确保取出的 URL 总是有效的)
+        // 5. 写入缓存
         if (!dbSongs.isEmpty()) {
             redisTemplate.opsForValue().set(cacheKey, dbSongs, 6, TimeUnit.HOURS);
         }
@@ -155,13 +147,12 @@ public class SongService {
         }
     }
 
-    private void evictAllFolderCaches() {
+    public void evictAllFolderCaches() {
         Set<String> keys = redisTemplate.keys("songs:folder:*");
         if (keys != null && !keys.isEmpty()) {
             redisTemplate.delete(keys);
         }
     }
-
 
     /**
      * 同步指定文件夹的 OSS 文件到数据库
@@ -212,4 +203,3 @@ public class SongService {
         }
     }
 }
-
