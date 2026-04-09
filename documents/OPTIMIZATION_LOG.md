@@ -2,7 +2,7 @@
 
 ## 1. 优化概览 (Executive Summary)
 
-针对核心接口 `GET /api/public/songs/get` (获取歌曲列表) 进行的三阶段性能优化。通过引入 Redis 缓存架构和 GZIP
+针对核心接口 `GET /api/public/songs/get?folder={folderKey}` (获取指定歌单歌曲列表) 进行的三阶段性能优化。通过引入 Redis 缓存架构和 GZIP
 传输压缩，在服务器硬件资源（带宽 3Mbps）不变的情况下，实现了吞吐量 **15倍** 提升，响应速度 **20倍** 提升。
 
 | 指标 (Metric)        | 初始状态 (Baseline) | 阶段一：Redis (缓存元数据) | 阶段二：Redis (全量缓存) | 最终阶段：Redis + GZIP | **提升幅度**     |

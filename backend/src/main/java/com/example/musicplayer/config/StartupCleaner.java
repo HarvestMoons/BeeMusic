@@ -20,6 +20,5 @@ public class StartupCleaner {
     public void clean() {
         redisTemplate.delete(ONLINE_TOTAL_KEY);
         redisTemplate.delete(SONG_LISTENERS_HASH);
-        System.out.println("【开发环境】在线人数和同曲听众计数已自动重置为 0");
     }
 }

@@ -5,7 +5,7 @@ class WebsiteUser(HttpUser):
     host = "https://beemusic.fun/"
     @task
     def get_songs(self):
-        self.client.get("/api/public/songs/get")
+        self.client.get("/api/public/songs/get", params={"folder": "ha_ji_mi"})
 
 from locust import LoadTestShape
 

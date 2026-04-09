@@ -73,7 +73,6 @@ public class OnlineCountHandler extends TextWebSocketHandler {
         Map<String, Object> jsonMap = objectMapper.readValue(message.getPayload(),
                 new TypeReference<Map<String, Object>>() {
                 });
-        System.out.println("Received WebSocket message: " + jsonMap);
 
         // 兼容前端可能传数字的情况
         Object songIdObj = jsonMap.get("songId");

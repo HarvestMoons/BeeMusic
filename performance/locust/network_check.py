@@ -1,7 +1,7 @@
 import requests
 import time
 
-url = "https://beemusic.fun/api/public/songs/get"
+url = "https://beemusic.fun/api/public/songs/get?folder=ha_ji_mi"
 
 print(f"Connecting to {url} ...")
 

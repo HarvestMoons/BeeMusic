@@ -15,6 +15,8 @@ import java.util.stream.Collectors;
 @Service
 public class SongService {
 
+    private static final String DEFAULT_FOLDER_KEY = "ha_ji_mi";
+
     private final OssUtil ossUtil;
     private final SongRepository songRepository;
     private final RedisTemplate<String, Object> redisTemplate;
@@ -29,8 +31,6 @@ public class SongService {
             "DDF", "哲学",
             "true_music", "真正的音乐");
 
-    private String currentFolderKey = "ha_ji_mi";
-
     public SongService(OssUtil ossUtil, SongRepository songRepository,
             RedisTemplate<String, Object> jsonRedisTemplate,
             org.springframework.data.redis.core.StringRedisTemplate stringRedisTemplate) {
@@ -38,14 +38,6 @@ public class SongService {
         this.songRepository = songRepository;
         this.redisTemplate = jsonRedisTemplate;
         this.stringRedisTemplate = stringRedisTemplate;
-    }
-
-    public Map<String, String> setFolder(String folder) {
-        if (AVAILABLE_FOLDERS.containsKey(folder)) {
-            currentFolderKey = folder;
-            return Map.of("status", "ok", "current", folder);
-        }
-        return Map.of("error", "Invalid folder key");
     }
 
     public void incrementPlayCount(Long songId) {
@@ -63,10 +55,11 @@ public class SongService {
     }
 
     @SuppressWarnings("unchecked")
-    public List<Song> getSongs(boolean includeDeleted) {
-        String folderChineseName = AVAILABLE_FOLDERS.get(currentFolderKey);
+    public List<Song> getSongs(String folderKey, boolean includeDeleted) {
+        String normalizedFolderKey = normalizeFolderKey(folderKey);
+        String folderChineseName = getFolderChineseName(normalizedFolderKey);
         String prefix = "music/" + folderChineseName + "/";
-        String cacheKey = "songs:folder:" + currentFolderKey + (includeDeleted ? ":all" : ":active");
+        String cacheKey = "songs:folder:" + normalizedFolderKey + (includeDeleted ? ":all" : ":active");
 
         // 1. 查缓存
         List<Song> cachedSongs = (List<Song>) redisTemplate.opsForValue().get(cacheKey);
@@ -187,5 +180,20 @@ public class SongService {
                 song.setDislikeCount(redisDislikes != null ? redisDislikes.intValue() : 0);
             }
         }
+    }
+
+    private String normalizeFolderKey(String folderKey) {
+        if (folderKey == null || folderKey.isBlank()) {
+            return DEFAULT_FOLDER_KEY;
+        }
+        return folderKey;
+    }
+
+    private String getFolderChineseName(String folderKey) {
+        String folderChineseName = AVAILABLE_FOLDERS.get(folderKey);
+        if (folderChineseName == null) {
+            throw new IllegalArgumentException("Invalid folder key: " + folderKey);
+        }
+        return folderChineseName;
     }
 }

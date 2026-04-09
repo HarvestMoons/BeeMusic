@@ -236,36 +236,25 @@ async function handleFolderChange() {
 async function setFolder(folder, targetSongId = null) {
   try {
     document.body.classList.add('loading')
-    const res = await fetch(`${PUBLIC_API_BASE}/songs/set-folder`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({folder})
-    });
-    const result = await res.json();
+    historyStack.value = [];
+    await fetchSongList(folder);
 
-    if (result.status === 'ok') {
-      historyStack.value = [];
-      await fetchSongList(folder);
+    const savedRate = loadPlaybackRateForFolder(folder);
+    if (savedRate != null) {
+      playbackRate.value = savedRate;
+      if (audioRef.value) audioRef.value.playbackRate = savedRate;
+    }
 
-      const savedRate = loadPlaybackRateForFolder(folder);
-      if (savedRate != null) {
-        playbackRate.value = savedRate;
-        if (audioRef.value) audioRef.value.playbackRate = savedRate;
+    if (playlist.value.length > 0) {
+      let playIndex = 0;
+      if (targetSongId) {
+        const foundIndex = playlist.value.findIndex(s => s.id === targetSongId);
+        if (foundIndex !== -1) playIndex = foundIndex;
       }
-
-      if (playlist.value.length > 0) {
-        let playIndex = 0;
-        if (targetSongId) {
-          const foundIndex = playlist.value.findIndex(s => s.id === targetSongId);
-          if (foundIndex !== -1) playIndex = foundIndex;
-        }
-        playSongAtIndex(playIndex);
-      } else {
-        currentSongInfo.value = {title: '', bv: null}
-        if (audioRef.value) audioRef.value.src = '';
-      }
+      playSongAtIndex(playIndex);
     } else {
-      alert('切换失败：' + result.error);
+      currentSongInfo.value = {title: '', bv: null}
+      if (audioRef.value) audioRef.value.src = '';
     }
   } catch (err) {
     console.error('切换音乐文件夹失败', err);
@@ -275,9 +264,10 @@ async function setFolder(folder, targetSongId = null) {
   }
 }
 
-async function fetchSongList() {
+async function fetchSongList(folder) {
   try {
-    const res = await fetch(`${PUBLIC_API_BASE}/songs/get`);
+    const query = new URLSearchParams({folder}).toString()
+    const res = await fetch(`${PUBLIC_API_BASE}/songs/get?${query}`);
     const data = await res.json();
     playlist.value = shuffleArray(data || []);
     return playlist.value;

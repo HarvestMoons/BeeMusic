@@ -32,7 +32,7 @@ public class SongController {
 
     // 首页歌曲列表
     @GetMapping("/public/songs/get")
-    public List<Song> getSongs(HttpServletRequest request) {
+    public List<Song> getSongs(@RequestParam String folder, HttpServletRequest request) {
         boolean includeDeleted = false;
         Object userObj = request.getSession().getAttribute("user");
         if (userObj instanceof User u) {
@@ -41,7 +41,7 @@ public class SongController {
                 includeDeleted = true;
             }
         }
-        return songService.getSongs(includeDeleted);
+        return songService.getSongs(folder, includeDeleted);
     }
 
     // 删除歌曲（软删除）
@@ -77,13 +77,6 @@ public class SongController {
         return songService.getFolderSongCounts();
     }
 
-    // 切换歌曲文件夹
-    @PostMapping("/public/songs/set-folder")
-    public Map<String, String> setFolder(@RequestBody Map<String, String> body) {
-        String folder = body.get("folder");
-        return songService.setFolder(folder);
-    }
-
     // 增加播放次数
     @PostMapping("/public/songs/play/{songId}")
     public void incrementPlayCount(@PathVariable Long songId) {
@@ -93,9 +86,6 @@ public class SongController {
     // 获取点赞/点踩数
     @GetMapping("/public/songs/votes/{songId}")
     public Map<String, Integer> getVotes(@PathVariable Long songId, HttpServletRequest request) {
-        String cookieHeader = request.getHeader("Cookie");
-        System.out.println(cookieHeader);
-        System.out.println(request.getSession(false));
         Map<String, Integer> counts = voteService.counts(songId);
         Object userObj = request.getSession().getAttribute("user");
         if (userObj instanceof com.example.musicplayer.model.User u) {
@@ -104,8 +94,7 @@ public class SongController {
             counts = Map.of(
                     "likes", counts.get("likes"),
                     "dislikes", counts.get("dislikes"),
-                    "userVote", userVote
-            );
+                    "userVote", userVote);
         }
         return counts;
     }
