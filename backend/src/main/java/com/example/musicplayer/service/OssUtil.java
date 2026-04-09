@@ -32,6 +32,17 @@ public class OssUtil {
         return new Date(System.currentTimeMillis() + expirationHours * 3600 * 1000);
     }
 
+    public String buildSignedUrl(String key) {
+        return ossClient.generatePresignedUrl(bucketName, key, getExpirationDate()).toString();
+    }
+
+    public String extractFilename(String key) {
+        if (key == null || key.isBlank()) {
+            return key;
+        }
+        return key.substring(key.lastIndexOf('/') + 1);
+    }
+
     public List<OSSObjectSummary> listFilesByPrefixAndSuffix(String prefix, String suffix) {
         List<OSSObjectSummary> results = new ArrayList<>();
         String nextMarker = null;
@@ -42,11 +53,11 @@ public class OssUtil {
                     new ListObjectsRequest(bucketName)
                             .withPrefix(prefix)
                             .withMarker(nextMarker)
-                            .withMaxKeys(1000)
-            );
+                            .withMaxKeys(1000));
 
             for (OSSObjectSummary summary : objectListing.getObjectSummaries()) {
-                if (suffix == null || suffix.isEmpty() || summary.getKey().toLowerCase().endsWith(suffix.toLowerCase())) {
+                if (suffix == null || suffix.isEmpty()
+                        || summary.getKey().toLowerCase().endsWith(suffix.toLowerCase())) {
                     results.add(summary);
                 }
             }

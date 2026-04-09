@@ -1,6 +1,5 @@
 package com.example.musicplayer.service;
 
-import com.aliyun.oss.OSS;
 import com.aliyun.oss.model.OSSObjectSummary;
 import com.example.musicplayer.dto.FolderSongCount;
 import com.example.musicplayer.model.Song;
@@ -16,7 +15,6 @@ import java.util.stream.Collectors;
 @Service
 public class SongService {
 
-    private final OSS ossClient;
     private final OssUtil ossUtil;
     private final SongRepository songRepository;
     private final RedisTemplate<String, Object> redisTemplate;
@@ -29,15 +27,13 @@ public class SongService {
             "ding_zhen", "丁真",
             "dxl", "东洋雪莲",
             "DDF", "哲学",
-            "true_music", "真正的音乐"
-    );
+            "true_music", "真正的音乐");
 
     private String currentFolderKey = "ha_ji_mi";
 
-    public SongService(OSS ossClient, OssUtil ossUtil, SongRepository songRepository,
-                       RedisTemplate<String, Object> jsonRedisTemplate,
-                       org.springframework.data.redis.core.StringRedisTemplate stringRedisTemplate) {
-        this.ossClient = ossClient;
+    public SongService(OssUtil ossUtil, SongRepository songRepository,
+            RedisTemplate<String, Object> jsonRedisTemplate,
+            org.springframework.data.redis.core.StringRedisTemplate stringRedisTemplate) {
         this.ossUtil = ossUtil;
         this.songRepository = songRepository;
         this.redisTemplate = jsonRedisTemplate;
@@ -77,15 +73,7 @@ public class SongService {
         if (cachedSongs != null) {
             // 缓存命中，虽然缓存里有 Song 数据，但缓存里的点赞数可能是旧的(即使缓存只存6小时)
             // 所以我们需要遍历缓存里的 Song，用 Redis 里的最新票数覆盖一下
-            for (Song song : cachedSongs) {
-                Long songId = song.getId();
-                if (songId != null) {
-                    Long redisLikes = stringRedisTemplate.opsForSet().size("likes:" + songId);
-                    Long redisDislikes = stringRedisTemplate.opsForSet().size("dislikes:" + songId);
-                    song.setLikeCount(redisLikes != null ? redisLikes.intValue() : 0);
-                    song.setDislikeCount(redisDislikes != null ? redisDislikes.intValue() : 0);
-                }
-            }
+            hydrateSongVoteCounts(cachedSongs);
             return cachedSongs;
         }
 
@@ -98,34 +86,12 @@ public class SongService {
                     .collect(Collectors.toList());
         }
 
-        // 3. 生成 signedUrl
-        // 注意：这里生成的 URL 必须有效期足够长，至少要覆盖 Redis 的缓存时间
-        Date expiration = ossUtil.getExpirationDate(); // 默认为24小时后
         for (Song song : dbSongs) {
-            String signedUrl = ossClient.generatePresignedUrl(
-                    ossUtil.getBucketName(),
-                    song.getKey(),
-                    expiration
-            ).toString();
-            song.setUrl(signedUrl);
+            song.setUrl(ossUtil.buildSignedUrl(song.getKey()));
         }
 
         // 4. 实时修正票数：用 Redis 里的最新票数覆盖 DB/缓存里的旧数据
-        for (Song song : dbSongs) {
-            Long songId = song.getId();
-            if (songId != null) {
-                // 读取 redis 集合大小
-                Long redisLikes = stringRedisTemplate.opsForSet().size("likes:" + songId);
-                Long redisDislikes = stringRedisTemplate.opsForSet().size("dislikes:" + songId);
-
-                // 只有当 redis 有数据时才覆盖 (避免 redis 挂了导致显示为 0)
-                // VoteService 里如果 redis 没数据会返回 0，这里也遵循一样的逻辑，
-                // 但要考虑一种情况：新歌没点赞 redis 是空的吗？是的。
-                // 只要 redis 不崩，redis 里的数据就是权威的实时的。
-                song.setLikeCount(redisLikes != null ? redisLikes.intValue() : 0);
-                song.setDislikeCount(redisDislikes != null ? redisDislikes.intValue() : 0);
-            }
-        }
+        hydrateSongVoteCounts(dbSongs);
 
         // 5. 写入缓存 (设置过期时间为 6 小时，远小于 OSS 签名的 24 小时，确保取出的 URL 总是有效的)
         if (!dbSongs.isEmpty()) {
@@ -162,7 +128,6 @@ public class SongService {
         }
     }
 
-
     /**
      * 同步指定文件夹的 OSS 文件到数据库
      */
@@ -186,7 +151,7 @@ public class SongService {
             if (!dbKeys.contains(file.getKey())) {
                 Song song = new Song();
                 String key = file.getKey();
-                String filename = key.substring(key.lastIndexOf('/') + 1);
+                String filename = ossUtil.extractFilename(key);
                 song.setName(filename);
                 song.setKey(key);
                 song.setLikeCount(0);
@@ -211,5 +176,16 @@ public class SongService {
             syncSongsFromOss(folderKey);
         }
     }
-}
 
+    private void hydrateSongVoteCounts(List<Song> songs) {
+        for (Song song : songs) {
+            Long songId = song.getId();
+            if (songId != null) {
+                Long redisLikes = stringRedisTemplate.opsForSet().size("likes:" + songId);
+                Long redisDislikes = stringRedisTemplate.opsForSet().size("dislikes:" + songId);
+                song.setLikeCount(redisLikes != null ? redisLikes.intValue() : 0);
+                song.setDislikeCount(redisDislikes != null ? redisDislikes.intValue() : 0);
+            }
+        }
+    }
+}
