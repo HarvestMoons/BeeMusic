@@ -46,7 +46,8 @@
                 <div class="comment-actions">
                   <button
                       class="action-btn like-btn"
-                      :class="{ active: comment.liked }"
+                      :class="{ active: comment.liked, loading: isCommentLikeLoading(comment.id) }"
+                      :disabled="isCommentLikeLoading(comment.id)"
                       @click="toggleLike(comment)"
                   >
                     <span class="icon">👍</span> {{ comment.likeCount || 0 }}
@@ -76,7 +77,8 @@
                   <div class="comment-actions">
                     <button
                         class="action-btn like-btn"
-                        :class="{ active: reply.liked }"
+                        :class="{ active: reply.liked, loading: isCommentLikeLoading(reply.id) }"
+                        :disabled="isCommentLikeLoading(reply.id)"
                         @click="toggleLike(reply)"
                     >
                       <span class="icon">👍</span> {{ reply.likeCount || 0 }}
@@ -102,16 +104,16 @@
           <textarea
               v-model="inputContent"
               :placeholder="authStore.isAuthenticated ? '发一条友善的评论...' : '请先登录后评论'"
-              :disabled="!authStore.isAuthenticated"
+              :disabled="!authStore.isAuthenticated || isSubmitting"
               @keydown.ctrl.enter="submitComment"
               rows="1"
           ></textarea>
           <button
               class="send-btn"
-              :disabled="!authStore.isAuthenticated || !inputContent.trim()"
+              :disabled="!authStore.isAuthenticated || !inputContent.trim() || isSubmitting"
               @click="submitComment"
           >
-            发送
+            {{ isSubmitting ? '发送中...' : '发送' }}
           </button>
         </div>
       </div>
@@ -125,7 +127,7 @@ import {useAuthStore} from '@/store'
 import api from '@/services/auth'
 import unfoldIcon from '@/assets/icons/unfold.svg'
 import foldIcon from '@/assets/icons/fold.svg'
-import {eventBus} from '@/utils/eventBus'
+import { eventBus } from '@/utils/eventBus'
 
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 const MAX_CACHE_ENTRIES = 50;
@@ -211,6 +213,12 @@ const sortedComments = computed(() => {
 const loading = ref(false)
 const inputContent = ref('')
 const replyingTo = ref(null) // { commentId, userId, username, rootId }
+const isSubmitting = ref(false)
+const commentLikeLoadingMap = ref({})
+
+function isCommentLikeLoading(commentId) {
+  return Boolean(commentLikeLoadingMap.value[commentId])
+}
 
 function persistCurrentComments() {
   if (!props.songId) return
@@ -282,18 +290,22 @@ function cancelReply() {
 }
 
 async function submitComment() {
-  if (!inputContent.value.trim()) return
+  if (isSubmitting.value) return
 
-  // TODO:校验权限：仅管理员或站长可以评论
+  const trimmedContent = inputContent.value.trim()
+  if (!trimmedContent) return
+
+  // 校验权限：仅管理员或站长可以评论
   // 1=USER, 2=ADMIN, 3=STATION_MASTER
   if (authStore.role !== 2 && authStore.role !== 3) {
     eventBus.emit('show-toast', '根据相关法规，暂时仅支持管理员发布评论')
     return
   }
 
+  isSubmitting.value = true
   const payload = {
     songId: props.songId,
-    content: inputContent.value,
+    content: trimmedContent,
     parentId: replyingTo.value ? replyingTo.value.rootId : null,
     replyToUserId: replyingTo.value ? replyingTo.value.userId : null
   }
@@ -319,26 +331,32 @@ async function submitComment() {
     cancelReply()
   } catch (err) {
     console.error('发表评论失败', err)
-    alert('发表失败: ' + (err.response?.data?.message || err.message))
+    eventBus.emit('show-toast', err.response?.data?.message || ('发表失败: ' + err.message))
+  } finally {
+    isSubmitting.value = false
   }
 }
 
 async function toggleLike(comment) {
   if (!authStore.isAuthenticated) return
+  if (isCommentLikeLoading(comment.id)) return
 
+  commentLikeLoadingMap.value[comment.id] = true
   try {
     if (comment.liked) {
-      await api.delete(`/comments/like/${comment.id}`)
-      comment.liked = false
-      comment.likeCount--
+      const res = await api.delete(`/comments/like/${comment.id}`)
+      comment.liked = Boolean(res.data?.liked)
+      comment.likeCount = Number(res.data?.likeCount ?? 0)
     } else {
-      await api.post(`/comments/like/${comment.id}`)
-      comment.liked = true
-      comment.likeCount++
+      const res = await api.post(`/comments/like/${comment.id}`)
+      comment.liked = Boolean(res.data?.liked)
+      comment.likeCount = Number(res.data?.likeCount ?? 0)
     }
     persistCurrentComments()
   } catch (err) {
     console.error('操作失败', err)
+  } finally {
+    commentLikeLoadingMap.value[comment.id] = false
   }
 }
 
@@ -519,11 +537,31 @@ async function handleDelete(commentId) {
   display: flex;
   align-items: center;
   gap: 4px;
+  transition: opacity 0.2s ease, color 0.2s ease, transform 0.2s ease, filter 0.2s ease;
 }
 
 .action-btn:hover {
   opacity: 1;
   color: var(--primary-color);
+}
+
+.action-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.action-btn:disabled:hover {
+  color: var(--text-color);
+}
+
+.like-btn.loading {
+  opacity: 0.35;
+  filter: grayscale(1);
+  transform: scale(0.96);
+}
+
+.like-btn.loading .icon {
+  opacity: 0.7;
 }
 
 .like-btn.active {

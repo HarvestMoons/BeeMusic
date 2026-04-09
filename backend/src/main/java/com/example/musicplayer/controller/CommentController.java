@@ -35,21 +35,22 @@ public class CommentController {
         Long songId = Long.valueOf(body.get("songId").toString());
         String content = (String) body.get("content");
         Long parentId = body.get("parentId") != null ? Long.valueOf(body.get("parentId").toString()) : null;
-        Long replyToUserId = body.get("replyToUserId") != null ? Long.valueOf(body.get("replyToUserId").toString()) : null;
+        Long replyToUserId = body.get("replyToUserId") != null ? Long.valueOf(body.get("replyToUserId").toString())
+                : null;
 
         return commentService.addComment(userId, songId, content, parentId, replyToUserId);
     }
 
     @PostMapping("/comments/like/{commentId}")
-    public void likeComment(@PathVariable Long commentId, HttpServletRequest request) {
+    public Map<String, Object> likeComment(@PathVariable Long commentId, HttpServletRequest request) {
         Long userId = currentUserId(request);
-        commentService.likeComment(userId, commentId);
+        return commentService.likeComment(userId, commentId);
     }
 
     @DeleteMapping("/comments/like/{commentId}")
-    public void unlikeComment(@PathVariable Long commentId, HttpServletRequest request) {
+    public Map<String, Object> unlikeComment(@PathVariable Long commentId, HttpServletRequest request) {
         Long userId = currentUserId(request);
-        commentService.unlikeComment(userId, commentId);
+        return commentService.unlikeComment(userId, commentId);
     }
 
     @DeleteMapping("/comments/{commentId}")

@@ -20,14 +20,16 @@ public class CommentService {
     private final CommentLikeRepository commentLikeRepository;
     private final UserRepository userRepository;
 
-    public CommentService(CommentRepository commentRepository, CommentLikeRepository commentLikeRepository, UserRepository userRepository) {
+    public CommentService(CommentRepository commentRepository, CommentLikeRepository commentLikeRepository,
+            UserRepository userRepository) {
         this.commentRepository = commentRepository;
         this.commentLikeRepository = commentLikeRepository;
         this.userRepository = userRepository;
     }
 
     public List<CommentDTO> getComments(Long songId, Long currentUserId) {
-        List<Comment> allComments = commentRepository.findBySongIdAndIsDeletedOrderByLikeCountDescCreatedAtDesc(songId, 0);
+        List<Comment> allComments = commentRepository.findBySongIdAndIsDeletedOrderByLikeCountDescCreatedAtDesc(songId,
+                0);
         if (allComments.isEmpty()) {
             return Collections.emptyList();
         }
@@ -42,7 +44,7 @@ public class CommentService {
         Map<Long, User> userMap = userIds.isEmpty()
                 ? Collections.emptyMap()
                 : userRepository.findAllById(userIds).stream()
-                .collect(Collectors.toMap(User::getId, u -> u));
+                        .collect(Collectors.toMap(User::getId, u -> u));
 
         Set<Long> likedCommentIds = Collections.emptySet();
         if (currentUserId != null) {
@@ -163,7 +165,7 @@ public class CommentService {
     }
 
     @Transactional
-    public void likeComment(Long userId, Long commentId) {
+    public Map<String, Object> likeComment(Long userId, Long commentId) {
         if (!commentLikeRepository.existsByUserIdAndCommentId(userId, commentId)) {
             CommentLike like = new CommentLike();
             like.setUserId(userId);
@@ -171,15 +173,27 @@ public class CommentService {
             commentLikeRepository.save(like);
             commentRepository.incrementLikeCount(commentId);
         }
+        return buildCommentLikeState(commentId, true);
     }
 
     @Transactional
-    public void unlikeComment(Long userId, Long commentId) {
+    public Map<String, Object> unlikeComment(Long userId, Long commentId) {
         Optional<CommentLike> like = commentLikeRepository.findByUserIdAndCommentId(userId, commentId);
         if (like.isPresent()) {
             commentLikeRepository.delete(like.get());
             commentRepository.decrementLikeCount(commentId);
         }
+        return buildCommentLikeState(commentId, false);
+    }
+
+    private Map<String, Object> buildCommentLikeState(Long commentId, boolean liked) {
+        Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("Comment not found: " + commentId));
+        int likeCount = comment.getLikeCount() == null ? 0 : Math.max(comment.getLikeCount(), 0);
+        return Map.of(
+                "commentId", commentId,
+                "liked", liked,
+                "likeCount", likeCount);
     }
 
     @Transactional

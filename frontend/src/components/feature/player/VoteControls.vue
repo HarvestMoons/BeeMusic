@@ -1,10 +1,10 @@
 <template>
   <div class="vote-controls">
-    <button :class="{ active: userVote === 1 }" @click="handleLike">
+    <button :class="{ active: userVote === 1 }" :disabled="isVoting" @click="handleLike">
       <img :src="likeIcon" alt="点赞" class="vote-icon svg-icon"/>
       <span>{{ likes }}</span>
     </button>
-    <button :class="{ active: userVote === -1 }" @click="handleDislike">
+    <button :class="{ active: userVote === -1 }" :disabled="isVoting" @click="handleDislike">
       <img :src="dislikeIcon" alt="点踩" class="vote-icon svg-icon"/>
       <span>{{ dislikes }}</span>
     </button>
@@ -31,6 +31,7 @@ const props = defineProps({
 const likes = ref(0)
 const dislikes = ref(0)
 const userVote = ref(0) // 1=已点赞, -1=已点踩, 0=无
+const isVoting = ref(false)
 
 const authStore = useAuthStore()
 
@@ -56,10 +57,12 @@ async function refreshVotes() {
 }
 
 async function handleLike() {
+  if (isVoting.value) return
   if (!authStore.isAuthenticated) {
     showToastMessage('请先登录再点赞哦')
     return
   }
+  isVoting.value = true
   try {
     // 如果当前是已点赞 -> 取消
     if (userVote.value === 1) {
@@ -85,14 +88,18 @@ async function handleLike() {
     })
   } catch (err) {
     console.error('点赞失败', err)
+  } finally {
+    isVoting.value = false
   }
 }
 
 async function handleDislike() {
+  if (isVoting.value) return
   if (!authStore.isAuthenticated) {
     showToastMessage('请先登录再点踩哦')
     return
   }
+  isVoting.value = true
   try {
     // 如果当前是已点踩 -> 取消
     if (userVote.value === -1) {
@@ -118,6 +125,8 @@ async function handleDislike() {
     })
   } catch (err) {
     console.error('点踩失败', err)
+  } finally {
+    isVoting.value = false
   }
 }
 
@@ -149,6 +158,11 @@ onMounted(refreshVotes)
 
 .vote-controls button:hover {
   background-color: var(--vote-btn-hover-bg);
+}
+
+.vote-controls button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .vote-controls button.active {
