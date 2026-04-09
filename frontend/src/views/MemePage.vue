@@ -1,5 +1,13 @@
 <template>
   <div class="meme-page">
+    <div v-if="currentMeme" class="auto-progress-anchor">
+      <CountdownRing
+          :progress="countdownProgress"
+          :label="countdownLabel"
+          subtitle="自动"
+      />
+    </div>
+
     <div class="meme-content" v-if="loading && !currentMeme">
       <div class="loading">正在打捞漂流瓶...</div>
     </div>
@@ -25,9 +33,18 @@
       </div>
 
       <div class="action-bar">
-        <button class="btn accent big-btn" @click="fetchRandomMeme" :disabled="loading">
-          {{ loading ? '打捞中...' : '下一个漂流瓶' }}
-        </button>
+        <div class="primary-actions">
+          <button class="btn primary-action-btn" @click="fetchRandomMeme" :disabled="loading">
+            {{ loading ? '打捞中...' : '下一个漂流瓶' }}
+          </button>
+          <button
+              class="btn primary-action-btn auto-btn"
+              :class="{ active: autoSwitchEnabled }"
+              @click="toggleAutoSwitch"
+          >
+            {{ autoSwitchEnabled ? '关闭自动切换' : '开启自动切换' }}
+          </button>
+        </div>
 
         <div class="admin-actions" v-if="authStore.isStationMaster">
           <button class="btn danger" @click="handleDelete" title="删除当前图片">删除</button>
@@ -60,20 +77,40 @@
 </template>
 
 <script setup>
-import {onMounted, onUnmounted, ref, watch} from 'vue';
+import {computed, onMounted, onUnmounted, ref, watch} from 'vue';
 import {deleteMeme, getRandomMeme, syncMemes} from '@/services/meme';
 import {useAuthStore} from '@/store';
 import {eventBus} from '@/utils/eventBus.js'
+import CountdownRing from '@/components/common/CountdownRing.vue'
 
 const authStore = useAuthStore();
+const AUTO_SWITCH_INTERVAL_MS = 5000;
+const COUNTDOWN_TICK_MS = 100;
+
 const currentMeme = ref(null);
 const loading = ref(true);
 const syncing = ref(false);
 const showPreview = ref(false);
+const autoSwitchEnabled = ref(false);
+const countdownRemainingMs = ref(AUTO_SWITCH_INTERVAL_MS);
+
+let nextMemePromise = null;
+let autoSwitchTimer = null;
+let countdownTimer = null;
 
 const showToastMessage = (msg) => {
   eventBus.emit('show-toast', msg)
 }
+
+const countdownProgress = computed(() => {
+  if (!autoSwitchEnabled.value) return 0
+  return 1 - countdownRemainingMs.value / AUTO_SWITCH_INTERVAL_MS
+})
+
+const countdownLabel = computed(() => {
+  if (!autoSwitchEnabled.value) return 'OFF'
+  return Math.max(1, Math.ceil(countdownRemainingMs.value / 1000))
+})
 
 watch(showPreview, (val) => {
   if (val) {
@@ -81,9 +118,19 @@ watch(showPreview, (val) => {
   } else {
     document.body.style.overflow = '';
   }
+  syncAutoSwitchState();
+});
+
+watch(autoSwitchEnabled, () => {
+  syncAutoSwitchState();
+});
+
+watch(loading, () => {
+  syncAutoSwitchState();
 });
 
 onUnmounted(() => {
+  stopAutoSwitchTimers();
   document.body.style.overflow = '';
 });
 
@@ -93,10 +140,7 @@ const togglePreview = () => {
   }
 };
 
-// 预加载的 Promise
-let nextMemePromise = null;
-
-// 预加载下一张图片的函数
+// 预加载下一张图片
 const preloadNext = () => {
   nextMemePromise = getRandomMeme()
       .then(meme => {
@@ -113,7 +157,62 @@ const preloadNext = () => {
       });
 };
 
+const stopAutoSwitchTimers = () => {
+  if (autoSwitchTimer) {
+    clearTimeout(autoSwitchTimer);
+    autoSwitchTimer = null;
+  }
+  if (countdownTimer) {
+    clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+};
+
+const resetCountdown = () => {
+  countdownRemainingMs.value = AUTO_SWITCH_INTERVAL_MS;
+};
+
+const canAutoSwitch = () => {
+  return autoSwitchEnabled.value && !showPreview.value && !loading.value && Boolean(currentMeme.value);
+};
+
+const startAutoSwitchCycle = () => {
+  stopAutoSwitchTimers();
+  if (!canAutoSwitch()) {
+    if (!autoSwitchEnabled.value) {
+      countdownRemainingMs.value = 0;
+    } else {
+      resetCountdown();
+    }
+    return;
+  }
+
+  resetCountdown();
+  countdownTimer = setInterval(() => {
+    countdownRemainingMs.value = Math.max(0, countdownRemainingMs.value - COUNTDOWN_TICK_MS);
+  }, COUNTDOWN_TICK_MS);
+
+  autoSwitchTimer = setTimeout(async () => {
+    await fetchRandomMeme();
+  }, AUTO_SWITCH_INTERVAL_MS);
+};
+
+const syncAutoSwitchState = () => {
+  if (!autoSwitchEnabled.value) {
+    stopAutoSwitchTimers();
+    countdownRemainingMs.value = 0;
+    return;
+  }
+  startAutoSwitchCycle();
+};
+
+const toggleAutoSwitch = () => {
+  autoSwitchEnabled.value = !autoSwitchEnabled.value;
+  showToastMessage(autoSwitchEnabled.value ? '已开启自动切换' : '已关闭自动切换');
+};
+
 const fetchRandomMeme = async () => {
+  stopAutoSwitchTimers();
   loading.value = true;
   try {
     let meme = null;
@@ -124,7 +223,7 @@ const fetchRandomMeme = async () => {
       nextMemePromise = null; // 消费掉
     }
 
-    // 2. 如果没有预加载（首次进入或预加载失败），则直接请求
+    // 2. 如果没有预加载，则直接请求
     if (!meme) {
       meme = await getRandomMeme();
     }
@@ -139,6 +238,7 @@ const fetchRandomMeme = async () => {
     preloadNext();
 
     if (!currentMeme.value) loading.value = false;
+    syncAutoSwitchState();
   }
 };
 
@@ -215,6 +315,14 @@ onMounted(() => {
   width: 100%;
   padding: 20px;
   box-sizing: border-box;
+  position: relative;
+}
+
+.auto-progress-anchor {
+  position: absolute;
+  top: 24px;
+  right: 28px;
+  z-index: 4;
 }
 
 .meme-content {
@@ -231,7 +339,7 @@ onMounted(() => {
 
 .image-container {
   width: 100%;
-  height: 65vh; /* 固定高度保持一致性 */
+  height: 65vh;
   min-height: 400px;
   display: flex;
   justify-content: center;
@@ -293,18 +401,52 @@ onMounted(() => {
   margin-top: 10px;
 }
 
+.primary-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
 .admin-actions {
   position: absolute;
-  right: 0;
+  right: -28px;
   display: flex;
   gap: 10px;
 }
 
+.auto-btn.active {
+  background: color-mix(in srgb, var(--primary-color) 16%, var(--playlist-item-bg));
+  border-color: color-mix(in srgb, var(--primary-color) 66%, var(--secondary-text-color));
+  color: var(--primary-color);
+  box-shadow: 0 0 0 1px rgba(var(--primary-color-rgb), 0.18);
+}
+
+.auto-btn.active:hover:not(:disabled) {
+  color: #fff;
+}
+
 /* 移动端适配：空间不足时垂直排列 */
 @media (max-width: 600px) {
+  .auto-progress-anchor {
+    top: 18px;
+    right: 18px;
+    transform: scale(0.92);
+    transform-origin: top right;
+  }
+
   .action-bar {
     flex-direction: column;
     gap: 15px;
+  }
+
+  .primary-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .primary-actions .btn {
+    width: 100%;
+    min-width: 0;
   }
 
   .admin-actions {
@@ -312,12 +454,6 @@ onMounted(() => {
     width: 100%;
     justify-content: center;
   }
-}
-
-.big-btn {
-  padding: 12px 40px;
-  font-size: 1.1rem;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .btn {
@@ -348,17 +484,25 @@ onMounted(() => {
   color: var(--secondary-text-color);
 }
 
-/* Accent Button (Primary Action) */
-.btn.accent {
+.primary-action-btn {
+  min-width: 188px;
+  padding: 12px 26px;
+  font-size: 1.02rem;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
   background: var(--playlist-item-bg);
   border-color: var(--secondary-text-color);
   color: var(--secondary-text-color);
 }
 
-.btn.accent:hover {
+.primary-action-btn:hover:not(:disabled) {
   background: var(--primary-color);
   border-color: var(--primary-color);
   color: #fff;
+  box-shadow: 0 10px 24px rgba(var(--primary-color-rgb), 0.2);
+}
+
+.auto-btn.active:not(:hover):not(:disabled) {
+  transform: none;
 }
 
 .btn.danger {
@@ -400,7 +544,6 @@ onMounted(() => {
   transform: scale(0.98);
 }
 
-/* 预览模态框样式 */
 .preview-overlay {
   position: fixed;
   top: 0;
