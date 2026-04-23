@@ -10,23 +10,30 @@
 
     <!-- 菜单 -->
     <nav class="menu" :class="{ visible: isOpen }">
-      <ul>
-        <li>
-          <a href="#" @click.prevent="onAuthClick">
+      <ul class="nav-list">
+        <li class="nav-item action-item">
+          <button type="button" class="nav-link nav-button" @click="onAuthClick">
             {{ authStore.isAuthenticated ? '登出' : '登录' }}
-          </a>
+          </button>
         </li>
-        <li><a href="#" @click.prevent="showHome">首页</a></li>
-        <li><a href="#" @click.prevent="showAbout">关于本站</a></li>
-        <li><a href="#" @click.prevent="showMeme">迷因漂流瓶</a></li>
-        <li><a href="#" @click.prevent="showPrivacy">隐私政策</a></li>
 
-        <li class="settings-group">
-          <a href="#" @click.prevent="toggleDisplaySettings" class="theme-toggle-link">
+        <li v-for="item in navItems" :key="item.to" class="nav-item">
+          <RouterLink
+              :to="item.to"
+              class="nav-link"
+              exact-active-class="is-active"
+              @click="closeSidebar"
+          >
+            {{ item.label }}
+          </RouterLink>
+        </li>
+
+        <li class="nav-item settings-group">
+          <button type="button" @click="toggleDisplaySettings" class="nav-link nav-button theme-toggle-link">
             <img :src="settingsIcon" class="svg-icon" alt="显示设置"/>
             <span>显示设置</span>
             <span class="chevron" :class="{ rotated: showDisplaySettings }">›</span>
-          </a>
+          </button>
 
           <ul v-show="showDisplaySettings" class="sub-menu">
             <li class="sub-item" @click.stop>
@@ -46,12 +53,12 @@
           </ul>
         </li>
 
-        <li v-if="authStore.isStationMaster" class="settings-group">
-          <a href="#" @click.prevent="toggleSiteSettings" class="theme-toggle-link">
+        <li v-if="authStore.isStationMaster" class="nav-item settings-group">
+          <button type="button" @click="toggleSiteSettings" class="nav-link nav-button theme-toggle-link">
             <img :src="settingsIcon" class="svg-icon" alt="站长设置"/>
             <span>站长设置</span>
             <span class="chevron" :class="{ rotated: showSiteSettings }">›</span>
-          </a>
+          </button>
 
           <ul v-show="showSiteSettings" class="sub-menu">
             <li class="sub-item" @click.stop>
@@ -62,10 +69,10 @@
               />
             </li>
             <li class="sub-item">
-              <a href="#" @click.prevent="handleSyncDatabase" class="theme-toggle-link" style="padding:0;">
+              <button type="button" @click="handleSyncDatabase" class="sub-action-button theme-toggle-link">
                 <img :src="restoreIcon" class="svg-icon" alt="同步" style="width:16px;height:16px;"/>
                 <span>同步数据库</span>
-              </a>
+              </button>
             </li>
           </ul>
         </li>
@@ -76,7 +83,6 @@
 
 <script setup>
 import {onMounted, ref, watch} from 'vue'
-import {useRouter} from 'vue-router'
 import {useAuthStore, useSiteConfigStore, useThemeStore} from '@/store/index.js'
 import {eventBus} from "@/utils/eventBus.js";
 import settingsIcon from '@/assets/icons/settings.svg'
@@ -87,10 +93,16 @@ import restoreIcon from '@/assets/icons/restore.svg'
 const isOpen = ref(false)
 const showDisplaySettings = ref(false)
 const showSiteSettings = ref(false)
-const router = useRouter()
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
 const siteConfigStore = useSiteConfigStore()
+
+const navItems = [
+  {label: '首页', to: '/'},
+  {label: '关于本站', to: '/about'},
+  {label: '迷因漂流瓶', to: '/meme'},
+  {label: '隐私政策', to: '/privacy'}
+]
 
 // Local state proxies for toggles
 const isDarkMode = ref(themeStore.isDarkMode)
@@ -111,6 +123,10 @@ onMounted(() => {
 
 function toggleSidebar() {
   isOpen.value = !isOpen.value
+}
+
+function closeSidebar() {
+  isOpen.value = false
 }
 
 function toggleDisplaySettings() {
@@ -146,29 +162,9 @@ async function handleSyncDatabase() {
   }
 }
 
-// 路由跳转
-const showHome = () => {
-  router.push('/');
-  isOpen.value = false;
-};
-
-const showMeme = () => {
-  router.push('/meme');
-  isOpen.value = false;
-};
-
-function showAbout() {
-  router.push('/about')
-  isOpen.value = false
-}
-
-function showPrivacy() {
-  router.push('/privacy')
-  isOpen.value = false
-}
-
 // 登录 / 登出处理
 function onAuthClick() {
+  closeSidebar()
   if (authStore.isAuthenticated) {
     eventBus.emit('request-logout')
   } else {
@@ -253,45 +249,59 @@ function onAuthClick() {
   transition: opacity 0.3s ease 0.15s, visibility 0s linear 0s;
 }
 
-.menu ul {
+.nav-list {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
 
-.menu li {
+.nav-item {
   margin-bottom: 20px;
 }
 
-.menu a {
+.nav-link {
   color: var(--secondary-text-color, #e0e0e0);
   text-decoration: none;
   font-weight: 500;
   font-size: 16px;
   line-height: 1.8;
   letter-spacing: 1px;
-  transition: color 0.2s ease;
-}
-
-.menu a:hover {
-  color: var(--sidebar-text-hover, #ffffff);
-  text-decoration: underline;
-}
-
-.menu a.theme-toggle-link:hover {
-  text-decoration: none;
-  color: var(--sidebar-text-hover, #ffffff);
-}
-
-.menu a.theme-toggle-link:hover span:not(.chevron) {
-  text-decoration: underline;
-}
-
-.theme-toggle-link {
+  transition: color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
   display: flex;
   align-items: center;
   gap: 8px;
   width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  box-sizing: border-box;
+}
+
+.nav-link:hover {
+  color: var(--sidebar-text-hover, #ffffff);
+  background: rgba(var(--primary-color-rgb, 249, 168, 37), 0.12);
+  transform: translateX(2px);
+}
+
+.nav-link.is-active {
+  color: var(--sidebar-text-hover, #ffffff);
+  background: rgba(var(--primary-color-rgb, 249, 168, 37), 0.2);
+  box-shadow: inset 3px 0 0 var(--primary-color);
+}
+
+.nav-button {
+  border: none;
+  background: transparent;
   cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+
+.theme-toggle-link:hover {
+  color: var(--sidebar-text-hover, #ffffff);
+}
+
+.theme-toggle-link {
+  justify-content: flex-start;
 }
 
 .settings-group {
@@ -341,5 +351,16 @@ function onAuthClick() {
 
 .sub-item span {
   flex: 1;
+}
+
+.sub-action-button {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  width: 100%;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
 }
 </style>
