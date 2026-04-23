@@ -1,6 +1,8 @@
-import {defineStore} from 'pinia';
-import {getUserStatus} from '@/services/auth';
-import {getCommentsEnabled, setCommentsEnabled} from '@/services/siteConfig';
+import { defineStore } from 'pinia';
+import { getUserStatus } from '@/services/auth';
+import { getCommentsEnabled, setCommentsEnabled } from '@/services/siteConfig';
+
+let authStatusRequest = null;
 
 export const useAuthStore = defineStore('auth', {
     state: () => ({
@@ -8,20 +10,57 @@ export const useAuthStore = defineStore('auth', {
         username: null,
         role: null, // 1=USER, 2=ADMIN, 3=STATION_MASTER
         isHiddenPlaylistUnlocked: false,
+        initialized: false,
     }),
     actions: {
-        async fetchUserStatus() {
-            const response = await getUserStatus();
+        applyUserStatus(response) {
             this.isAuthenticated = response.success;
             this.username = response.username || null;
             this.role = response.role || null;
             this.isHiddenPlaylistUnlocked = response.isHiddenPlaylistUnlocked || false;
         },
-        logout() {
+        clearUserStatus() {
             this.isAuthenticated = false;
             this.username = null;
             this.role = null;
             this.isHiddenPlaylistUnlocked = false;
+        },
+        async refreshUserStatus() {
+            if (authStatusRequest) {
+                return authStatusRequest;
+            }
+
+            authStatusRequest = (async () => {
+                try {
+                    const response = await getUserStatus();
+                    this.applyUserStatus(response);
+                    this.initialized = true;
+                    return response;
+                } catch (error) {
+                    this.clearUserStatus();
+                    this.initialized = true;
+                    throw error;
+                } finally {
+                    authStatusRequest = null;
+                }
+            })();
+
+            return authStatusRequest;
+        },
+        async initializeAuth() {
+            if (this.initialized) {
+                return;
+            }
+
+            try {
+                await this.refreshUserStatus();
+            } catch (error) {
+                console.error('Failed to initialize auth state', error);
+            }
+        },
+        logout() {
+            this.clearUserStatus();
+            this.initialized = true;
         },
     },
     getters: {

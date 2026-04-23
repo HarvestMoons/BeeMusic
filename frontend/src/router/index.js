@@ -1,33 +1,19 @@
-import {createRouter, createWebHistory} from 'vue-router';
+import { createRouter, createWebHistory } from 'vue-router';
 import HomePage from '@/views/HomePage.vue';
 import PrivacyPage from '@/views/PrivacyPage.vue';
 import About from '@/views/About.vue';
 import MemePage from '@/views/MemePage.vue';
-import {useAuthStore} from '@/store';
 
 const routes = [
-    {path: '/', component: HomePage},
-    {path: '/privacy', component: PrivacyPage},
-    {path: '/about', component: About},
-    {path: '/meme', component: MemePage},
+    { path: '/', component: HomePage },
+    { path: '/privacy', component: PrivacyPage },
+    { path: '/about', component: About },
+    { path: '/meme', component: MemePage },
 ];
 
 const router = createRouter({
     history: createWebHistory(),
     routes,
-});
-
-router.beforeEach(async (to, from, next) => {
-    const authStore = useAuthStore();
-    await authStore.fetchUserStatus(); // 确保状态同步
-
-    if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-        next('/login'); // 未登录时重定向到登录页面
-    } else if (to.path === '/login' && authStore.isAuthenticated) {
-        next('/'); // 已登录时从登录页面重定向到首页
-    } else {
-        next(); // 允许访问
-    }
 });
 
 export default router;

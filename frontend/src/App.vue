@@ -74,6 +74,7 @@ onMounted(() => {
   eventBus.on('open-register', () => showRegister.value = true)
   eventBus.on('request-logout', handleLogout)
   eventBus.on('show-toast', showToast)
+  authStore.initializeAuth()
 })
 
 onBeforeUnmount(() => {

@@ -69,10 +69,10 @@ async function handleLogin() {
   error.value = ''
   loading.value = true
   try {
-    await login({username: username.value, password: password.value}) // 你的现有逻辑
-    await authStore.fetchUserStatus() // 保持原逻辑：刷新认证状态
-    emit('close')
-    await router.push('/') // 保持原逻辑：跳转首页
+    await login({username: username.value, password: password.value})
+    await authStore.refreshUserStatus()
+    close()
+    await router.push('/')
   } catch (err) {
     console.error('Login error:', err)
     error.value = '登录失败，请检查用户名和密码'

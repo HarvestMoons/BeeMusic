@@ -476,7 +476,7 @@ onMounted(async () => {
   if (audioRef.value) audioRef.value.playbackRate = playbackRate.value;
 
   // 验证隐藏歌单权限
-  await authStore.fetchUserStatus();
+  await authStore.initializeAuth();
   if (selectedFolder.value === 'true_music' && !authStore.isHiddenPlaylistUnlocked) {
     selectedFolder.value = DEFAULT_FOLDER;
     saveSelectedFolder('folder-selector', DEFAULT_FOLDER);

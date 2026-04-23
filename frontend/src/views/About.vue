@@ -1,5 +1,4 @@
 <template>
-  <Sidebar/>
   <div class="about-page">
     <h1>关于本站</h1>
     <p style="text-indent: 2em;">开发者&站长：小蜜蜂
@@ -36,7 +35,6 @@
 </template>
 
 <script setup>
-import Sidebar from "@/components/layout/Sidebar.vue";
 import SongFolderDonut from "@/components/feature/stats/SongFolderDonut.vue";
 import Footnote from "@/components/common/Footnote.vue";
 </script>

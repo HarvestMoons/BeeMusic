@@ -69,9 +69,9 @@ async function handleRegister() {
   error.value = ''
   loading.value = true
   try {
-    await register({username: username.value, password: password.value}) // 保持现有逻辑
-    await authStore.fetchUserStatus()
-    emit('close')
+    await register({username: username.value, password: password.value})
+    await authStore.refreshUserStatus()
+    close()
     await router.push('/')
   } catch (err) {
     console.error('Register error:', err)

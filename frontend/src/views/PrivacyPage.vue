@@ -1,5 +1,4 @@
 <template>
-  <Sidebar/>
   <div class="container">
     <div v-if="loading">
       <MySpinner/>
@@ -12,10 +11,9 @@
 import {onMounted, ref} from 'vue'
 import MarkdownIt from 'markdown-it'
 import MySpinner from "@/components/effects/MySpinner.vue";
-import Sidebar from "@/components/layout/Sidebar.vue";
 
 export default {
-  components: {Sidebar, MySpinner},
+  components: {MySpinner},
   setup() {
     const mdParser = new MarkdownIt()
     const renderedMarkdown = ref('')
