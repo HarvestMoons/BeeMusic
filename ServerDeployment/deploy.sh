@@ -5,4 +5,4 @@ docker pull beecool/music-player-frontend:latest
 docker compose up -d --force-recreate
 
 
-echo "部署完成!应用访问地址: http://8.155.47.138:8081"
+echo "部署完成! 应用访问地址: https://beemusic.fun"

@@ -5,17 +5,32 @@ services:
     image: beecool/music-player:latest
     container_name: spring_app
     restart: always
-    ports:
-      - "8082:8082"
     depends_on:
       - redis
     networks:
       - app-network
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - DB_PASSWORD
+      - SERVER_PORT
+      - SERVER_SESSION_COOKIE_HTTP_ONLY
+      - SERVER_SESSION_COOKIE_SECURE
+      - SERVER_SESSION_COOKIE_MAX_AGE
+      - SERVER_SESSION_TIMEOUT
+      - SPRING_DATA_REDIS_HOST
+      - SPRING_DATA_REDIS_PORT
+      - SPRING_DATASOURCE_URL
+      - SPRING_DATASOURCE_USERNAME
+      - SPRING_DATASOURCE_PASSWORD
+      - SPRING_JPA_SHOW_SQL
+      - ALIYUN_OSS_ENDPOINT
+      - ALIYUN_OSS_BUCKET_NAME
       - ALIYUN_OSS_ACCESS_KEY
       - ALIYUN_OSS_SECRET_KEY
+      - ALIYUN_OSS_EXPIRATION_HOURS
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY
+      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SESSION
+      - SERVER_COMPRESSION_ENABLED
+      - SERVER_COMPRESSION_MIN_RESPONSE_SIZE
     # 每次部署前拉取最新镜像
     deploy:
       update_config:
@@ -40,8 +55,6 @@ services:
     image: redis:6.2
     container_name: redis_server
     restart: always
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
     networks:
