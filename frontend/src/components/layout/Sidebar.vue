@@ -100,8 +100,7 @@ const siteConfigStore = useSiteConfigStore()
 const navItems = [
   {label: '首页', to: '/'},
   {label: '关于本站', to: '/about'},
-  {label: '迷因漂流瓶', to: '/meme'},
-  {label: '隐私政策', to: '/privacy'}
+  {label: '迷因漂流瓶', to: '/meme'}
 ]
 
 // Local state proxies for toggles
