@@ -32,6 +32,16 @@
         @switch="onModalSwitch"
     />
 
+    <ConfirmModal
+      v-model:visible="globalConfirm.visible"
+      :title="globalConfirm.title"
+      :message="globalConfirm.message"
+      :confirm-text="globalConfirm.confirmText"
+      :cancel-text="globalConfirm.cancelText"
+      @confirm="handleGlobalConfirm"
+      @cancel="handleGlobalCancel"
+    />
+
     <!-- 全局 Toast -->
     <Toast :visible="toastVisible" :message="toastMessage"/>
   </div>
@@ -44,6 +54,7 @@ import Sidebar from '@/components/layout/Sidebar.vue'
 import HomePage from '@/views/HomePage.vue'
 import LoginModal from '@/components/feature/auth/LoginModal.vue'
 import RegisterModal from "@/components/feature/auth/RegisterModal.vue";
+import ConfirmModal from '@/components/common/ConfirmModal.vue'
 import Toast from '@/components/common/Toast.vue'
 import {logout} from '@/services/auth.js'
 import {useAuthStore, useThemeStore} from '@/store/index.js'
@@ -55,6 +66,15 @@ const showLogin = ref(false)
 const showRegister = ref(false)
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
+const globalConfirm = ref({
+  visible: false,
+  title: '确认',
+  message: '',
+  confirmText: '确定',
+  cancelText: '取消',
+  onConfirm: null,
+  onCancel: null
+})
 
 // Toast 状态
 const toastVisible = ref(false)
@@ -68,12 +88,49 @@ function showToast(msg) {
   }, 3000)
 }
 
+function openGlobalConfirm(options = {}) {
+  globalConfirm.value = {
+    visible: true,
+    title: options.title || '确认',
+    message: options.message || '',
+    confirmText: options.confirmText || '确定',
+    cancelText: options.cancelText || '取消',
+    onConfirm: options.onConfirm || null,
+    onCancel: options.onCancel || null
+  }
+}
+
+function resetGlobalConfirm() {
+  globalConfirm.value = {
+    visible: false,
+    title: '确认',
+    message: '',
+    confirmText: '确定',
+    cancelText: '取消',
+    onConfirm: null,
+    onCancel: null
+  }
+}
+
+function handleGlobalConfirm() {
+  const callback = globalConfirm.value.onConfirm
+  resetGlobalConfirm()
+  callback?.()
+}
+
+function handleGlobalCancel() {
+  const callback = globalConfirm.value.onCancel
+  resetGlobalConfirm()
+  callback?.()
+}
+
 onMounted(() => {
   themeStore.initTheme()
   eventBus.on('open-login', () => showLogin.value = true)
   eventBus.on('open-register', () => showRegister.value = true)
   eventBus.on('request-logout', handleLogout)
   eventBus.on('show-toast', showToast)
+  eventBus.on('request-confirm', openGlobalConfirm)
   authStore.initializeAuth()
 })
 

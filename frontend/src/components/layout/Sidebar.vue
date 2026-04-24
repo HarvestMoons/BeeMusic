@@ -84,7 +84,7 @@
 <script setup>
 import {onMounted, ref, watch} from 'vue'
 import {useAuthStore, useSiteConfigStore, useThemeStore} from '@/store/index.js'
-import {eventBus} from "@/utils/eventBus.js";
+import {eventBus, requestConfirm} from "@/utils/eventBus.js";
 import settingsIcon from '@/assets/icons/settings.svg'
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue'
 import {syncDatabase} from "@/services/siteConfig.js";
@@ -152,7 +152,12 @@ function handleCommentsToggle(val) {
 }
 
 async function handleSyncDatabase() {
-  if (!confirm("确定要立即从OSS同步数据库吗？")) return;
+  const confirmed = await requestConfirm({
+    title: '同步数据库',
+    message: '确定要立即从 OSS 同步数据库吗？',
+    confirmText: '立即同步'
+  })
+  if (!confirmed) return
   try {
     await syncDatabase();
     eventBus.emit('show-toast', "数据库同步触发成功！");

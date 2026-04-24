@@ -258,7 +258,7 @@ async function setFolder(folder, targetSongId = null) {
     }
   } catch (err) {
     console.error('切换音乐文件夹失败', err);
-    alert('请求失败: ' + err.message);
+    showToastMessage('请求失败: ' + err.message)
   } finally {
     document.body.classList.remove('loading')
   }

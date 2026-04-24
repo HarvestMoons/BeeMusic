@@ -127,7 +127,7 @@ import {useAuthStore} from '@/store'
 import api from '@/services/auth'
 import unfoldIcon from '@/assets/icons/unfold.svg'
 import foldIcon from '@/assets/icons/fold.svg'
-import { eventBus } from '@/utils/eventBus'
+import {eventBus, requestConfirm} from '@/utils/eventBus'
 
 const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 const MAX_CACHE_ENTRIES = 50;
@@ -361,7 +361,12 @@ async function toggleLike(comment) {
 }
 
 async function handleDelete(commentId) {
-  if (!confirm('确定删除这条评论吗？')) return
+  const confirmed = await requestConfirm({
+    title: '删除评论',
+    message: '确定删除这条评论吗？',
+    confirmText: '删除'
+  })
+  if (!confirmed) return
   try {
     await api.delete(`/comments/${commentId}`)
     // 从列表中移除

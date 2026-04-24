@@ -80,7 +80,7 @@
 import {computed, onMounted, onUnmounted, ref, watch} from 'vue';
 import {deleteMeme, getRandomMeme, syncMemes} from '@/services/meme';
 import {useAuthStore} from '@/store';
-import {eventBus} from '@/utils/eventBus.js'
+import {eventBus, requestConfirm} from '@/utils/eventBus.js'
 import CountdownRing from '@/components/common/CountdownRing.vue'
 
 const authStore = useAuthStore();
@@ -277,7 +277,14 @@ const downloadMeme = async () => {
 };
 
 const handleDelete = async () => {
-  if (!currentMeme.value || !confirm('确定要将这张图片标记为删除吗？')) return;
+  if (!currentMeme.value) return
+
+  const confirmed = await requestConfirm({
+    title: '删除图片',
+    message: '确定要将这张图片标记为删除吗？',
+    confirmText: '删除'
+  })
+  if (!confirmed) return
 
   try {
     await deleteMeme(currentMeme.value.id);
