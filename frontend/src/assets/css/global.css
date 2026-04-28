@@ -1,6 +1,7 @@
 @font-face {
     font-family: 'HanChanRounded';
-    src: url('../fonts/HanChanRounded.ttf') format('truetype');
+    src: local('HanChanRounded'),
+        url('../fonts/HanChanRounded.woff2') format('woff2');
     font-weight: normal;
     font-style: normal;
     font-display: swap;
