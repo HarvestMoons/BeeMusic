@@ -30,13 +30,26 @@
       <div><kbd>M</kbd> 静音开关</div>
       <div><kbd>Z</kbd> 频谱样式切换</div>
     </div>
-    <SongFolderDonut/>
+    <component :is="SongFolderDonutAsync" v-if="shouldRenderChart" />
   </div>
 </template>
 
 <script setup>
-import SongFolderDonut from "@/components/feature/stats/SongFolderDonut.vue";
+import {defineAsyncComponent, onMounted, ref} from 'vue'
 import Footnote from "@/components/common/Footnote.vue";
+
+const SongFolderDonutAsync = defineAsyncComponent(() => import('@/components/feature/stats/SongFolderDonut.vue'))
+const shouldRenderChart = ref(false)
+
+onMounted(() => {
+  const schedule = window.requestIdleCallback
+      ? window.requestIdleCallback
+      : (callback) => window.setTimeout(callback, 120)
+
+  schedule(() => {
+    shouldRenderChart.value = true
+  })
+})
 </script>
 
 <style scoped>

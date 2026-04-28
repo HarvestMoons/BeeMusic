@@ -167,6 +167,12 @@ const selectedFolder = ref(DEFAULT_FOLDER)
 const currentSongInfo = ref({title: '', bv: null})
 const playCountState = ref({songId: null, reported: false})
 
+function runAfterFirstPaint(task) {
+  requestAnimationFrame(() => {
+    window.setTimeout(task, 0)
+  })
+}
+
 function showToastMessage(msg) {
   eventBus.emit('show-toast', msg)
 }
@@ -437,12 +443,10 @@ async function copyTextToClipboard(text) {
   }
 }
 
-onMounted(async () => {
-  // 初始化音量
+function initializePlayerPreferences() {
   const savedVol = loadVolumeFromStorage();
   if (audioRef.value) audioRef.value.volume = savedVol != null ? savedVol : 0.2;
 
-  // 解析分享参数
   const urlParams = new URLSearchParams(window.location.search);
   const shareParam = urlParams.get('share');
   let shareFolder = null;
@@ -454,15 +458,12 @@ onMounted(async () => {
       const data = JSON.parse(decoded);
       if (data.f) shareFolder = data.f;
       if (data.id) shareSongId = data.id;
-
-      // 清除 URL 参数
       window.history.replaceState({}, '', window.location.pathname);
     } catch (e) {
       console.error('解析分享链接失败', e);
     }
   }
 
-  // 初始化文件夹
   if (shareFolder) {
     selectedFolder.value = shareFolder;
   } else {
@@ -470,12 +471,14 @@ onMounted(async () => {
     if (savedFolder) selectedFolder.value = savedFolder;
   }
 
-  // 初始化倍速
   const savedRate = loadPlaybackRateForFolder(selectedFolder.value);
   if (savedRate != null) playbackRate.value = savedRate;
   if (audioRef.value) audioRef.value.playbackRate = playbackRate.value;
 
-  // 验证隐藏歌单权限
+  return {shareSongId};
+}
+
+async function initializePlaylistData(shareSongId) {
   await authStore.initializeAuth();
   if (selectedFolder.value === 'true_music' && !authStore.isHiddenPlaylistUnlocked) {
     selectedFolder.value = DEFAULT_FOLDER;
@@ -483,6 +486,10 @@ onMounted(async () => {
   }
 
   await setFolder(selectedFolder.value, shareSongId);
+}
+
+onMounted(async () => {
+  const {shareSongId} = initializePlayerPreferences()
 
   useKeyboardShortcuts(
       () => audioRef.value,
@@ -494,6 +501,10 @@ onMounted(async () => {
   )
 
   eventBus.on('song-vote-updated', handleSongVoteUpdate)
+
+  runAfterFirstPaint(() => {
+    initializePlaylistData(shareSongId)
+  })
 });
 
 onUnmounted(() => {
