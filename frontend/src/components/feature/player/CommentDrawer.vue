@@ -19,7 +19,7 @@
           </button>
         </div>
       </div>
-      <button class="close-btn" @click="$emit('close')">
+      <button class="close-btn" @click="$emit('close')" :aria-label="visible ? '收起评论侧栏' : '展开评论侧栏'">
         <img v-if="visible" :src="foldIcon" class="svg-icon" alt="收起"/>
         <img v-else :src="unfoldIcon" class="svg-icon" alt="展开"/>
       </button>
@@ -98,7 +98,7 @@
       <div class="drawer-footer">
         <div v-if="replyingTo" class="reply-indicator">
           回复 @{{ replyingTo.username }}:
-          <button class="cancel-reply" @click="cancelReply">×</button>
+          <button class="cancel-reply" @click="cancelReply" aria-label="取消回复">×</button>
         </div>
         <div class="input-area">
           <textarea

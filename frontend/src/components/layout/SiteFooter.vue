@@ -19,7 +19,7 @@ import icpIcon from '@/assets/icons/icp/备案图标.png'
   padding: 15px 0;
   font-size: 12px;
   color: var(--text-color);
-  opacity: 0.6;
+  opacity: 0.82;
   display: flex;
   flex-direction: column;
   justify-content: center;

@@ -6,14 +6,20 @@
     </div>
 
     <div class="sort-toolbar">
-      <select v-model="sortField" class="sort-select">
+      <label for="playlist-sort-field" class="sr-only">歌单排序方式</label>
+      <select id="playlist-sort-field" v-model="sortField" class="sort-select">
         <option value="default">默认排序</option>
         <option value="playCount">播放次数</option>
         <option value="likeCount">点赞数</option>
         <option value="dislikeCount">点踩数</option>
         <option value="createdAt">上架日期</option>
       </select>
-      <button class="sort-btn" @click="toggleSortOrder" :title="sortOrder === 'asc' ? '升序' : '降序'">
+      <button
+          class="sort-btn"
+          @click="toggleSortOrder"
+          :title="sortOrder === 'asc' ? '升序' : '降序'"
+          :aria-label="sortOrder === 'asc' ? '当前升序，点击切换为降序' : '当前降序，点击切换为升序'"
+      >
         <img v-if="sortOrder === 'asc'" :src="upArrowIcon" alt="升序" class="svg-icon"/>
         <img v-else :src="downArrowIcon" alt="降序" class="svg-icon"/>
       </button>
@@ -144,6 +150,18 @@ function getSongTitle(name) {
   transition: background-color 0.3s ease;
   display: flex;
   flex-direction: column;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .header {

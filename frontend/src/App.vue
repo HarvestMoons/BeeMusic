@@ -10,10 +10,10 @@
 
     <!-- 主体部分 -->
     <div class="flex-1 main-content-column">
-      <div class="content-area">
+      <main class="content-area" id="main-content">
         <HomePage v-show="route.path === '/'"/>
         <router-view v-if="route.path !== '/'"/>
-      </div>
+      </main>
 
       <SiteFooter/>
     </div>

@@ -2,7 +2,7 @@
 <template>
   <div :class="['sidebar', { open: isOpen }]">
     <!-- 汉堡按钮 -->
-    <button class="hamburger" @click="toggleSidebar">
+    <button class="hamburger" @click="toggleSidebar" :aria-expanded="isOpen" :aria-label="isOpen ? '收起侧边栏' : '展开侧边栏'">
       <span></span>
       <span></span>
       <span></span>
