@@ -7,6 +7,7 @@
 <script setup>
 import {onBeforeUnmount, onMounted, watch} from 'vue';
 import {useThemeStore} from '@/store/index.js';
+import {ensureAudioGraph, getAudioGraph, resumeAudioGraph} from '@/utils/audioGraph.js'
 
 const props = defineProps({
   visible: {
@@ -18,54 +19,32 @@ const props = defineProps({
 const themeStore = useThemeStore();
 let rafId = null;
 let audioCtx = null;
-let source = null;
 let analyser = null;
-let removeAudioResumeListeners = null;
 
 onMounted(() => {
   const audio = document.getElementById("audio-player");
   const canvas = document.getElementById("spectrumCanvas");
-  const rect = canvas.getBoundingClientRect();
-
-  canvas.width = rect.width;
-  canvas.height = rect.height;
-
-
   if (!audio || !canvas) {
     console.error("找不到 #audio-player 或 #spectrumCanvas，无法启动可视化");
     return;
   }
 
-  const ctx = canvas.getContext("2d");
-  audioCtx = new AudioContext();
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = rect.height;
 
-  try {
-    // createMediaElementSource 在同一页面只能被创建一次连接到同一个媒体元素。
-    // 如果已经有 source 则先断开（防御性处理）
-    source = audioCtx.createMediaElementSource(audio);
-  } catch (e) {
-    // 如果 createMediaElementSource 抛错，仍尝试继续（保持原始行为）
-    console.warn("createMediaElementSource 可能已被创建:", e);
-    try {
-      // 若再次 create 失败，设置 source 为 null（后续绘制依赖 analyser）
-      source = null;
-    } catch (_) {
-      source = null;
-    }
+  const ctx = canvas.getContext("2d");
+  const graph = getAudioGraph() || ensureAudioGraph(audio)
+  if (!graph) {
+    console.error('无法初始化共享音频图，频谱不可用')
+    return
   }
 
-  analyser = audioCtx.createAnalyser();
-  analyser.fftSize = 1024;
+  audioCtx = graph.audioContext
+  analyser = graph.analyserNode
 
   const bufferLength = analyser.frequencyBinCount;
   const dataArray = new Uint8Array(bufferLength);
-
-  if (source) {
-    source.connect(analyser);
-    analyser.connect(audioCtx.destination);
-  } else {
-    analyser.connect(audioCtx.destination);
-  }
 
   // 初始设置容器高度
   const container = canvas.parentElement;
@@ -201,10 +180,7 @@ onMounted(() => {
   }
 
   function resumeAudioContext() {
-    if (audioCtx && audioCtx.state === "suspended") {
-      audioCtx.resume().catch(() => {
-      })
-    }
+    resumeAudioGraph()
   }
 
   const clickResumeHandler = () => resumeAudioContext();
@@ -214,18 +190,6 @@ onMounted(() => {
   document.addEventListener("keydown", keydownResumeHandler);
 
   // 重要：用户第一次点播放器控件时，也要同步唤醒频谱使用的 AudioContext，避免必须额外点页面其他位置。
-  const audioResumeEvents = ["play", "playing", "pointerdown", "mousedown", "touchstart"];
-  const audioResumeHandler = () => resumeAudioContext();
-  audioResumeEvents.forEach((eventName) => {
-    audio.addEventListener(eventName, audioResumeHandler);
-  });
-  removeAudioResumeListeners = () => {
-    audioResumeEvents.forEach((eventName) => {
-      audio.removeEventListener(eventName, audioResumeHandler);
-    });
-    removeAudioResumeListeners = null;
-  };
-
   // 按 Z 切换模式
   const modeKeyHandler = (e) => {
     if (!e.key || e.key.toLowerCase() !== "z") return;
@@ -241,22 +205,10 @@ onMounted(() => {
     document.removeEventListener("click", clickResumeHandler);
     document.removeEventListener("keydown", keydownResumeHandler);
     document.removeEventListener("keydown", modeKeyHandler);
-    removeAudioResumeListeners?.();
     if (rafId) cancelAnimationFrame(rafId);
 
-    [source, analyser].forEach(node => {
-      try {
-        node?.disconnect();
-      } catch (e) {
-      }
-    });
-    try {
-      audioCtx?.close();
-    } catch (e) {
-    }
     rafId = null;
     audioCtx = null;
-    source = null;
     analyser = null;
   };
 });
@@ -270,10 +222,6 @@ onBeforeUnmount(() => {
   } else {
     // 兜底：取消 raf 与关闭 audioCtx
     if (rafId) cancelAnimationFrame(rafId);
-    removeAudioResumeListeners?.();
-    if (analyser) analyser.disconnect();
-    if (source) source.disconnect();
-    if (audioCtx && typeof audioCtx.close === 'function') audioCtx.close();
   }
 });
 </script>

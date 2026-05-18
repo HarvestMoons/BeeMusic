@@ -42,42 +42,39 @@
 </template>
 
 <script setup>
-import {computed, onMounted, ref, watch} from 'vue'
+import {computed, ref, watch} from 'vue'
 import SearchBar from "@/components/common/SearchBar.vue";
 import upArrowIcon from '@/assets/icons/up_arrow.svg'
 import downArrowIcon from '@/assets/icons/down_arrow.svg'
-import {useAuthStore} from '@/store'
+import {usePlayerStorage} from '@/composables/player/usePlayerStorage.js'
+import {getSongTitle, sortPlaylist} from '@/utils/playerPlaylist.js'
 
 const props = defineProps({
   playlist: {type: Array, required: true},
   currentSongId: {type: [String, Number], default: null}
 })
 
-const emit = defineEmits(['select', 'refresh'])
-const authStore = useAuthStore()
+defineEmits(['select'])
+
+const {
+  loadPlaylistSortPreferences,
+  savePlaylistSortField,
+  savePlaylistSortOrder
+} = usePlayerStorage()
+
+const savedSortPreferences = loadPlaylistSortPreferences()
 
 const searchQuery = ref('')
-const sortField = ref('default')
-const sortOrder = ref('desc')
-
-// LocalStorage Keys
-const STORAGE_KEY_SORT_FIELD = 'music_playlist_sort_field'
-const STORAGE_KEY_SORT_ORDER = 'music_playlist_sort_order'
-
-onMounted(() => {
-  const savedField = localStorage.getItem(STORAGE_KEY_SORT_FIELD)
-  const savedOrder = localStorage.getItem(STORAGE_KEY_SORT_ORDER)
-  if (savedField) sortField.value = savedField
-  if (savedOrder) sortOrder.value = savedOrder
-})
+const sortField = ref(savedSortPreferences.field)
+const sortOrder = ref(savedSortPreferences.order)
 
 
 watch(sortField, (newVal) => {
-  localStorage.setItem(STORAGE_KEY_SORT_FIELD, newVal)
+  savePlaylistSortField(newVal)
 })
 
 watch(sortOrder, (newVal) => {
-  localStorage.setItem(STORAGE_KEY_SORT_ORDER, newVal)
+  savePlaylistSortOrder(newVal)
 })
 
 const handleSearch = (keyword) => {
@@ -93,24 +90,9 @@ const filteredPlaylist = computed(() => {
 })
 
 const displayPlaylist = computed(() => {
-  let list = [...filteredPlaylist.value]
-  if (sortField.value === 'default') return list
-
-  return list.sort((a, b) => {
-    let valA = a[sortField.value]
-    let valB = b[sortField.value]
-
-    if (sortField.value === 'createdAt') {
-      valA = valA ? new Date(valA).getTime() : 0
-      valB = valB ? new Date(valB).getTime() : 0
-    } else {
-      valA = Number(valA) || 0
-      valB = Number(valB) || 0
-    }
-
-    if (valA === valB) return 0
-    const result = valA > valB ? 1 : -1
-    return sortOrder.value === 'asc' ? result : -result
+  return sortPlaylist(filteredPlaylist.value, {
+    field: sortField.value,
+    order: sortOrder.value
   })
 })
 
@@ -127,13 +109,6 @@ function formatMeta(song) {
     return new Date(song.createdAt).toLocaleDateString()
   }
   return ''
-}
-
-function getSongTitle(name) {
-  let title = name.replace(/\.(mp3)$/i, '')
-  const match = title.match(/^(.*?)_?BV[0-9A-Za-z]+/i)
-  if (match) title = match[1]
-  return title
 }
 </script>
 

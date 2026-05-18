@@ -16,9 +16,11 @@ import {computed, onMounted, ref, watch} from 'vue'
 import CommentDrawer from '@/components/feature/player/CommentDrawer.vue'
 import SpectrumVisualizer from '@/components/feature/spectrum/SpectrumVisualizer.vue'
 import {useAuthStore, useSiteConfigStore} from '@/store'
+import {usePlayerStorage} from '@/composables/player/usePlayerStorage.js'
 
 const authStore = useAuthStore()
 const siteConfigStore = useSiteConfigStore()
+const {saveCommentsVisibility, loadCommentsVisibility} = usePlayerStorage()
 
 const canShowComments = computed(() => {
   return authStore.isStationMaster || siteConfigStore.commentsEnabled
@@ -46,10 +48,7 @@ const showComments = ref(true)
 const showSpectrum = ref(false)
 
 function persistShowComments() {
-  try {
-    localStorage.setItem(props.showCommentsStorageKey, String(showComments.value))
-  } catch (e) {
-  }
+  saveCommentsVisibility(showComments.value, props.showCommentsStorageKey)
 }
 
 function setCommentsVisibility(next) {
@@ -87,11 +86,7 @@ function handleDrawerClose() {
 }
 
 onMounted(() => {
-  try {
-    const saved = localStorage.getItem(props.showCommentsStorageKey)
-    if (saved !== null) showComments.value = saved === 'true'
-  } catch (e) {
-  }
+  showComments.value = loadCommentsVisibility(props.showCommentsStorageKey, showComments.value)
 })
 
 defineExpose({

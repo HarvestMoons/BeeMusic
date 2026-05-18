@@ -114,9 +114,12 @@ import OnlineStatus from "@/components/common/OnlineStatus.vue";
 import {useStationMaster} from '@/composables/player/useStationMaster.js'
 import {usePlayerStorage} from '@/composables/player/usePlayerStorage.js'
 import {eventBus} from '@/utils/eventBus.js'
+import {ensureAudioGraph, resumeAudioGraph, setMasterGain, teardownAudioGraph} from '@/utils/audioGraph.js'
+import {parseSongName, sortPlaylist} from '@/utils/playerPlaylist.js'
 
 const DEFAULT_FOLDER = 'ha_ji_mi';
 const PLAY_COUNT_THRESHOLD_SECONDS = 10;
+const MASTER_GAIN_SCALE = 0.1;
 
 const {
   STORAGE_KEYS,
@@ -125,7 +128,10 @@ const {
   saveSelectedFolder,
   loadSelectedFolder,
   savePlaybackRateForFolder,
-  loadPlaybackRateForFolder
+  loadPlaybackRateForFolder,
+  savePlayMode,
+  loadPlayMode,
+  loadPlaylistSortPreferences
 } = usePlayerStorage()
 
 const authStore = useAuthStore();
@@ -136,7 +142,7 @@ const playlist = ref([])
 const currentIndex = ref(-1)
 const historyStack = ref([])
 const playbackRate = ref(1.0)
-const playMode = ref(localStorage.getItem(STORAGE_KEYS.PLAY_MODE) || 'random')
+const playMode = ref(loadPlayMode() || 'random')
 const playerSidebarRef = ref(null)
 const isSpectrumVisible = computed(() => playerSidebarRef.value?.showSpectrum ?? false)
 
@@ -168,6 +174,7 @@ function handleToggleSpectrum() {
 const selectedFolder = ref(DEFAULT_FOLDER)
 const currentSongInfo = ref({title: '', bv: null})
 const playCountState = ref({songId: null, reported: false})
+let removeAudioGraphResumeListeners = null
 
 function runAfterFirstPaint(task) {
   requestAnimationFrame(() => {
@@ -232,7 +239,7 @@ watch(playbackRate, (val) => {
 })
 
 watch(playMode, (val) => {
-  localStorage.setItem(STORAGE_KEYS.PLAY_MODE, val)
+  savePlayMode(val)
 })
 
 // 逻辑
@@ -294,10 +301,12 @@ function shuffleArray(array) {
   return newArr;
 }
 
-function parseSongNameWithBv(name) {
-  const clean = name.replace(/\.mp3$/, '');
-  const match = clean.match(/^(.*?)_?(BV[0-9A-Za-z]+)/);
-  return match ? {title: match[1], bv: match[2]} : {title: clean, bv: null};
+function getCurrentSortedPlaylist() {
+  return sortPlaylist(playlist.value, loadPlaylistSortPreferences())
+}
+
+function findPlaylistIndexBySongId(songId) {
+  return playlist.value.findIndex(song => song.id === songId)
 }
 
 function playPreviousSong() {
@@ -331,16 +340,36 @@ function handleSelectSong(songId) {
 
 function playNextInOrder() {
   if (playlist.value.length === 0) return
-  const next = (currentIndex.value + 1) % playlist.value.length
-  playSongAtIndex(next)
+
+  const orderedPlaylist = getCurrentSortedPlaylist()
+  const currentSongId = playlist.value[currentIndex.value]?.id
+  const orderedCurrentIndex = orderedPlaylist.findIndex(song => song.id === currentSongId)
+  const nextOrderedIndex = orderedCurrentIndex === -1
+      ? 0
+      : (orderedCurrentIndex + 1) % orderedPlaylist.length
+  const nextSongId = orderedPlaylist[nextOrderedIndex]?.id
+  const nextIndex = findPlaylistIndexBySongId(nextSongId)
+
+  if (nextIndex !== -1) {
+    playSongAtIndex(nextIndex)
+  }
 }
 
 function playPrevInOrder() {
   if (playlist.value.length === 0 || currentIndex.value === -1) return
-  const prev = currentIndex.value === 0
-      ? playlist.value.length - 1
-      : currentIndex.value - 1
-  playSongAtIndex(prev)
+
+  const orderedPlaylist = getCurrentSortedPlaylist()
+  const currentSongId = playlist.value[currentIndex.value]?.id
+  const orderedCurrentIndex = orderedPlaylist.findIndex(song => song.id === currentSongId)
+  const prevOrderedIndex = orderedCurrentIndex === -1
+      ? orderedPlaylist.length - 1
+      : (orderedCurrentIndex - 1 + orderedPlaylist.length) % orderedPlaylist.length
+  const prevSongId = orderedPlaylist[prevOrderedIndex]?.id
+  const prevIndex = findPlaylistIndexBySongId(prevSongId)
+
+  if (prevIndex !== -1) {
+    playSongAtIndex(prevIndex)
+  }
 }
 
 async function safePlayAudio(audioElement) {
@@ -378,7 +407,7 @@ function playSongAtIndex(index, fromHistory = false) {
   const song = playlist.value[index];
   playCountState.value = {songId: song.id, reported: false};
 
-  const parsed = parseSongNameWithBv(song.name);
+  const parsed = parseSongName(song.name);
   const songName = parsed.title || song.name.replace(/\.mp3$/, '')
   currentSongInfo.value = parsed
 
@@ -480,6 +509,40 @@ function initializePlayerPreferences() {
   return {shareSongId};
 }
 
+function setupAudioGraphForPlayback() {
+  if (!audioRef.value) {
+    return
+  }
+
+  const graph = ensureAudioGraph(audioRef.value)
+  if (!graph) {
+    return
+  }
+
+  setMasterGain(MASTER_GAIN_SCALE)
+
+  const resumeHandler = () => {
+    resumeAudioGraph()
+  }
+
+  document.addEventListener('click', resumeHandler)
+  document.addEventListener('keydown', resumeHandler)
+
+  const audioResumeEvents = ['play', 'playing', 'pointerdown', 'mousedown', 'touchstart']
+  audioResumeEvents.forEach((eventName) => {
+    audioRef.value?.addEventListener(eventName, resumeHandler)
+  })
+
+  removeAudioGraphResumeListeners = () => {
+    document.removeEventListener('click', resumeHandler)
+    document.removeEventListener('keydown', resumeHandler)
+    audioResumeEvents.forEach((eventName) => {
+      audioRef.value?.removeEventListener(eventName, resumeHandler)
+    })
+    removeAudioGraphResumeListeners = null
+  }
+}
+
 async function initializePlaylistData(shareSongId) {
   await authStore.initializeAuth();
   if (selectedFolder.value === 'true_music' && !authStore.isHiddenPlaylistUnlocked) {
@@ -492,6 +555,7 @@ async function initializePlaylistData(shareSongId) {
 
 onMounted(async () => {
   const {shareSongId} = initializePlayerPreferences()
+  setupAudioGraphForPlayback()
 
   useKeyboardShortcuts(
       () => audioRef.value,
@@ -511,6 +575,8 @@ onMounted(async () => {
 
 onUnmounted(() => {
   eventBus.off('song-vote-updated', handleSongVoteUpdate)
+  removeAudioGraphResumeListeners?.()
+  teardownAudioGraph(audioRef.value)
 })
 
 defineExpose({
