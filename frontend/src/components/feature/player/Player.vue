@@ -111,11 +111,14 @@ import PlayerSidebar from "@/components/feature/player/PlayerSidebar.vue";
 import {PUBLIC_API_BASE} from '@/constants';
 import {useKeyboardShortcuts} from "@/composables/useKeyboardShortcuts.js";
 import OnlineStatus from "@/components/common/OnlineStatus.vue";
+import {usePlayerQueue} from '@/composables/player/usePlayerQueue.js'
+import {usePlayerPlaylistLoader} from '@/composables/player/usePlayerPlaylistLoader.js'
 import {useStationMaster} from '@/composables/player/useStationMaster.js'
 import {usePlayerStorage} from '@/composables/player/usePlayerStorage.js'
 import {eventBus} from '@/utils/eventBus.js'
 import {ensureAudioGraph, resumeAudioGraph, setMasterGain, teardownAudioGraph} from '@/utils/audioGraph.js'
-import {parseSongName, sortPlaylist} from '@/utils/playerPlaylist.js'
+import {parseSongName} from '@/utils/playerPlaylist.js'
+import {createSharedSongUrl, getSharedSongParams} from '@/utils/playerShare.js'
 
 const DEFAULT_FOLDER = 'ha_ji_mi';
 const PLAY_COUNT_THRESHOLD_SECONDS = 10;
@@ -139,8 +142,6 @@ const authStore = useAuthStore();
 // Refs
 const audioRef = ref(null)
 const playlist = ref([])
-const currentIndex = ref(-1)
-const historyStack = ref([])
 const playbackRate = ref(1.0)
 const playMode = ref(loadPlayMode() || 'random')
 const playerSidebarRef = ref(null)
@@ -175,6 +176,26 @@ const selectedFolder = ref(DEFAULT_FOLDER)
 const currentSongInfo = ref({title: '', bv: null})
 const playCountState = ref({songId: null, reported: false})
 let removeAudioGraphResumeListeners = null
+
+let playSongAtIndex = () => {}
+
+const {
+  currentIndex,
+  historyStack,
+  resetQueueState,
+  playPreviousSong,
+  playRandomSong,
+  handleSelectSong,
+  playNextInOrder,
+  playPrevInOrder,
+  handlePlaybackEnd
+} = usePlayerQueue({
+  playlist,
+  playMode,
+  playSongAtIndex: (...args) => playSongAtIndex(...args),
+  showToastMessage,
+  loadPlaylistSortPreferences
+})
 
 function runAfterFirstPaint(task) {
   requestAnimationFrame(() => {
@@ -242,135 +263,18 @@ watch(playMode, (val) => {
   savePlayMode(val)
 })
 
-// 逻辑
-async function handleFolderChange() {
-  saveSelectedFolder('folder-selector', selectedFolder.value)
-  await setFolder(selectedFolder.value)
-}
-
-async function setFolder(folder, targetSongId = null) {
-  try {
-    document.body.classList.add('loading')
-    historyStack.value = [];
-    await fetchSongList(folder);
-
-    const savedRate = loadPlaybackRateForFolder(folder);
-    if (savedRate != null) {
-      playbackRate.value = savedRate;
-      if (audioRef.value) audioRef.value.playbackRate = savedRate;
-    }
-
-    if (playlist.value.length > 0) {
-      let playIndex = 0;
-      if (targetSongId) {
-        const foundIndex = playlist.value.findIndex(s => s.id === targetSongId);
-        if (foundIndex !== -1) playIndex = foundIndex;
-      }
-      playSongAtIndex(playIndex);
-    } else {
-      currentSongInfo.value = {title: '', bv: null}
-      if (audioRef.value) audioRef.value.src = '';
-    }
-  } catch (err) {
-    console.error('切换音乐文件夹失败', err);
-    showToastMessage('请求失败: ' + err.message)
-  } finally {
-    document.body.classList.remove('loading')
-  }
-}
-
-async function fetchSongList(folder) {
-  try {
-    const query = new URLSearchParams({folder}).toString()
-    const res = await fetch(`${PUBLIC_API_BASE}/songs/get?${query}`);
-    const data = await res.json();
-    playlist.value = shuffleArray(data || []);
-    return playlist.value;
-  } catch (err) {
-    playlist.value = [];
-    return [];
-  }
-}
-
-function shuffleArray(array) {
-  const newArr = [...array];
-  for (let i = newArr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [newArr[i], newArr[j]] = [newArr[j], newArr[i]];
-  }
-  return newArr;
-}
-
-function getCurrentSortedPlaylist() {
-  return sortPlaylist(playlist.value, loadPlaylistSortPreferences())
-}
-
-function findPlaylistIndexBySongId(songId) {
-  return playlist.value.findIndex(song => song.id === songId)
-}
-
-function playPreviousSong() {
-  if (historyStack.value.length === 0) {
-    showToastMessage("没有上一首了");
-    return;
-  }
-  const prev = historyStack.value.pop();
-  playSongAtIndex(prev, true);
-}
-
-function handlePlaybackEnd() {
-  if (playMode.value === 'single-loop') {
-    playSongAtIndex(currentIndex.value, false);
-  } else if (playMode.value === 'loop-list') {
-    playNextInOrder();
-  } else if(playMode.value === 'random') {
-    playRandomSong();
-  }
-}
-
-function playRandomSong() {
-  const rand = Math.floor(Math.random() * playlist.value.length);
-  playSongAtIndex(rand);
-}
-
-function handleSelectSong(songId) {
-  const idx = playlist.value.findIndex(s => s.id === songId)
-  playSongAtIndex(idx)
-}
-
-function playNextInOrder() {
-  if (playlist.value.length === 0) return
-
-  const orderedPlaylist = getCurrentSortedPlaylist()
-  const currentSongId = playlist.value[currentIndex.value]?.id
-  const orderedCurrentIndex = orderedPlaylist.findIndex(song => song.id === currentSongId)
-  const nextOrderedIndex = orderedCurrentIndex === -1
-      ? 0
-      : (orderedCurrentIndex + 1) % orderedPlaylist.length
-  const nextSongId = orderedPlaylist[nextOrderedIndex]?.id
-  const nextIndex = findPlaylistIndexBySongId(nextSongId)
-
-  if (nextIndex !== -1) {
-    playSongAtIndex(nextIndex)
-  }
-}
-
-function playPrevInOrder() {
-  if (playlist.value.length === 0 || currentIndex.value === -1) return
-
-  const orderedPlaylist = getCurrentSortedPlaylist()
-  const currentSongId = playlist.value[currentIndex.value]?.id
-  const orderedCurrentIndex = orderedPlaylist.findIndex(song => song.id === currentSongId)
-  const prevOrderedIndex = orderedCurrentIndex === -1
-      ? orderedPlaylist.length - 1
-      : (orderedCurrentIndex - 1 + orderedPlaylist.length) % orderedPlaylist.length
-  const prevSongId = orderedPlaylist[prevOrderedIndex]?.id
-  const prevIndex = findPlaylistIndexBySongId(prevSongId)
-
-  if (prevIndex !== -1) {
-    playSongAtIndex(prevIndex)
-  }
-}
+const {handleFolderChange, setFolder} = usePlayerPlaylistLoader({
+  playlist,
+  selectedFolder,
+  playbackRate,
+  audioRef,
+  currentSongInfo,
+  showToastMessage,
+  saveSelectedFolder,
+  loadPlaybackRateForFolder,
+  resetQueueState,
+  playSongAtIndex: (...args) => playSongAtIndex(...args)
+})
 
 async function safePlayAudio(audioElement) {
   if (!audioElement) return false
@@ -388,7 +292,7 @@ async function safePlayAudio(audioElement) {
   }
 }
 
-function playSongAtIndex(index, fromHistory = false) {
+playSongAtIndex = function (index, fromHistory = false) {
   if (!playlist.value || playlist.value.length === 0) {
     currentSongInfo.value = {title: '播放失败：歌曲列表为空', bv: null}
     return;
@@ -444,9 +348,12 @@ async function handleShare() {
     id: playlist.value[currentIndex.value].id
   };
   try {
-    const jsonStr = JSON.stringify(data);
-    const encoded = btoa(jsonStr);
-    const url = `${window.location.origin}${window.location.pathname}?share=${encoded}`;
+    const url = createSharedSongUrl({
+      origin: window.location.origin,
+      pathname: window.location.pathname,
+      folder: data.f,
+      songId: data.id
+    })
 
     const successful = await copyTextToClipboard(url);
     if (successful) {
@@ -478,21 +385,9 @@ function initializePlayerPreferences() {
   const savedVol = loadVolumeFromStorage();
   if (audioRef.value) audioRef.value.volume = savedVol != null ? savedVol : 0.2;
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const shareParam = urlParams.get('share');
-  let shareFolder = null;
-  let shareSongId = null;
-
-  if (shareParam) {
-    try {
-      const decoded = atob(shareParam);
-      const data = JSON.parse(decoded);
-      if (data.f) shareFolder = data.f;
-      if (data.id) shareSongId = data.id;
-      window.history.replaceState({}, '', window.location.pathname);
-    } catch (e) {
-      console.error('解析分享链接失败', e);
-    }
+  const {hadShareParam, shareFolder, shareSongId} = getSharedSongParams(window.location.search)
+  if (hadShareParam) {
+    window.history.replaceState({}, '', window.location.pathname)
   }
 
   if (shareFolder) {
