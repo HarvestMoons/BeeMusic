@@ -122,7 +122,7 @@ import {createSharedSongUrl, getSharedSongParams} from '@/utils/playerShare.js'
 
 const DEFAULT_FOLDER = 'ha_ji_mi';
 const PLAY_COUNT_THRESHOLD_SECONDS = 10;
-const MASTER_GAIN_SCALE = 0.1;
+const MASTER_GAIN_SCALE = 0.25;
 
 const {
   STORAGE_KEYS,
