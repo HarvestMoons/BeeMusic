@@ -3,7 +3,7 @@
   <div id="app" class="flex">
     <EntryCover
         :visible="showEntryCover"
-        quote="这里先放一句你喜欢的话。"
+        quote="Bee live in yourself"
         @enter="closeEntryCover"
     />
 
