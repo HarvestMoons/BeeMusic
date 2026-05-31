@@ -74,8 +74,9 @@ export function usePlayerStorage() {
     }
 
     function loadPlaylistSortPreferences() {
+        const savedField = loadValue(STORAGE_KEYS.PLAYLIST_SORT_FIELD)
         return {
-            field: loadValue(STORAGE_KEYS.PLAYLIST_SORT_FIELD) || 'default',
+            field: savedField && savedField !== 'default' ? savedField : 'createdAt',
             order: loadValue(STORAGE_KEYS.PLAYLIST_SORT_ORDER) || 'desc'
         }
     }

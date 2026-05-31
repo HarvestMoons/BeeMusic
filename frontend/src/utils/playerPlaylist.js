@@ -1,5 +1,5 @@
 export const DEFAULT_PLAYLIST_SORT = {
-    field: 'default',
+    field: 'createdAt',
     order: 'desc'
 }
 
@@ -19,10 +19,6 @@ export function getSongTitle(name = '') {
 export function sortPlaylist(list = [], sortOptions = DEFAULT_PLAYLIST_SORT) {
     const field = sortOptions?.field || DEFAULT_PLAYLIST_SORT.field
     const order = sortOptions?.order || DEFAULT_PLAYLIST_SORT.order
-
-    if (field === 'default') {
-        return list
-    }
 
     return [...list].sort((a, b) => {
         let valA = a[field]

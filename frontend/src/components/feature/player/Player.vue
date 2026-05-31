@@ -272,6 +272,7 @@ const {handleFolderChange, setFolder} = usePlayerPlaylistLoader({
   showToastMessage,
   saveSelectedFolder,
   loadPlaybackRateForFolder,
+  loadPlaylistSortPreferences,
   resetQueueState,
   playSongAtIndex: (...args) => playSongAtIndex(...args)
 })

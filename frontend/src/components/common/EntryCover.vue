@@ -9,12 +9,8 @@
     >
       <div class="entry-cover__shade"></div>
       <div class="entry-cover__content">
-        <p class="entry-cover__eyebrow">Bee Music</p>
         <h1 class="entry-cover__quote">{{ quote }}</h1>
         <p class="entry-cover__hint">点击任意位置进入</p>
-        <button class="entry-cover__button" type="button" @click.stop="enterSite">
-          进入网站
-        </button>
       </div>
     </section>
   </Transition>
@@ -129,15 +125,6 @@ function enterSite() {
   animation: cover-content-rise 0.8s ease both;
 }
 
-.entry-cover__eyebrow {
-  margin: 0 0 18px;
-  font-family: var(--round-font);
-  font-size: clamp(18px, 2vw, 26px);
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  opacity: 0.86;
-}
-
 .entry-cover__quote {
   margin: 0;
   font-family: var(--round-font);
@@ -147,32 +134,10 @@ function enterSite() {
 }
 
 .entry-cover__hint {
-  margin: 28px 0 18px;
+  margin: 28px 0 0;
   font-size: 15px;
   letter-spacing: 0.12em;
   opacity: 0.78;
-}
-
-.entry-cover__button {
-  padding: 12px 28px;
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  border-radius: 999px;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-  cursor: pointer;
-  font: inherit;
-  letter-spacing: 0.08em;
-  backdrop-filter: blur(8px);
-  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
-}
-
-.entry-cover__button:hover,
-.entry-cover__button:focus-visible {
-  border-color: rgba(255, 255, 255, 0.95);
-  background: rgba(255, 255, 255, 0.22);
-  transform: translateY(-2px);
-  outline: none;
 }
 
 .entry-cover-fade-enter-active,

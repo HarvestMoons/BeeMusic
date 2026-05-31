@@ -1,4 +1,5 @@
 import { PUBLIC_API_BASE } from '@/constants'
+import { sortPlaylist } from '@/utils/playerPlaylist.js'
 
 const DEFAULT_SELECTED_FOLDER_STORAGE_ID = 'folder-selector'
 
@@ -11,6 +12,7 @@ export function usePlayerPlaylistLoader({
     showToastMessage,
     saveSelectedFolder,
     loadPlaybackRateForFolder,
+    loadPlaylistSortPreferences,
     resetQueueState,
     playSongAtIndex
 }) {
@@ -32,7 +34,7 @@ export function usePlayerPlaylistLoader({
             }
 
             if (playlist.value.length > 0) {
-                let playIndex = 0
+                let playIndex = getFirstSortedSongIndex()
                 if (targetSongId) {
                     const foundIndex = playlist.value.findIndex(s => s.id === targetSongId)
                     if (foundIndex !== -1) playIndex = foundIndex
@@ -55,7 +57,7 @@ export function usePlayerPlaylistLoader({
             const query = new URLSearchParams({ folder }).toString()
             const res = await fetch(`${PUBLIC_API_BASE}/songs/get?${query}`)
             const data = await res.json()
-            playlist.value = shuffleArray(data || [])
+            playlist.value = data || []
             return playlist.value
         } catch (err) {
             playlist.value = []
@@ -63,13 +65,11 @@ export function usePlayerPlaylistLoader({
         }
     }
 
-    function shuffleArray(array) {
-        const newArr = [...array]
-        for (let i = newArr.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1))
-                ;[newArr[i], newArr[j]] = [newArr[j], newArr[i]]
-        }
-        return newArr
+    function getFirstSortedSongIndex() {
+        const sortedPlaylist = sortPlaylist(playlist.value, loadPlaylistSortPreferences())
+        const firstSongId = sortedPlaylist[0]?.id
+        const firstSongIndex = playlist.value.findIndex(song => song.id === firstSongId)
+        return firstSongIndex === -1 ? 0 : firstSongIndex
     }
 
     return {

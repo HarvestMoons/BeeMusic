@@ -8,11 +8,10 @@
     <div class="sort-toolbar">
       <label for="playlist-sort-field" class="sr-only">歌单排序方式</label>
       <select id="playlist-sort-field" v-model="sortField" class="sort-select">
-        <option value="default">默认排序</option>
+        <option value="createdAt">上架日期</option>
         <option value="playCount">播放次数</option>
         <option value="likeCount">点赞数</option>
         <option value="dislikeCount">点踩数</option>
-        <option value="createdAt">上架日期</option>
       </select>
       <button
           class="sort-btn"
@@ -34,7 +33,7 @@
       >
         <div class="song-item-content">
           <span class="song-title-text" :title="getSongTitle(song.name)">{{ getSongTitle(song.name) }}</span>
-          <span v-if="sortField !== 'default'" class="song-meta">{{ formatMeta(song) }}</span>
+          <span class="song-meta">{{ formatMeta(song) }}</span>
         </div>
       </li>
     </ul>
