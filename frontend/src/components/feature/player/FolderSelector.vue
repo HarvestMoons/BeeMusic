@@ -33,13 +33,13 @@ import {useAuthStore} from '@/store'
 import {FOLDER_INFO} from '@/constants'
 
 // Import images
-import ha_ji_mi from '@/assets/cover/哈基米.webp'
-import dian_gun from '@/assets/cover/电棍.webp'
-import da_si_ma from '@/assets/cover/大司马.webp'
-import ding_zhen from '@/assets/cover/丁真.webp'
-import dxl from '@/assets/cover/东雪莲.webp'
-import DDF from '@/assets/cover/哲学.webp'
-import true_music from '@/assets/cover/站长推荐.webp'
+import ha_ji_mi from '@/assets/cover/playlist_cover/哈基米.webp'
+import dian_gun from '@/assets/cover/playlist_cover/电棍.webp'
+import da_si_ma from '@/assets/cover/playlist_cover/大司马.webp'
+import ding_zhen from '@/assets/cover/playlist_cover/丁真.webp'
+import dxl from '@/assets/cover/playlist_cover/东雪莲.webp'
+import DDF from '@/assets/cover/playlist_cover/哲学.webp'
+import true_music from '@/assets/cover/playlist_cover/站长推荐.webp'
 
 const props = defineProps({
   modelValue: {

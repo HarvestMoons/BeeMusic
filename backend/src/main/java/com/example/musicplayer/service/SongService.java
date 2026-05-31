@@ -165,8 +165,12 @@ public class SongService {
     }
 
     public void syncAllSongs() {
-        for (String folderKey : AVAILABLE_FOLDERS.keySet()) {
-            syncSongsFromOss(folderKey);
+        try {
+            for (String folderKey : AVAILABLE_FOLDERS.keySet()) {
+                syncSongsFromOss(folderKey);
+            }
+        } finally {
+            evictAllFolderCaches();
         }
     }
 

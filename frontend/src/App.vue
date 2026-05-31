@@ -1,49 +1,57 @@
 <!-- src/App.vue -->
 <template>
   <div id="app" class="flex">
-    <!-- 侧边栏：负责触发登录、注册、登出事件 -->
-    <Sidebar
-        @open-login="openLogin"
-        @open-register="openRegister"
-        @request-logout="handleLogout"
+    <EntryCover
+        :visible="showEntryCover"
+        quote="这里先放一句你喜欢的话。"
+        @enter="closeEntryCover"
     />
 
-    <!-- 主体部分 -->
-    <div class="flex-1 main-content-column">
-      <main class="content-area" id="main-content">
-        <HomePage v-show="route.path === '/'"/>
-        <router-view v-if="route.path !== '/'"/>
-      </main>
+    <template v-if="!showEntryCover">
+      <!-- 侧边栏：负责触发登录、注册、登出事件 -->
+      <Sidebar
+          @open-login="openLogin"
+          @open-register="openRegister"
+          @request-logout="handleLogout"
+      />
 
-      <SiteFooter/>
-    </div>
+      <!-- 主体部分 -->
+      <div class="flex-1 main-content-column">
+        <main class="content-area" id="main-content">
+          <HomePage v-show="route.path === '/'"/>
+          <router-view v-if="route.path !== '/'"/>
+        </main>
 
-    <!-- 登录弹窗 -->
-    <LoginModal
-        :visible="showLogin"
-        @close="showLogin = false"
-        @switch="onModalSwitch"
-    />
+        <SiteFooter/>
+      </div>
 
-    <!-- 注册弹窗 -->
-    <RegisterModal
-        :visible="showRegister"
-        @close="showRegister = false"
-        @switch="onModalSwitch"
-    />
+      <!-- 登录弹窗 -->
+      <LoginModal
+          :visible="showLogin"
+          @close="showLogin = false"
+          @switch="onModalSwitch"
+      />
 
-    <ConfirmModal
-      v-model:visible="globalConfirm.visible"
-      :title="globalConfirm.title"
-      :message="globalConfirm.message"
-      :confirm-text="globalConfirm.confirmText"
-      :cancel-text="globalConfirm.cancelText"
-      @confirm="handleGlobalConfirm"
-      @cancel="handleGlobalCancel"
-    />
+      <!-- 注册弹窗 -->
+      <RegisterModal
+          :visible="showRegister"
+          @close="showRegister = false"
+          @switch="onModalSwitch"
+      />
 
-    <!-- 全局 Toast -->
-    <Toast :visible="toastVisible" :message="toastMessage"/>
+      <ConfirmModal
+        v-model:visible="globalConfirm.visible"
+        :title="globalConfirm.title"
+        :message="globalConfirm.message"
+        :confirm-text="globalConfirm.confirmText"
+        :cancel-text="globalConfirm.cancelText"
+        @confirm="handleGlobalConfirm"
+        @cancel="handleGlobalCancel"
+      />
+
+      <!-- 全局 Toast -->
+      <Toast :visible="toastVisible" :message="toastMessage"/>
+    </template>
   </div>
 </template>
 
@@ -56,12 +64,16 @@ import LoginModal from '@/components/feature/auth/LoginModal.vue'
 import RegisterModal from "@/components/feature/auth/RegisterModal.vue";
 import ConfirmModal from '@/components/common/ConfirmModal.vue'
 import Toast from '@/components/common/Toast.vue'
+import EntryCover from '@/components/common/EntryCover.vue'
 import {logout} from '@/services/auth.js'
 import {useAuthStore, useThemeStore} from '@/store/index.js'
 import {eventBus} from "@/utils/eventBus.js";
 import SiteFooter from '@/components/layout/SiteFooter.vue'
 
+const ENTRY_COVER_DISMISSED_KEY = 'entry_cover_dismissed'
+
 const route = useRoute()
+const showEntryCover = ref(sessionStorage.getItem(ENTRY_COVER_DISMISSED_KEY) !== 'true')
 const showLogin = ref(false)
 const showRegister = ref(false)
 const authStore = useAuthStore()
@@ -122,6 +134,11 @@ function handleGlobalCancel() {
   const callback = globalConfirm.value.onCancel
   resetGlobalConfirm()
   callback?.()
+}
+
+function closeEntryCover() {
+  showEntryCover.value = false
+  sessionStorage.setItem(ENTRY_COVER_DISMISSED_KEY, 'true')
 }
 
 onMounted(() => {
