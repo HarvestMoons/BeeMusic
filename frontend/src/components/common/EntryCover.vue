@@ -98,13 +98,15 @@ function enterSite() {
   box-sizing: border-box;
   overflow: hidden;
   cursor: pointer;
-  color: #fff;
+  color: #f7eedc;
   background:
       radial-gradient(circle at 20% 20%, rgba(255, 214, 102, 0.35), transparent 28%),
       radial-gradient(circle at 80% 30%, rgba(128, 203, 196, 0.28), transparent 30%),
       linear-gradient(135deg, #151515 0%, #2e2419 45%, #090909 100%);
+  background-color: #090909;
   background-position: center;
-  background-size: cover;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
 }
 
 .entry-cover__shade {
@@ -137,7 +139,7 @@ function enterSite() {
   margin: 28px 0 0;
   font-size: 15px;
   letter-spacing: 0.12em;
-  opacity: 0.78;
+  opacity: 0.7;
 }
 
 .entry-cover-fade-enter-active,
