@@ -17,11 +17,10 @@
 </template>
 
 <script setup>
-import {computed, onBeforeUnmount, ref, watch} from 'vue'
+import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue'
 
-const entryCoverImages = import.meta.glob('/src/assets/cover/entry_cover/*.{png,jpg,jpeg,webp,avif,gif}', {
-  eager: true,
-  query: '?url',
+const entryCoverImages = import.meta.glob('/src/assets/cover/entry_cover/*.{webp,avif}', {
+  eager: false,
   import: 'default'
 })
 
@@ -41,18 +40,41 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['enter'])
-const randomCoverImage = ref(pickRandomCoverImage())
+const currentCoverImage = ref('')
 let previousBodyOverflow = ''
 let previousHtmlOverflow = ''
 
-function pickRandomCoverImage() {
-  const images = Object.values(entryCoverImages)
-  if (images.length === 0) return ''
-  return images[Math.floor(Math.random() * images.length)]
+async function pickRandomCoverImage() {
+  const imageEntries = Object.entries(entryCoverImages)
+  if (imageEntries.length === 0) return ''
+  const [_, importer] = imageEntries[Math.floor(Math.random() * imageEntries.length)]
+  const module = await importer()
+  return module?.default || module || ''
+}
+
+async function loadCoverImage() {
+  const imageUrl = props.imageUrl || await pickRandomCoverImage()
+  if (!imageUrl) {
+    currentCoverImage.value = ''
+    return
+  }
+
+  const img = new Image()
+  img.src = imageUrl
+
+  try {
+    await new Promise((resolve, reject) => {
+      img.onload = resolve
+      img.onerror = reject
+    })
+    currentCoverImage.value = imageUrl
+  } catch {
+    currentCoverImage.value = ''
+  }
 }
 
 const coverStyle = computed(() => {
-  const imageUrl = props.imageUrl || randomCoverImage.value
+  const imageUrl = currentCoverImage.value
   if (!imageUrl) return {}
   return {
     backgroundImage: `url("${imageUrl}")`
@@ -67,6 +89,7 @@ watch(
         previousHtmlOverflow = document.documentElement.style.overflow
         document.body.style.overflow = 'hidden'
         document.documentElement.style.overflow = 'hidden'
+        loadCoverImage()
       } else {
         document.body.style.overflow = previousBodyOverflow
         document.documentElement.style.overflow = previousHtmlOverflow
@@ -74,6 +97,14 @@ watch(
     },
     {immediate: true}
 )
+
+watch(() => props.imageUrl, () => {
+  loadCoverImage()
+})
+
+onMounted(() => {
+  loadCoverImage()
+})
 
 onBeforeUnmount(() => {
   document.body.style.overflow = previousBodyOverflow
