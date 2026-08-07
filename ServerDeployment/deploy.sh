@@ -5,7 +5,7 @@ cd "$(dirname "$0")"
 
 echo "开始部署音乐播放器..."
 docker compose pull
-docker compose up -d --remove-orphans
+docker compose up -d --force-recreate --remove-orphans
 
 echo "等待服务健康..."
 for attempt in $(seq 1 30); do
