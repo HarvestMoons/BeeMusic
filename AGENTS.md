@@ -56,7 +56,8 @@ Ice（线上站点为 BeeMusic）是一个音乐播放器网站，提供：
 1. 歌曲基础信息和持久化计数在 MySQL；歌曲音频/图片等对象在阿里云 OSS。
 2. 歌曲列表优先从 Redis 读取，未命中时从 MySQL 查询并缓存。
 3. Redis Set `likes:{songId}` 和 `dislikes:{songId}` 保存实时投票成员及计数；
-   投票关系同时写入 `song_votes`，Redis 是实时读模型，MySQL 是可重建的持久化来源。
+   投票关系先在 MySQL `song_votes` 事务中提交，事务提交后尽力更新 Redis；Redis 是可重建的实时读模型，
+   MySQL 是唯一事实来源，定时任务会从 MySQL 重建 Redis。
 4. 列表返回前会用 Redis Set 的实时计数覆盖缓存对象中的投票数。
 5. Redis 缺失或重启后，投票重建逻辑会从 `song_votes` 恢复 Set，再由定时任务将变化回写
    `songs` 的计数字段。多实例定时任务使用 Redis 租约避免重复执行。
@@ -178,4 +179,3 @@ API 反代、HTTPS 证书挂载和 WebSocket 连接路径。提交前确认没�
 - `documents/OPTIMIZATION_LOG.md`：性能优化记录；
 - `documents/TODO.md`：历史任务清单；
 - `docker-compose.yml`、`backend/pom.xml`、`frontend/package.json`：运行时事实来源。
-

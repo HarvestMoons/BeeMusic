@@ -13,11 +13,28 @@
 
 ### 2. 投票数据的 Redis 冷启动保护
 
-- 增加 `music:votes:redis-rebuilt` 重建标记。
-- 启动或检测到标记缺失时，先从 MySQL `song_votes` 重建 `likes:{songId}` 和 `dislikes:{songId}` Set，再回写歌曲计数。
-- Redis Set 缺失不再直接解释为“票数为 0”，避免 Redis 清空后把 MySQL 持久化计数错误清零。
+- 启动或定期从 MySQL `song_votes` 重建 `likes:{songId}` 和 `dislikes:{songId}` Set。
+- Redis Set 缺失不再直接解释为“票数为 0”并回写 MySQL，避免 Redis 清空后把 MySQL 持久化事实错误清零。
 - 投票同步和歌曲 OSS 同步都使用 Redis 租约锁，避免多实例重复执行。
 - 租约释放使用 token 校验，避免一个任务释放另一个任务持有的锁。
+
+### 2.1 投票双写一致性整改（小型站点简化方案）
+
+经过评估，当前站点规模不值得引入 Outbox 表、Flyway 迁移和独立重试任务。方案调整为：
+
+- `VoteService` 使用 `TransactionTemplate`，投票关系只在 MySQL 事务中提交；MySQL
+  `song_votes` 是唯一事实来源。
+- MySQL 事务提交后，调用 `VoteRedisProjector` 使用 Lua 脚本原子更新
+  `likes:{songId}` 和 `dislikes:{songId}` 两个互斥 Set。
+- Redis 更新失败只记录错误，不影响已提交的 MySQL 投票；接口可能短暂返回旧的 Redis 计数。
+- `VoteCountSyncTask` 启动时及每 60 分钟从 MySQL `song_votes` 删除并重建 Redis 投票集合，
+  作为 Redis 故障、更新失败和数据漂移的最终兜底。
+- 不再引入 `vote_sync_outbox`、Flyway、Outbox 重试任务或额外数据库表，降低个人站点的
+  部署和维护成本。
+
+该方案不追求 MySQL 与 Redis 的分布式原子提交，而是保证不可丢失的投票事实只提交到 MySQL；
+Redis 作为可重建的实时读模型，允许短暂不一致，并通过定期重建收敛。若未来需要秒级重试、
+多实例高可靠投影或严格的实时一致性，再重新评估 Outbox。
 
 ### 3. 歌曲列表和缓存操作优化
 
@@ -70,7 +87,8 @@
 
 ## 尚未在本次实施的项目
 
-- 投票 outbox/事件表和完整对账命令：本次先实现安全的 Redis 重建保护，避免直接引入数据迁移风险。
+- 投票的人工对账命令和告警：当前依赖定期全量重建，后续可增加按 MySQL 事实表重建 Redis
+  的运维命令和失败告警。
 - 歌曲、评论和迷因分页接口：这些会改变请求/响应形态，需要先与前端协商兼容版本。
 - OSS 删除/替换的增量同步：当前同步仍以新增 key 为主，后续应补充对象版本和同步状态。
 - CI 镜像不可变 tag、扫描和自动回滚：依赖服务器部署脚本和发布策略确认。

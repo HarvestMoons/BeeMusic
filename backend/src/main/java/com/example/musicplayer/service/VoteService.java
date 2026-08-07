@@ -4,24 +4,33 @@ import com.example.musicplayer.enums.VoteType;
 import com.example.musicplayer.model.SongVote;
 import com.example.musicplayer.repository.SongRepository;
 import com.example.musicplayer.repository.SongVoteRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
 @Service
+@Slf4j
 public class VoteService {
     private final SongVoteRepository songVoteRepository;
     private final SongRepository songRepository;
     private final StringRedisTemplate redisTemplate;
+    private final VoteRedisProjector redisProjector;
+    private final TransactionTemplate transactionTemplate;
 
     public VoteService(SongVoteRepository songVoteRepository,
                        SongRepository songRepository,
-                       StringRedisTemplate redisTemplate) {
+                       StringRedisTemplate redisTemplate,
+                       VoteRedisProjector redisProjector,
+                       PlatformTransactionManager transactionManager) {
         this.songVoteRepository = songVoteRepository;
         this.songRepository = songRepository;
         this.redisTemplate = redisTemplate;
+        this.redisProjector = redisProjector;
+        this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
     private String likesKey(Long songId) {
@@ -32,49 +41,64 @@ public class VoteService {
         return "dislikes:" + songId;
     }
 
-    @Transactional
     public Map<String, Integer> like(Long songId, Long userId) {
         return vote(songId, userId, VoteType.LIKE);
     }
 
-    @Transactional
     public Map<String, Integer> dislike(Long songId, Long userId) {
         return vote(songId, userId, VoteType.DISLIKE);
     }
 
-    @Transactional
     public Map<String, Integer> vote(Long songId, Long userId, VoteType newType) {
-        // Validate song exists
-        songRepository.findById(songId).orElseThrow(() -> new IllegalArgumentException("Song not found: " + songId));
-
-        SongVote existing = songVoteRepository.findByUserIdAndSongId(userId, songId).orElse(null);
-        if (existing == null) {
-            SongVote sv = new SongVote();
-            sv.setUserId(userId);
-            sv.setSongId(songId);
-            sv.setVoteType(newType);
-            songVoteRepository.save(sv);
-            addToRedis(songId, userId, newType);
-        } else {
-            VoteType oldType = existing.getVoteType();
-            if (oldType != newType) {
-                existing.setVoteType(newType);
-                songVoteRepository.save(existing);
-                switchRedis(songId, userId, oldType, newType);
-            } // else idempotent
+        VoteChange change = transactionTemplate.execute(status -> saveVote(songId, userId, newType));
+        if (change != null) {
+            projectAfterCommit(change);
         }
         return counts(songId);
     }
 
-    @Transactional
     public Map<String, Integer> cancel(Long songId, Long userId) {
-        SongVote existing = songVoteRepository.findByUserIdAndSongId(userId, songId).orElse(null);
-        if (existing != null) {
-            VoteType oldType = existing.getVoteType();
-            songVoteRepository.delete(existing);
-            removeFromRedis(songId, userId, oldType);
+        VoteChange change = transactionTemplate.execute(status -> cancelVote(songId, userId));
+        if (change != null) {
+            projectAfterCommit(change);
         }
         return counts(songId);
+    }
+
+    private VoteChange saveVote(Long songId, Long userId, VoteType newType) {
+        songRepository.findById(songId)
+                .orElseThrow(() -> new IllegalArgumentException("Song not found: " + songId));
+
+        SongVote existing = songVoteRepository.findByUserIdAndSongId(userId, songId).orElse(null);
+        if (existing == null) {
+            existing = new SongVote();
+            existing.setUserId(userId);
+            existing.setSongId(songId);
+        }
+        if (existing.getVoteType() == newType) {
+            return null;
+        }
+        existing.setVoteType(newType);
+        songVoteRepository.save(existing);
+        return new VoteChange(songId, userId, newType.getCode());
+    }
+
+    private VoteChange cancelVote(Long songId, Long userId) {
+        SongVote existing = songVoteRepository.findByUserIdAndSongId(userId, songId).orElse(null);
+        if (existing == null) {
+            return null;
+        }
+        songVoteRepository.delete(existing);
+        return new VoteChange(songId, userId, null);
+    }
+
+    private void projectAfterCommit(VoteChange change) {
+        try {
+            redisProjector.project(change.songId(), change.userId(), change.vote());
+        } catch (RuntimeException error) {
+            log.error("投票已写入 MySQL，但 Redis 更新失败；等待定期重建: songId={}, userId={}",
+                    change.songId(), change.userId(), error);
+        }
     }
 
     public Map<String, Integer> counts(Long songId) {
@@ -85,29 +109,7 @@ public class VoteService {
         return Map.of("likes", likes, "dislikes", dislikes);
     }
 
-    private void addToRedis(Long songId, Long userId, VoteType type) {
-        if (type == VoteType.LIKE) {
-            redisTemplate.opsForSet().add(likesKey(songId), userId.toString());
-        } else {
-            redisTemplate.opsForSet().add(dislikesKey(songId), userId.toString());
-        }
+    private record VoteChange(Long songId, Long userId, Integer vote) {
     }
 
-    private void switchRedis(Long songId, Long userId, VoteType oldType, VoteType newType) {
-        if (oldType == VoteType.LIKE) {
-            redisTemplate.opsForSet().remove(likesKey(songId), userId.toString());
-        } else {
-            redisTemplate.opsForSet().remove(dislikesKey(songId), userId.toString());
-        }
-        addToRedis(songId, userId, newType);
-    }
-
-    private void removeFromRedis(Long songId, Long userId, VoteType oldType) {
-        if (oldType == VoteType.LIKE) {
-            redisTemplate.opsForSet().remove(likesKey(songId), userId.toString());
-        } else {
-            redisTemplate.opsForSet().remove(dislikesKey(songId), userId.toString());
-        }
-    }
 }
-
