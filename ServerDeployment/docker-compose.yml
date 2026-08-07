@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   spring:
     image: beecool/music-player:${IMAGE_TAG:-latest}
