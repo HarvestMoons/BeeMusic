@@ -13,7 +13,7 @@
 - **`RedisPubSubConfig.java`**: Redis 发布/订阅配置（用于在线人数同步等）。
 - **`WebSocketConfig.java`**: WebSocket 配置，注册端点。
 - **`OssConfig.java`**: 对象存储（OSS）配置。
-- **`StartupCleaner.java`**: 应用启动时的清理逻辑。
+- 在线人数使用带过期时间的 Redis 有序集合和 WebSocket 心跳维护，不再在应用启动时清空全局计数。
 
 ## 3. 控制器 (Controller)
 

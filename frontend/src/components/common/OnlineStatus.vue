@@ -20,6 +20,7 @@ const currentSongId = ref('')
 
 let ws = null
 let reconnectTimer = null
+let heartbeatTimer = null
 
 function getOnlineWsUrl() {
   const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
@@ -27,12 +28,12 @@ function getOnlineWsUrl() {
 }
 
 function sendCurrentSongToServer() {
-  if (!ws || ws.readyState !== WebSocket.OPEN || !currentSongId.value) {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
     return
   }
 
   ws.send(JSON.stringify({
-    songId: currentSongId.value,
+    songId: currentSongId.value || null,
     songName: currentSongName.value
   }))
 }
@@ -81,6 +82,7 @@ function connectWebSocket() {
 onMounted(() => {
   eventBus.on('player-song-changed', handleSongChanged)
   connectWebSocket()
+  heartbeatTimer = setInterval(sendCurrentSongToServer, 30000)
 })
 
 onUnmounted(() => {
@@ -88,6 +90,10 @@ onUnmounted(() => {
   if (reconnectTimer) {
     clearTimeout(reconnectTimer)
     reconnectTimer = null
+  }
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer)
+    heartbeatTimer = null
   }
   if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
     ws.close()

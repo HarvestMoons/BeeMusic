@@ -115,7 +115,20 @@ public class SongService {
     }
 
     private void evictAllFolderCaches() {
-        Set<String> keys = redisTemplate.keys("songs:folder:*");
+        Set<String> keys = redisTemplate.execute((org.springframework.data.redis.core.RedisCallback<Set<String>>) connection -> {
+            Set<String> result = new HashSet<>();
+            org.springframework.data.redis.serializer.RedisSerializer<String> serializer =
+                    redisTemplate.getStringSerializer();
+            try (var cursor = connection.scan(org.springframework.data.redis.core.ScanOptions.scanOptions()
+                    .match("songs:folder:*").count(500).build())) {
+                while (cursor.hasNext()) {
+                    result.add(serializer.deserialize(cursor.next()));
+                }
+            } catch (Exception e) {
+                throw new IllegalStateException("Failed to scan song cache keys", e);
+            }
+            return result;
+        });
         if (keys != null && !keys.isEmpty()) {
             redisTemplate.delete(keys);
         }
@@ -175,15 +188,35 @@ public class SongService {
     }
 
     private void hydrateSongVoteCounts(List<Song> songs) {
-        for (Song song : songs) {
-            Long songId = song.getId();
-            if (songId != null) {
-                Long redisLikes = stringRedisTemplate.opsForSet().size("likes:" + songId);
-                Long redisDislikes = stringRedisTemplate.opsForSet().size("dislikes:" + songId);
-                song.setLikeCount(redisLikes != null ? redisLikes.intValue() : 0);
-                song.setDislikeCount(redisDislikes != null ? redisDislikes.intValue() : 0);
-            }
+        if (songs.isEmpty()) {
+            return;
         }
+        List<Object> counts = stringRedisTemplate.executePipelined((org.springframework.data.redis.core.RedisCallback<Object>) connection -> {
+            org.springframework.data.redis.serializer.RedisSerializer<String> serializer =
+                    stringRedisTemplate.getStringSerializer();
+            for (Song song : songs) {
+                if (song.getId() != null) {
+                    connection.setCommands().sCard(serializer.serialize("likes:" + song.getId()));
+                    connection.setCommands().sCard(serializer.serialize("dislikes:" + song.getId()));
+                }
+            }
+            return null;
+        });
+        int index = 0;
+        for (Song song : songs) {
+            if (song.getId() == null) {
+                continue;
+            }
+            song.setLikeCount(readCount(counts, index++));
+            song.setDislikeCount(readCount(counts, index++));
+        }
+    }
+
+    private int readCount(List<Object> counts, int index) {
+        if (index >= counts.size() || !(counts.get(index) instanceof Number number)) {
+            return 0;
+        }
+        return number.intValue();
     }
 
     private String normalizeFolderKey(String folderKey) {

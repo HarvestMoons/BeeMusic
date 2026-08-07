@@ -6,9 +6,17 @@ import path from 'node:path'
 // https://vite.dev/config/
 export default defineConfig({
     plugins: [vue()],
+    server: {
+        proxy: {
+            '/ws': {
+                target: 'ws://localhost:8082',
+                ws: true,
+            },
+        },
+    },
     build: {
-        sourcemap: true, // 生成 source map
-        minify: false    // 关闭压缩，方便调试
+        sourcemap: false,
+        minify: true
     },
     resolve: {
         alias: {

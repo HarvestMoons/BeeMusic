@@ -2,11 +2,12 @@ version: '3.9'
 
 services:
   spring:
-    image: beecool/music-player:latest
+    image: beecool/music-player:${IMAGE_TAG:-latest}
     container_name: spring_app
     restart: always
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     networks:
       - app-network
     environment:
@@ -31,14 +32,17 @@ services:
       - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SESSION
       - SERVER_COMPRESSION_ENABLED
       - SERVER_COMPRESSION_MIN_RESPONSE_SIZE
-    # 每次部署前拉取最新镜像
-    deploy:
-      update_config:
-        parallelism: 1
-        delay: 10s
+      - APP_CORS_ALLOWED_ORIGINS
+      - APP_WEBSOCKET_ALLOWED_ORIGINS
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8082/actuator/health/readiness"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
 
   frontend:
-    image: beecool/music-player-frontend:latest
+    image: beecool/music-player-frontend:${IMAGE_TAG:-latest}
     container_name: nginx_frontend
     restart: always
     ports:
@@ -47,9 +51,16 @@ services:
     volumes:
       - ./certs:/etc/nginx/certs
     depends_on:
-      - spring
+      spring:
+        condition: service_healthy
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   redis:
     image: redis:6.2
@@ -59,6 +70,11 @@ services:
       - redis_data:/data
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
 volumes:
   redis_data:

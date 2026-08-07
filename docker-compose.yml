@@ -8,7 +8,8 @@ services:
     container_name: spring_app
     restart: always
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     environment:
       - SERVER_PORT
       - SERVER_SESSION_COOKIE_HTTP_ONLY
@@ -30,6 +31,14 @@ services:
       - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SESSION
       - SERVER_COMPRESSION_ENABLED
       - SERVER_COMPRESSION_MIN_RESPONSE_SIZE
+      - APP_CORS_ALLOWED_ORIGINS
+      - APP_WEBSOCKET_ALLOWED_ORIGINS
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8082/actuator/health/readiness"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
     logging:
       driver: "json-file"
       options:
@@ -49,7 +58,8 @@ services:
     volumes:
       - ./certs:/etc/nginx/certs  # 挂载证书目录到容器内
     depends_on:
-      - spring
+      spring:
+        condition: service_healthy
     logging:
       driver: "json-file"
       options:
@@ -62,6 +72,11 @@ services:
     restart: always
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
 volumes:
   redis_data:

@@ -13,6 +13,7 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Component
@@ -23,9 +24,10 @@ public class OnlineCountHandler extends TextWebSocketHandler {
     private final OnlineCountListener redisListener;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private static final String ONLINE_TOTAL_KEY = "music:online:total";
-    private static final String SONG_LISTENERS_HASH = "music:online:song:listeners";
+    private static final String ONLINE_TOTAL_KEY = "music:online:sessions";
+    private static final String ONLINE_SONGS_KEY = "music:online:songs";
     private static final String REDIS_CHANNEL = "online-count-channel";
+    private static final long SESSION_TTL_MILLIS = 90_000L;
 
     // 关键：用 session 属性防止重复计数
     private static final String COUNTED_FLAG = "online_counted";
@@ -40,7 +42,7 @@ public class OnlineCountHandler extends TextWebSocketHandler {
                 .computeIfAbsent(COUNTED_FLAG, _ -> new AtomicBoolean(false));
 
         if (counted.compareAndSet(false, true)) {
-            redisTemplate.opsForValue().increment(ONLINE_TOTAL_KEY);
+            refreshSession(session);
         }
 
         broadcast();
@@ -52,17 +54,13 @@ public class OnlineCountHandler extends TextWebSocketHandler {
 
         String oldSongId = (String) session.getAttributes().get(CURRENT_SONG_ID);
         if (oldSongId != null) {
-            Long result = redisTemplate.opsForHash().increment(SONG_LISTENERS_HASH, oldSongId, -1L);
-            // 防止负数（极端情况：Redis 重启或清理后旧数据残留）
-            if (result < 0) {
-                redisTemplate.opsForHash().put(SONG_LISTENERS_HASH, oldSongId, "0");
-            }
+            removeFromSong(session.getId(), oldSongId);
         }
 
         // 只在真正计数过的情况下才减1
         AtomicBoolean counted = (AtomicBoolean) session.getAttributes().get(COUNTED_FLAG);
         if (counted != null && counted.get()) {
-            redisTemplate.opsForValue().decrement(ONLINE_TOTAL_KEY);
+            redisTemplate.opsForZSet().remove(ONLINE_TOTAL_KEY, session.getId());
         }
 
         broadcast();
@@ -77,20 +75,21 @@ public class OnlineCountHandler extends TextWebSocketHandler {
         // 兼容前端可能传数字的情况
         Object songIdObj = jsonMap.get("songId");
         String songId = songIdObj == null ? null : String.valueOf(songIdObj);
+        if (songId != null && songId.isBlank()) {
+            songId = null;
+        }
 
         String oldSongId = (String) session.getAttributes().get(CURRENT_SONG_ID);
+        refreshSession(session);
 
         if (!Objects.equals(oldSongId, songId)) {
             // 减旧
             if (oldSongId != null) {
-                Long result = redisTemplate.opsForHash().increment(SONG_LISTENERS_HASH, oldSongId, -1L);
-                if (result < 0) {
-                    redisTemplate.opsForHash().put(SONG_LISTENERS_HASH, oldSongId, "0");
-                }
+                removeFromSong(session.getId(), oldSongId);
             }
             // 加新
             if (songId != null) {
-                redisTemplate.opsForHash().increment(SONG_LISTENERS_HASH, songId, 1L);
+                addToSong(session.getId(), songId);
             }
 
             session.getAttributes().put(CURRENT_SONG_ID, songId);
@@ -99,13 +98,28 @@ public class OnlineCountHandler extends TextWebSocketHandler {
     }
 
     private void broadcast() {
-        Long total = redisTemplate.opsForValue().increment(ONLINE_TOTAL_KEY, 0L);
-        if (total == null || total < 0) {
+        long now = System.currentTimeMillis();
+        redisTemplate.opsForZSet().removeRangeByScore(ONLINE_TOTAL_KEY, 0, now);
+        Long total = redisTemplate.opsForZSet().size(ONLINE_TOTAL_KEY);
+        if (total == null) {
             total = 0L;
-            redisTemplate.opsForValue().set(ONLINE_TOTAL_KEY, "0");
         }
 
-        Map<Object, Object> songMap = redisTemplate.opsForHash().entries(SONG_LISTENERS_HASH);
+        Map<String, Long> songMap = new java.util.HashMap<>();
+        Set<String> songs = redisTemplate.opsForSet().members(ONLINE_SONGS_KEY);
+        if (songs != null) {
+            for (String songId : songs) {
+                String key = songKey(songId);
+                redisTemplate.opsForZSet().removeRangeByScore(key, 0, now);
+                Long count = redisTemplate.opsForZSet().size(key);
+                if (count == null || count == 0) {
+                    redisTemplate.opsForSet().remove(ONLINE_SONGS_KEY, songId);
+                    redisTemplate.delete(key);
+                } else {
+                    songMap.put(songId, count);
+                }
+            }
+        }
 
         Map<String, Object> data = Map.of(
                 "onlineCount", total,
@@ -116,5 +130,28 @@ public class OnlineCountHandler extends TextWebSocketHandler {
             redisTemplate.convertAndSend(REDIS_CHANNEL, json);
         } catch (Exception ignored) {
         }
+    }
+
+    private void refreshSession(WebSocketSession session) {
+        redisTemplate.opsForZSet().add(
+                ONLINE_TOTAL_KEY,
+                session.getId(),
+                System.currentTimeMillis() + SESSION_TTL_MILLIS);
+    }
+
+    private void addToSong(String sessionId, String songId) {
+        redisTemplate.opsForSet().add(ONLINE_SONGS_KEY, songId);
+        redisTemplate.opsForZSet().add(
+                songKey(songId),
+                sessionId,
+                System.currentTimeMillis() + SESSION_TTL_MILLIS);
+    }
+
+    private void removeFromSong(String sessionId, String songId) {
+        redisTemplate.opsForZSet().remove(songKey(songId), sessionId);
+    }
+
+    private String songKey(String songId) {
+        return "music:online:song:" + songId;
     }
 }

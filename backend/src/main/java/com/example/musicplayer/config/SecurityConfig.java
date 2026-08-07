@@ -17,10 +17,16 @@ import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.beans.factory.annotation.Value;
+
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    @Value("${app.cors.allowed-origins:http://localhost:8081,http://8.155.47.138:8081,http://beemusic.fun,http://www.beemusic.fun,https://beemusic.fun,https://www.beemusic.fun,http://localhost,https://localhost}")
+    private String allowedOrigins;
 
     public SecurityConfig(CustomUserDetailsService userDetailsService) {
     }
@@ -32,7 +38,11 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/actuator/health/**").permitAll()
+                        .requestMatchers("/api/public/test/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers("/api/auth/**", "/api/public/**").permitAll()
+                        .requestMatchers("/api/memes/**", "/api/admin/**")
+                        .hasAnyAuthority("ROLE_ADMIN", "ROLE_STATION_MASTER")
                         .anyRequest().authenticated()
                 )
                 .formLogin(AbstractHttpConfigurer::disable)
@@ -67,14 +77,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOrigin("http://localhost:8081");
-        configuration.addAllowedOrigin("http://8.155.47.138:8081");
-        configuration.addAllowedOrigin("http://beemusic.fun");
-        configuration.addAllowedOrigin("http://www.beemusic.fun");
-        configuration.addAllowedOrigin("https://beemusic.fun");
-        configuration.addAllowedOrigin("https://www.beemusic.fun");
-        configuration.addAllowedOrigin("http://localhost");
-        configuration.addAllowedOrigin("https://localhost");
+        Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .forEach(configuration::addAllowedOrigin);
         configuration.addAllowedMethod("*");
         configuration.addAllowedHeader("*");
         configuration.setAllowCredentials(true);
