@@ -47,7 +47,7 @@
 
 | 编号 | 问题 | 证据 | 风险 | 整改方向 |
 |---|---|---|---|---|
-| P0-01 | 敏感凭据文件进入 Git 跟踪范围 | `git ls-files` 显示 `certs/beemusic.fun.key`；`.gitignore` 只忽略 `.env`，未忽略 `certs/` | 私钥泄露后 HTTPS 身份可被冒用；历史提交仍可能保留 | 立即轮换证书和私钥；从 Git 历史清理；仅挂载外部 Secret；增加 secret scanning 和提交钩子 |
+| P0-01 | 敏感凭据文件进入 Git 跟踪范围 | `git ls-files` 显示 `../../certs/beemusic.fun.key`；`../../.gitignore` 只忽略 `../../.env`，未忽略 `../../certs` | 私钥泄露后 HTTPS 身份可被冒用；历史提交仍可能保留 | 立即轮换证书和私钥；从 Git 历史清理；仅挂载外部 Secret；增加 secret scanning 和提交钩子 |
 | P0-02 | 迷因管理接口缺少权限校验 | `MemeController` 的 `POST /api/memes/sync`、`DELETE /api/memes/{id}` 没有角色判断 | 任意已认证用户可能同步或删除内容；若鉴权配置变化，边界更脆弱 | 统一使用 Spring Security 方法/请求授权，明确仅站长或管理员可操作，并添加拒绝用例 |
 | P0-03 | WebSocket 允许任意 Origin | `WebSocketConfig.java:21-22` 使用 `.setAllowedOriginPatterns("*")` | 可被任意站点建立连接，造成在线人数污染、资源消耗和跨站滥用 | 改为配置化允许来源；连接数、消息大小、消息频率限流；异常断开时保证计数收敛 |
 | P0-04 | Session Cookie 的 Secure 默认关闭且 CSRF 全局关闭 | `application.properties:6` 默认 `false`；`SecurityConfig.java:32` 禁用 CSRF | HTTPS 部署若未显式注入变量，Cookie 可能经 HTTP 传输；Cookie 认证接口缺少 CSRF 防护 | 按环境启用 Secure、SameSite；使用 CSRF Token 或改用明确的无状态认证方案；先通过集成测试确认兼容性 |
@@ -79,8 +79,8 @@
 |---|---|---|---|---|
 | P1-13 | 生产构建关闭压缩并生成 source map | `frontend/vite.config.js:10-11` | 资源体积变大、源码结构暴露、首屏与带宽成本增加 | 生产默认 minify；source map 仅在受控构建产物中保留并限制访问 |
 | P1-14 | CI 构建和推送阶段被整体注释 | `.github/workflows/deploy.yml:8-44` | 提交不能证明镜像可构建，远程部署可能拉到旧的 `latest` | 恢复可复现 build/push，使用 commit SHA/版本 tag，部署前执行 smoke test |
-| P1-15 | CI 引用当前根目录不存在的 `deploy.sh` | `.github/workflows/deploy.yml:60-61`；当前根目录只有 `deploy.bat`，`deploy.sh` 位于被排除的备份目录 | 自动部署链路在服务器上可能直接失败 | 将正式部署入口纳入受控版本，并在 CI 中校验文件和命令；备份脚本不作为运行依赖 |
-| P1-16 | Compose 依赖只保证启动顺序 | 根 `docker-compose.yml` 使用 `depends_on`，没有 healthcheck | Spring 可能在 Redis 尚未就绪时启动；前端可能在后端未就绪时工作 | 为 Redis、Spring 增加健康检查和条件依赖；设置合理重试 |
+| P1-15 | CI 引用当前根目录不存在的 `deploy.sh` | `.github/workflows/deploy.yml:60-61`；当前根目录只有 `../../deploy.bat`，`deploy.sh` 位于被排除的备份目录 | 自动部署链路在服务器上可能直接失败 | 将正式部署入口纳入受控版本，并在 CI 中校验文件和命令；备份脚本不作为运行依赖 |
+| P1-16 | Compose 依赖只保证启动顺序 | 根 `../../docker-compose.yml` 使用 `depends_on`，没有 healthcheck | Spring 可能在 Redis 尚未就绪时启动；前端可能在后端未就绪时工作 | 为 Redis、Spring 增加健康检查和条件依赖；设置合理重试 |
 | P1-17 | 容器使用固定名称和 `latest`/本地 build 混合策略 | Compose 设置 `container_name`；镜像/部署脚本使用 `latest` | 不利于多副本、回滚和环境可复现；不同机器构建结果可能不同 | 使用项目/环境命名空间、不可变 tag、镜像 digest 和回滚记录 |
 | P1-18 | Redis、数据库和 OSS 的连接配置缺少显式安全项 | `application.properties` 只配置 Redis host/port；Compose 直接启动 `redis:6.2` | Redis 无认证/TLS/资源限制，网络或误配置时扩大数据暴露面 | Secret 注入、最小网络暴露、认证/TLS、内存淘汰策略、备份与恢复演练 |
 | P1-19 | Nginx TLS 和安全响应头治理不足 | `default.conf` 有 TLS 配置，但没有 HSTS、CSP、Frame/Content-Type 等响应头 | 降低浏览器侧防护能力；配置变更缺少自动验证 | 用受支持的 TLS 配置模板；分阶段加入安全头并验证播放器、OSS 和 WebSocket 兼容性 |
@@ -89,14 +89,14 @@
 
 | 编号 | 问题 | 证据 | 整改方向 |
 |---|---|---|---|
-| P2-01 | 后端无测试源，构建跳过测试 | 当前 `backend/src/test` 无 Java 测试；Dockerfile 使用 `mvn clean package -DskipTests` | 先覆盖认证、投票、权限、缓存失效、同步幂等和关键 Controller，再将测试纳入 CI |
-| P2-02 | 前端没有 lint、format、type/test 脚本 | `frontend/package.json` 只有 dev/build/preview | 统一 ESLint/Prettier 规则；为 service、store、播放器状态和关键页面补组件/集成测试 |
+| P2-01 | 后端无测试源，构建跳过测试 | 当前 `../../backend/src/test` 无 Java 测试；Dockerfile 使用 `mvn clean package -DskipTests` | 先覆盖认证、投票、权限、缓存失效、同步幂等和关键 Controller，再将测试纳入 CI |
+| P2-02 | 前端没有 lint、format、type/test 脚本 | `../../frontend/package.json` 只有 dev/build/preview | 统一 ESLint/Prettier 规则；为 service、store、播放器状态和关键页面补组件/集成测试 |
 | P2-03 | 业务实体直接作为 API 和缓存模型 | `Song`、`Meme` 等 Entity 直接由 Controller 返回，Song 还含 `@Transient url` | 数据库字段变化会影响 API；缓存序列化与持久化模型耦合 | 引入响应 DTO、缓存 DTO 和 Mapper；保留旧 JSON 字段的兼容期 |
 | P2-04 | 配置和枚举在前后端重复，角色使用数字 | `SongService.AVAILABLE_FOLDERS` 与前端 `FOLDER_INFO` 重复；Pinia 角色用 1/2/3 | 增删歌单或角色容易只改一端；可读性和演进性差 | 后端提供版本化只读元数据接口，前端保留默认值作为降级；角色改为枚举/权限字符串 |
 | P2-05 | 状态管理同时使用 Pinia、EventBus、组件本地状态和 LocalStorage | `store/index.js`、`utils/eventBus.js`、播放器 composables | 状态更新来源多，出现竞态时难以追踪 | 按领域划分 store；EventBus 仅保留跨域通知；定义状态所有权和持久化边界 |
 | P2-06 | 手工错误处理造成静默失败和调试噪声 | 前端多个 `catch` 只清空列表/console；后端有 `System.err` 和 ignored exception | 用户无法区分空数据、网络故障和权限故障；生产排障信息不足 | 统一 API 错误模型、Toast/重试策略和结构化日志；保留可观测但不泄露敏感信息 |
 | P2-07 | 依赖和 Java 基线偏激进且缺少治理 | Maven 使用 Java 22；后端没有依赖审计/更新策略；前端依赖版本使用范围符号 | 运行时升级和供应链漏洞修复不可控 | 选择受支持的 LTS 基线，锁定关键依赖，建立 Dependabot/审计和升级窗口 |
-| P2-08 | 文档存在过时或过度乐观描述 | `BACKEND_STRUCTURE.md` 有重复条目；投票文档称“完美解决”；优化报告中的同步周期与当前代码不完全一致 | 新维护者会依据错误假设改动系统 | 将文档改为架构事实、约束、已知风险和可复现实验；每次结构变更同步更新 |
+| P2-08 | 文档存在过时或过度乐观描述 | `../BACKEND_STRUCTURE.md` 有重复条目；投票文档称“完美解决”；优化报告中的同步周期与当前代码不完全一致 | 新维护者会依据错误假设改动系统 | 将文档改为架构事实、约束、已知风险和可复现实验；每次结构变更同步更新 |
 
 ## 4. 整改原则与兼容策略
 

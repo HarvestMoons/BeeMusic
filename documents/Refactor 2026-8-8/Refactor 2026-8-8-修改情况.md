@@ -53,7 +53,7 @@
 2. **确认 Cookie 配置**：HTTPS 生产环境保持 `SERVER_SESSION_COOKIE_SECURE=true`；本地使用 HTTP 开发时，如确有需要，单独在本地环境覆盖为 `false`。
 3. **重新构建并启动容器**：由于后端增加 Actuator、`curl`、健康检查和任务逻辑，需要执行 `docker compose up -d --build`，不能只重启旧容器。
 4. **观察首次启动日志**：首次启动或 Redis 数据丢失后，应看到投票关系重建日志；重建期间不要手动删除 MySQL 投票表。
-5. **核对部署工作流**：当前 `.github/workflows/deploy.yml` 仍引用服务器上的 `deploy.sh`，而该脚本不在本项目正式目录中；请维护者确认服务器上的脚本路径、镜像 tag 策略和回滚方式后再恢复自动发布。
+5. **核对部署工作流**：当前 `../../.github/workflows/deploy.yml` 仍引用服务器上的 `deploy.sh`，而该脚本不在本项目正式目录中；请维护者确认服务器上的脚本路径、镜像 tag 策略和回滚方式后再恢复自动发布。
 6. **证书**：证书私钥已由维护者替换，但仍建议确认新私钥未被 Git 跟踪，并在服务器完成证书挂载和 Nginx 配置检查。
 
 ## ServerDeployment/Ice 已适配内容
@@ -64,9 +64,9 @@
 - Spring、前端和 Redis 增加 healthcheck，并按健康状态启动依赖服务。
 - Spring 注入 `APP_CORS_ALLOWED_ORIGINS` 和 `APP_WEBSOCKET_ALLOWED_ORIGINS`。
 - `deploy.sh` 使用 `docker compose pull`、健康等待和 HTTPS 健康探测，不再拉取后立即宣告成功。
-- 服务器上的 `.env` 与证书目录已加入 Git 忽略规则，避免部署凭据和私钥被提交。
+- 服务器上的 `../../.env` 与证书目录已加入 Git 忽略规则，避免部署凭据和私钥被提交。
 
-建议发布时通过服务器 `.env` 设置不可变的 `IMAGE_TAG`，例如 Git commit SHA；如暂时继续使用 `latest`，应确认镜像推送完成后再执行脚本。
+建议发布时通过服务器 `../../.env` 设置不可变的 `IMAGE_TAG`，例如 Git commit SHA；如暂时继续使用 `latest`，应确认镜像推送完成后再执行脚本。
 
 ## 尚未在本次实施的项目
 
