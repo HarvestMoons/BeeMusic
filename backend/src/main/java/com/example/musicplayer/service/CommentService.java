@@ -2,7 +2,6 @@ package com.example.musicplayer.service;
 
 import com.example.musicplayer.dto.CommentDTO;
 import com.example.musicplayer.model.Comment;
-import com.example.musicplayer.model.CommentLike;
 import com.example.musicplayer.model.User;
 import com.example.musicplayer.repository.CommentLikeRepository;
 import com.example.musicplayer.repository.CommentRepository;
@@ -166,11 +165,11 @@ public class CommentService {
 
     @Transactional
     public Map<String, Object> likeComment(Long userId, Long commentId) {
-        if (!commentLikeRepository.existsByUserIdAndCommentId(userId, commentId)) {
-            CommentLike like = new CommentLike();
-            like.setUserId(userId);
-            like.setCommentId(commentId);
-            commentLikeRepository.save(like);
+        commentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("Comment not found: " + commentId));
+
+        int inserted = commentLikeRepository.insertIfAbsent(userId, commentId);
+        if (inserted > 0) {
             commentRepository.incrementLikeCount(commentId);
         }
         return buildCommentLikeState(commentId, true);
@@ -178,9 +177,8 @@ public class CommentService {
 
     @Transactional
     public Map<String, Object> unlikeComment(Long userId, Long commentId) {
-        Optional<CommentLike> like = commentLikeRepository.findByUserIdAndCommentId(userId, commentId);
-        if (like.isPresent()) {
-            commentLikeRepository.delete(like.get());
+        int deleted = commentLikeRepository.deleteByUserIdAndCommentId(userId, commentId);
+        if (deleted > 0) {
             commentRepository.decrementLikeCount(commentId);
         }
         return buildCommentLikeState(commentId, false);

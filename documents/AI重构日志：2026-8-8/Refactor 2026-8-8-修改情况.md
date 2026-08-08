@@ -42,6 +42,14 @@ Redis 作为可重建的实时读模型，允许短暂不一致，并通过定�
 - 歌曲缓存失效从 Redis `KEYS` 改为渐进式 `SCAN`，避免大 Keyspace 下阻塞 Redis。
 - Redis 投票重建删除旧投票 key 时同样使用 `SCAN`。
 
+### 3.1 评论点赞唯一性与并发幂等
+
+- `CommentLike` 增加数据库唯一约束 `uk_comment_likes_user_comment`，确保同一用户对同一评论最多一条点赞关系。
+- `CommentService.likeComment()` 改为 MySQL `INSERT IGNORE`，只有实际插入成功时才增加评论计数；
+  并发重复点赞不会重复计数或因唯一约束冲突返回错误。
+- `CommentService.unlikeComment()` 改为按用户和评论直接删除并根据实际删除行数减少计数，
+  避免并发取消点赞时重复扣减。
+
 ### 4. 在线人数多实例和异常断线可靠性
 
 - 删除启动时清空全局在线计数的 `StartupCleaner`，避免一个实例重启影响其他实例。
