@@ -66,6 +66,8 @@ Ice（线上站点为 BeeMusic）是一个音乐播放器网站，提供：
 ### 认证与权限
 
 - Spring Session Data Redis 保存 Session，浏览器通过 Cookie 维持登录状态。
+- 业务接口的当前用户和角色统一从 Spring Security `Authentication`（控制器中使用
+  `@AuthenticationPrincipal`）获取，不要从 Session 自定义的 `"user"` 属性读取身份。
 - 公共 API 使用 `/api/public/**`，认证 API 使用 `/api/auth/**`。
 - 歌曲投票、评论等写操作通常需要登录；删除/恢复/同步和站点配置管理接口需要相应角色。
 - 角色定义见 `backend/src/main/java/com/example/musicplayer/enums/UserRole.java`；
@@ -147,7 +149,8 @@ npm run dev
    `spring.jpa.hibernate.ddl-auto=none`，应用不会自动替你迁移生产数据库。
 3. 涉及歌曲列表时，同时考虑 MySQL、Redis 缓存、OSS 签名 URL、软删除和文件夹白名单。
 4. 涉及投票时保持点赞/点踩互斥、Redis Set 与 `song_votes` 一致，以及前端即时状态同步。
-5. 涉及认证或写 API 时同时检查 CSRF/CORS、Session Cookie、Security matcher 和角色校验。
+5. 涉及认证或写 API 时同时检查 CSRF/CORS、Session Cookie、Security matcher、
+   `Authentication`/`@AuthenticationPrincipal` 和角色校验。
 6. 不要把“前端按钮隐藏”当作权限控制，不要在异常处静默返回成功或吞掉异常。
 7. 新增环境变量时同步更新 `application.properties`、Compose 和必要的部署文档。
 8. 保持现有代码风格；Java 使用包分层和构造器注入，Vue 使用 Composition API 和现有目录分类。
@@ -177,5 +180,4 @@ API 反代、HTTPS 证书挂载和 WebSocket 连接路径。提交前确认没�
 - `documents/FRONTEND_STRUCTURE.md`：前端组件说明；
 - `documents/VOTE_AND_RANKING_IMPLEMENTATION.md`：投票、排序和缓存一致性；
 - `documents/OPTIMIZATION_LOG.md`：性能优化记录；
-- `documents/TODO.md`：历史任务清单；
 - `docker-compose.yml`、`backend/pom.xml`、`frontend/package.json`：运行时事实来源。

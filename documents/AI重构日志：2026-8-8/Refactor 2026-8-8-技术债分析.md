@@ -8,9 +8,9 @@
 
 当前项目已经具备可运行的业务闭环：Vue 3 前端通过 Nginx 提供静态资源，Spring Boot 后端负责认证、歌曲、评论、投票和迷因功能，Redis 承担会话、缓存、投票集合及在线人数，MySQL 保存业务数据，OSS 保存媒体文件。
 
-主要问题不是单点代码质量，而是“多个真实来源并存、边界依赖隐式约定”：
+主要问题不是单点代码质量，而是“多个真实来源并存、边界依赖隐式约定”（其中认证身份重复问题已在 2026-08-08 的后续修复中处理）：
 
-1. **安全边界不统一**：Spring Security、Session 中的 `user` 属性和控制器手工角色判断并存；迷因管理接口没有控制器级鉴权，WebSocket 允许任意来源连接，CSRF 被全局关闭。
+1. **安全边界不统一**：迷因管理接口没有控制器级鉴权，WebSocket 允许任意来源连接，CSRF 被全局关闭。
 2. **数据一致性有高风险路径**：投票同时写 MySQL 和 Redis 但不是原子操作；Redis 冷启动时定时任务可能把数据库票数覆盖为 0；缓存保存 JPA Entity 和签名 URL，失效、序列化和演进成本较高。
 3. **规模化能力不足**：歌曲、评论、同步任务均有全量读取；歌单计数是逐歌单查询；缓存失效使用 Redis `KEYS`；随机迷因采用随机 offset，数据量增长后会退化。
 4. **部署与配置不可审计**：证书私钥处于 Git 跟踪范围；生产构建关闭前端压缩并生成 source map；CI 的构建/推送部分被注释，工作流引用的根目录 `deploy.sh` 在当前项目中不存在。
@@ -34,7 +34,7 @@
 
 ### 2.2 已识别的领域边界
 
-- 认证：Session Cookie + Spring Security，但业务控制器仍从 `HttpSession` 读取 `"user"`。
+- 认证：浏览器通过 Session Cookie 维持登录状态，Spring Security `Authentication` 是唯一业务身份来源；控制器通过 `@AuthenticationPrincipal` 获取用户。
 - 歌曲：OSS 定时同步到 MySQL；歌曲列表使用 Redis 缓存并生成 OSS 签名 URL。
 - 投票：MySQL 保存用户投票关系，Redis Set 负责实时计数，定时任务回写歌曲计数。
 - 评论：MySQL 保存评论和评论点赞；服务层手工组装两层评论树。
@@ -51,7 +51,7 @@
 | P0-02 | 迷因管理接口缺少权限校验 | `MemeController` 的 `POST /api/memes/sync`、`DELETE /api/memes/{id}` 没有角色判断 | 任意已认证用户可能同步或删除内容；若鉴权配置变化，边界更脆弱 | 统一使用 Spring Security 方法/请求授权，明确仅站长或管理员可操作，并添加拒绝用例 |
 | P0-03 | WebSocket 允许任意 Origin | `WebSocketConfig.java:21-22` 使用 `.setAllowedOriginPatterns("*")` | 可被任意站点建立连接，造成在线人数污染、资源消耗和跨站滥用 | 改为配置化允许来源；连接数、消息大小、消息频率限流；异常断开时保证计数收敛 |
 | P0-04 | Session Cookie 的 Secure 默认关闭且 CSRF 全局关闭 | `application.properties:6` 默认 `false`；`SecurityConfig.java:32` 禁用 CSRF | HTTPS 部署若未显式注入变量，Cookie 可能经 HTTP 传输；Cookie 认证接口缺少 CSRF 防护 | 按环境启用 Secure、SameSite；使用 CSRF Token 或改用明确的无状态认证方案；先通过集成测试确认兼容性 |
-| P0-05 | 认证身份来源重复 | `AuthController` 把 User 放入 Session；多个 Controller 又自行读取 `"user"`，同时 SecurityConfig 建立 SecurityContext | Session 属性和 SecurityContext 可能不同步，角色变更、失效和并发登录行为难以推理 | 以 Spring Security `Authentication` 为唯一身份来源；逐接口迁移，保留兼容读取仅用于过渡并加监控 |
+| P0-05 | 认证身份来源重复 | 已于 2026-08-08 修复：控制器不再读取 Session 的 `"user"` 属性 | 已消除 Session 用户属性与 SecurityContext 不一致导致的管理接口 403 风险 | 继续以 Spring Security `Authentication` 为唯一身份来源 |
 | P0-06 | Redis 冷启动可能覆盖持久化票数 | `VoteCountSyncTask.syncOnStartup()` 调用全量同步；同步逻辑对 Redis 缺失 Set 按 0 处理并写回 MySQL | Redis 清空或新环境启动时，MySQL 中已有票数可能被错误清零 | 明确 MySQL/Redis 的事实来源；增加 Redis 重建流程和版本标记；只有确认集合已完成重建后才允许回写 |
 | P0-07 | Redis 与 MySQL 双写无一致性协议 | `VoteService.vote/cancel` 先写数据库关系再写 Redis，异常时没有补偿；事务只覆盖数据库 | 部分成功会造成用户投票关系、实时计数、回写计数不一致 | 先记录投票事件或 outbox，再异步重建 Redis；为重试、幂等和对账定义协议 |
 | P0-08 | Redis JSON 使用宽泛默认类型 | `RedisConfig.java:42` 使用 `LaissezFaireSubTypeValidator` 和 `DefaultTyping.NON_FINAL` | 反序列化边界过宽，缓存数据被污染时扩大安全面；实体结构变化也容易导致缓存不可读 | 使用显式 DTO、固定序列化类型和版本化 cache key；禁止宽泛多态反序列化 |
@@ -113,7 +113,7 @@
 
 | 数据 | 短期兼容来源 | 目标事实来源 |
 |---|---|---|
-| 用户身份 | SecurityContext + Session 兼容属性 | Spring Security Authentication |
+| 用户身份 | Spring Security Authentication | Spring Security Authentication |
 | 用户投票关系 | MySQL `song_votes` 旧与 Redis Set 对账 | MySQL 事实表，Redis 为可重建读模型 |
 | 投票总数 | Redis 实时读、MySQL 回写 | 由事实表/事件可靠重建的计数读模型 |
 | 歌曲元数据 | MySQL + OSS 增量同步 | 同步状态明确的 MySQL 投影，OSS 为文件事实来源 |

@@ -1,9 +1,9 @@
 package com.example.musicplayer.controller;
 
 import com.example.musicplayer.dto.CommentDTO;
-import com.example.musicplayer.model.User;
 import com.example.musicplayer.service.CommentService;
-import jakarta.servlet.http.HttpServletRequest;
+import com.example.musicplayer.service.CustomUserDetails;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,18 +20,19 @@ public class CommentController {
     }
 
     @GetMapping("/public/comments/{songId}")
-    public List<CommentDTO> getComments(@PathVariable Long songId, HttpServletRequest request) {
+    public List<CommentDTO> getComments(@PathVariable Long songId,
+                                        @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long userId = null;
-        Object userObj = request.getSession().getAttribute("user");
-        if (userObj instanceof User u) {
-            userId = u.getId();
+        if (userDetails != null && userDetails.isEnabled()) {
+            userId = userDetails.getUser().getId();
         }
         return commentService.getComments(songId, userId);
     }
 
     @PostMapping("/comments/add")
-    public CommentDTO addComment(@RequestBody Map<String, Object> body, HttpServletRequest request) {
-        Long userId = currentUserId(request);
+    public CommentDTO addComment(@RequestBody Map<String, Object> body,
+                                 @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long userId = currentUserId(userDetails);
         Long songId = Long.valueOf(body.get("songId").toString());
         String content = (String) body.get("content");
         Long parentId = body.get("parentId") != null ? Long.valueOf(body.get("parentId").toString()) : null;
@@ -42,27 +43,29 @@ public class CommentController {
     }
 
     @PostMapping("/comments/like/{commentId}")
-    public Map<String, Object> likeComment(@PathVariable Long commentId, HttpServletRequest request) {
-        Long userId = currentUserId(request);
+    public Map<String, Object> likeComment(@PathVariable Long commentId,
+                                            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long userId = currentUserId(userDetails);
         return commentService.likeComment(userId, commentId);
     }
 
     @DeleteMapping("/comments/like/{commentId}")
-    public Map<String, Object> unlikeComment(@PathVariable Long commentId, HttpServletRequest request) {
-        Long userId = currentUserId(request);
+    public Map<String, Object> unlikeComment(@PathVariable Long commentId,
+                                             @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long userId = currentUserId(userDetails);
         return commentService.unlikeComment(userId, commentId);
     }
 
     @DeleteMapping("/comments/{commentId}")
-    public void deleteComment(@PathVariable Long commentId, HttpServletRequest request) {
-        Long userId = currentUserId(request);
+    public void deleteComment(@PathVariable Long commentId,
+                              @AuthenticationPrincipal CustomUserDetails userDetails) {
+        Long userId = currentUserId(userDetails);
         commentService.deleteComment(userId, commentId);
     }
 
-    private Long currentUserId(HttpServletRequest request) {
-        Object userObj = request.getSession().getAttribute("user");
-        if (userObj instanceof User u) {
-            return u.getId();
+    private Long currentUserId(CustomUserDetails userDetails) {
+        if (userDetails != null && userDetails.isEnabled()) {
+            return userDetails.getUser().getId();
         }
         throw new IllegalStateException("未登录");
     }

@@ -11,6 +11,12 @@
 - 原测试接口 `/api/public/test/**` 改为仅管理员可访问，避免公开数据库连接信息、Session ID 和安全上下文。
 - WebSocket 不再允许任意 Origin，改为读取 `APP_WEBSOCKET_ALLOWED_ORIGINS`。
 
+### 1.1 统一认证身份来源
+
+- 登录时只持久化 Spring Security `SecurityContext`，不再向 Session 写入业务用户对象。
+- 歌曲、评论和站点配置控制器统一通过 `@AuthenticationPrincipal CustomUserDetails` 获取当前用户。
+- 旧 Session 中只有 `"user"` 属性而没有有效 `SecurityContext` 时，不再自动恢复权限；用户会被视为未登录，避免从兼容数据推断权限。
+
 ### 2. 投票数据的 Redis 冷启动保护
 
 - 启动或定期从 MySQL `song_votes` 重建 `likes:{songId}` 和 `dislikes:{songId}` Set。

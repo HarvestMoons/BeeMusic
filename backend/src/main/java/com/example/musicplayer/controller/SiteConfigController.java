@@ -1,11 +1,11 @@
 package com.example.musicplayer.controller;
 
 import com.example.musicplayer.enums.UserRole;
-import com.example.musicplayer.model.User;
-import jakarta.servlet.http.HttpServletRequest;
+import com.example.musicplayer.service.CustomUserDetails;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -32,9 +32,11 @@ public class SiteConfigController {
 
     // 切换评论区状态 (仅站长)
     @PostMapping("/admin/config/comments-enabled")
-    public ResponseEntity<?> setCommentsEnabled(@RequestBody Map<String, Boolean> body, HttpServletRequest request) {
-        Object userObj = request.getSession().getAttribute("user");
-        if (!(userObj instanceof User user) || user.getRoleEnum() != UserRole.STATION_MASTER) {
+    public ResponseEntity<?> setCommentsEnabled(@RequestBody Map<String, Boolean> body,
+                                                @AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null
+                || !userDetails.isEnabled()
+                || userDetails.getUser().getRoleEnum() != UserRole.STATION_MASTER) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only Station Master can change site config");
         }
 

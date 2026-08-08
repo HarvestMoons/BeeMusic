@@ -82,9 +82,9 @@ const handleSearch = (keyword) => {
 
 const filteredPlaylist = computed(() => {
   if (!searchQuery.value) return props.playlist
-  const query = searchQuery.value.toLowerCase()
+  const query = String(searchQuery.value ?? '').toLowerCase()
   return props.playlist.filter(song =>
-      getSongTitle(song.name).toLowerCase().includes(query)
+      String(getSongTitle(song.name) ?? '').toLowerCase().includes(query)
   )
 })
 

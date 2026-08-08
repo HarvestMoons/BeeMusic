@@ -4,7 +4,7 @@ export const DEFAULT_PLAYLIST_SORT = {
 }
 
 export function parseSongName(name = '') {
-    const cleanName = name.replace(/\.mp3$/i, '')
+    const cleanName = String(name ?? '').replace(/\.mp3$/i, '')
     const match = cleanName.match(/^(.*?)_?(BV[0-9A-Za-z]+)/i)
 
     return match
