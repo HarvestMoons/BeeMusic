@@ -109,6 +109,17 @@ public class VoteService {
         return Map.of("likes", likes, "dislikes", dislikes);
     }
 
+    public Map<String, Integer> countsForUser(Long songId, Long userId) {
+        Map<String, Integer> counts = counts(songId);
+        int userVote = songVoteRepository.findByUserIdAndSongId(userId, songId)
+                .map(SongVote::getVote)
+                .orElse(0);
+        return Map.of(
+                "likes", counts.get("likes"),
+                "dislikes", counts.get("dislikes"),
+                "userVote", userVote);
+    }
+
     private record VoteChange(Long songId, Long userId, Integer vote) {
     }
 
