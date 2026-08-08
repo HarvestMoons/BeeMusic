@@ -21,6 +21,7 @@ const currentSongId = ref('')
 let ws = null
 let reconnectTimer = null
 let heartbeatTimer = null
+let isActive = false
 
 function getOnlineWsUrl() {
   const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
@@ -45,6 +46,10 @@ function handleSongChanged({songId, songName} = {}) {
 }
 
 function connectWebSocket() {
+  if (!isActive) {
+    return
+  }
+
   ws = new WebSocket(getOnlineWsUrl())
 
   ws.onopen = () => {
@@ -72,20 +77,27 @@ function connectWebSocket() {
   }
 
   ws.onclose = () => {
+    if (!isActive) {
+      return
+    }
+
     console.log('WebSocket 断开，3秒后重连...')
     reconnectTimer = setTimeout(() => {
+      reconnectTimer = null
       connectWebSocket()
     }, 3000)
   }
 }
 
 onMounted(() => {
+  isActive = true
   eventBus.on('player-song-changed', handleSongChanged)
   connectWebSocket()
   heartbeatTimer = setInterval(sendCurrentSongToServer, 30000)
 })
 
 onUnmounted(() => {
+  isActive = false
   eventBus.off('player-song-changed', handleSongChanged)
   if (reconnectTimer) {
     clearTimeout(reconnectTimer)
