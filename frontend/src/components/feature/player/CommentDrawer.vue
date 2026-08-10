@@ -295,13 +295,6 @@ async function submitComment() {
   const trimmedContent = inputContent.value.trim()
   if (!trimmedContent) return
 
-  // 校验权限：仅管理员或站长可以评论
-  // 1=USER, 2=ADMIN, 3=STATION_MASTER
-  if (authStore.role !== 2 && authStore.role !== 3) {
-    eventBus.emit('show-toast', '根据相关法规，暂时仅支持管理员发布评论')
-    return
-  }
-
   isSubmitting.value = true
   const payload = {
     songId: props.songId,
