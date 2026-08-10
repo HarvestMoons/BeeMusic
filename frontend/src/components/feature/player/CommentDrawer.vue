@@ -178,6 +178,7 @@ const comments = ref([])
 const sortOrder = ref('hot')
 const contentVisible = ref(props.visible)
 let timer = null
+let commentsRequestId = 0
 
 watch(() => props.visible, (val) => {
   if (timer) clearTimeout(timer)
@@ -234,17 +235,22 @@ const totalComments = computed(() => {
 })
 
 watch(() => props.songId, (val) => {
+  commentsRequestId += 1
+  comments.value = []
+  loading.value = false
+
   if (props.visible && val) {
-    fetchComments()
+    fetchComments(false, val, commentsRequestId)
   }
 })
 
-async function fetchComments(force = false) {
-  if (!props.songId) return
+async function fetchComments(force = false, songId = props.songId, requestId = ++commentsRequestId) {
+  if (!songId) return
 
   if (!force) {
-    const cached = getCachedComments(props.songId)
+    const cached = getCachedComments(songId)
     if (cached) {
+      if (requestId !== commentsRequestId || songId !== props.songId) return
       comments.value = cached
       loading.value = false
       return
@@ -253,13 +259,16 @@ async function fetchComments(force = false) {
 
   loading.value = true
   try {
-    const res = await api.get(`/public/comments/${props.songId}`)
+    const res = await api.get(`/public/comments/${songId}`)
+    if (requestId !== commentsRequestId || songId !== props.songId) return
     comments.value = res.data || []
-    saveCommentsToCache(props.songId, comments.value)
+    saveCommentsToCache(songId, comments.value)
   } catch (err) {
     console.error('加载评论失败', err)
   } finally {
-    loading.value = false
+    if (requestId === commentsRequestId && songId === props.songId) {
+      loading.value = false
+    }
   }
 }
 
