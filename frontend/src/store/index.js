@@ -64,10 +64,7 @@ export const useAuthStore = defineStore('auth', {
         },
     },
     getters: {
-        getUsername: (state) => state.username || '未登录',
         isStationMaster: (state) => state.role === 3,
-        isAdmin: (state) => state.role === 2,
-        canManageSongs: (state) => state.role === 3 || state.role === 2, // 站长或管理员
     },
 });
 
@@ -107,10 +104,6 @@ export const useThemeStore = defineStore('theme', {
             const theme = this.isDarkMode ? 'dark' : 'light';
             localStorage.setItem('theme', theme);
             document.documentElement.setAttribute('data-theme', theme);
-        },
-        toggleParticles() {
-            this.showParticles = !this.showParticles;
-            localStorage.setItem('show_particles', String(this.showParticles));
         },
         setParticles(value) {
             this.showParticles = value;

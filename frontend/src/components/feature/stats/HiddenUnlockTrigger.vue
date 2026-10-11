@@ -29,7 +29,7 @@
 </template>
 
 <script setup>
-import {defineEmits, defineProps, ref} from 'vue'
+import {ref} from 'vue'
 import {unlockHiddenPlaylist} from '@/services/auth'
 
 const props = defineProps({

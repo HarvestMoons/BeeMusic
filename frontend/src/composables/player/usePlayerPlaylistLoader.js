@@ -92,7 +92,7 @@ export function usePlayerPlaylistLoader({
         if (newIndex === -1) {
             // 正在播放的歌曲已被清理，停止播放并提示
             currentIndex.value = -1
-            currentSongInfo.value = {title: '', bv: null}
+            currentSongInfo.value = { title: '', bv: null }
             if (audioRef.value) {
                 audioRef.value.pause()
                 audioRef.value.src = ''

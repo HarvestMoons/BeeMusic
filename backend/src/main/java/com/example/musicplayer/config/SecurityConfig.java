@@ -1,6 +1,5 @@
 package com.example.musicplayer.config;
 
-import com.example.musicplayer.service.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -28,9 +27,6 @@ public class SecurityConfig {
     @Value("${app.cors.allowed-origins:http://localhost:8081,http://8.155.47.138:8081,http://beemusic.fun,http://www.beemusic.fun,https://beemusic.fun,https://www.beemusic.fun,http://localhost,https://localhost}")
     private String allowedOrigins;
 
-    public SecurityConfig(CustomUserDetailsService userDetailsService) {
-    }
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -43,14 +39,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**", "/api/public/**").permitAll()
                         .requestMatchers("/api/memes/**", "/api/admin/**")
                         .hasAnyAuthority("ROLE_ADMIN", "ROLE_STATION_MASTER")
-                        .anyRequest().authenticated()
-                )
+                        .anyRequest().authenticated())
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session
                         .maximumSessions(1)
-                        .expiredUrl("/api/auth/login")
-                );
+                        .expiredUrl("/api/auth/login"));
         return http.build();
     }
 
@@ -70,7 +64,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+            throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
 

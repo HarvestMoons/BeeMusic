@@ -14,8 +14,6 @@ public interface MemeRepository extends JpaRepository<Meme, Long> {
 
     Page<Meme> findByIsDeletedFalse(Pageable pageable);
 
-    boolean existsByKey(String key);
-
     @org.springframework.data.jpa.repository.Query("SELECT m.key FROM Meme m")
     java.util.List<String> findAllKeys();
 }

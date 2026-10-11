@@ -32,7 +32,7 @@ public class TestController {
     @GetMapping("/db")
     public String testDatabaseConnection() {
         try (Connection conn = dataSource.getConnection()) {
-            if (conn != null && !conn.isClosed()) {
+            if (!conn.isClosed()) {
                 return "✅ 数据库连接成功: " + conn.getMetaData().getURL();
             } else {
                 return "❌ 数据库连接失败（连接为空或已关闭）";

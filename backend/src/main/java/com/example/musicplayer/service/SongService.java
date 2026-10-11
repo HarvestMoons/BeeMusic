@@ -155,52 +155,6 @@ public class SongService {
     }
 
     /**
-     * 同步指定文件夹的 OSS 文件到数据库（只新增，不删除任何记录）
-     *
-     * @return 新增的歌曲数量
-     */
-    public int syncSongsFromOss(String folderKey) {
-        String folderChineseName = AVAILABLE_FOLDERS.get(folderKey);
-        if (folderChineseName == null) {
-            return 0;
-        }
-        String prefix = "music/" + folderChineseName + "/";
-
-        // 1. OSS 列出文件
-        List<OSSObjectSummary> ossFiles = ossUtil.listFilesByPrefixAndSuffix(prefix, ".mp3");
-
-        // 2. 数据库查出已有文件
-        List<Song> dbSongs = songRepository.findByKeyStartingWith(prefix);
-        Set<String> dbKeys = dbSongs.stream().map(Song::getKey).collect(Collectors.toSet());
-
-        // 3. 找出新文件
-        List<Song> newSongs = new ArrayList<>();
-        for (OSSObjectSummary file : ossFiles) {
-            if (!dbKeys.contains(file.getKey())) {
-                Song song = new Song();
-                String key = file.getKey();
-                String filename = ossUtil.extractFilename(key);
-                song.setName(filename);
-                song.setKey(key);
-                song.setLikeCount(0);
-                song.setDislikeCount(0);
-                song.setPlayCount(0);
-                song.setIsDeleted(0);
-                newSongs.add(song);
-            }
-        }
-
-        // 4. 保存新文件
-        if (!newSongs.isEmpty()) {
-            songRepository.saveAll(newSongs);
-            // 只有当有新歌时才清除缓存
-            redisTemplate.delete("songs:folder:" + folderKey + ":all");
-            redisTemplate.delete("songs:folder:" + folderKey + ":active");
-        }
-        return newSongs.size();
-    }
-
-    /**
      * 只新增的同步。用于定时任务和启动时同步，永远不会删除数据。
      */
     public SyncResult syncAllSongs() {
@@ -219,10 +173,14 @@ public class SongService {
         int added = 0;
         int removed = 0;
         try {
-            for (String folderKey : AVAILABLE_FOLDERS.keySet()) {
-                added += syncSongsFromOss(folderKey);
+            for (Map.Entry<String, String> folder : AVAILABLE_FOLDERS.entrySet()) {
+                String folderKey = folder.getKey();
+                String prefix = "music/" + folder.getValue() + "/";
+                // 每个文件夹只列举一次 OSS，新增与清理复用同一份结果
+                List<OSSObjectSummary> ossObjects = ossUtil.listFilesByPrefix(prefix);
+                added += addNewSongs(folderKey, prefix, ossObjects);
                 if (cleanupOrphans) {
-                    removed += removeOrphanSongs(folderKey);
+                    removed += removeOrphanSongs(folderKey, prefix, ossObjects);
                 }
             }
         } finally {
@@ -232,25 +190,55 @@ public class SongService {
     }
 
     /**
-     * 删除数据库中「OSS 里已经不存在」的歌曲记录。
-     * 只处理白名单文件夹下的记录，并且只在该文件夹 OSS 列表非空时才清理。
+     * 把 OSS 中存在、数据库中还没有的 mp3 写入数据库（只新增，不删除任何记录）。
      *
+     * @param ossObjects 该文件夹下 OSS 的全部对象，本方法内部按 .mp3 过滤
+     * @return 新增的歌曲数量
+     */
+    private int addNewSongs(String folderKey, String prefix, List<OSSObjectSummary> ossObjects) {
+        Set<String> dbKeys = songRepository.findByKeyStartingWith(prefix).stream()
+                .map(Song::getKey)
+                .collect(Collectors.toSet());
+
+        List<Song> newSongs = new ArrayList<>();
+        for (OSSObjectSummary file : ossObjects) {
+            String key = file.getKey();
+            if (!key.toLowerCase(Locale.ROOT).endsWith(".mp3") || dbKeys.contains(key)) {
+                continue;
+            }
+            Song song = new Song();
+            song.setName(ossUtil.extractFilename(key));
+            song.setKey(key);
+            song.setLikeCount(0);
+            song.setDislikeCount(0);
+            song.setPlayCount(0);
+            song.setIsDeleted(0);
+            newSongs.add(song);
+        }
+
+        if (!newSongs.isEmpty()) {
+            songRepository.saveAll(newSongs);
+            // 只有当有新歌时才清除缓存
+            redisTemplate.delete("songs:folder:" + folderKey + ":all");
+            redisTemplate.delete("songs:folder:" + folderKey + ":active");
+        }
+        return newSongs.size();
+    }
+
+    /**
+     * 删除数据库中「OSS 里已经不存在」的歌曲记录。
+     * 只在该文件夹 OSS 列表非空时才清理。
+     *
+     * @param ossObjects 本次同步已列举到的该文件夹 OSS 对象，复用避免重复列举
      * @return 被删除的歌曲数量
      */
-    private int removeOrphanSongs(String folderKey) {
-        String folderChineseName = AVAILABLE_FOLDERS.get(folderKey);
-        if (folderChineseName == null) {
-            return 0;
-        }
-        String prefix = "music/" + folderChineseName + "/";
-
+    private int removeOrphanSongs(String folderKey, String prefix, List<OSSObjectSummary> ossObjects) {
         List<Song> dbSongs = songRepository.findByKeyStartingWith(prefix);
         if (dbSongs.isEmpty()) {
             return 0;
         }
 
-        // 列出该文件夹下 OSS 的全部对象（不限后缀），用于判断记录是否还有对应文件
-        Set<String> ossKeys = ossUtil.listFilesByPrefix(prefix).stream()
+        Set<String> ossKeys = ossObjects.stream()
                 .map(OSSObjectSummary::getKey)
                 .collect(Collectors.toSet());
 

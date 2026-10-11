@@ -21,14 +21,6 @@ public class GlobalExceptionHandler {
         public static final String AUTHENTICATION_ERROR = "用户名或密码错误。";
     }
 
-    @ExceptionHandler({ElementExistedException.class, ElementNotExistException.class,
-            UnexpectedNullElementException.class})
-    public ResponseEntity<Map<String, Object>> handleCustomException(Exception ex) {
-        Map<String, Object> response = new HashMap<>();
-        response.put(ErrorMessageConstants.MESSAGE, ex.getMessage());
-        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-    }
-
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<Map<String, Object>> handleDatabaseException() {
         Map<String, Object> response = new HashMap<>();

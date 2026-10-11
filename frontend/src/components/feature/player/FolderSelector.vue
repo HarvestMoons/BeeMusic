@@ -28,7 +28,7 @@
 </template>
 
 <script setup>
-import {computed, defineEmits, defineProps} from 'vue'
+import {computed} from 'vue'
 import {useAuthStore} from '@/store'
 import {FOLDER_INFO} from '@/constants'
 
