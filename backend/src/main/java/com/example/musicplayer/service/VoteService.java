@@ -33,14 +33,6 @@ public class VoteService {
         this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
-    private String likesKey(Long songId) {
-        return "likes:" + songId;
-    }
-
-    private String dislikesKey(Long songId) {
-        return "dislikes:" + songId;
-    }
-
     public Map<String, Integer> like(Long songId, Long userId) {
         return vote(songId, userId, VoteType.LIKE);
     }
@@ -102,8 +94,8 @@ public class VoteService {
     }
 
     public Map<String, Integer> counts(Long songId) {
-        Long likeSize = redisTemplate.opsForSet().size(likesKey(songId));
-        Long dislikeSize = redisTemplate.opsForSet().size(dislikesKey(songId));
+        Long likeSize = redisTemplate.opsForSet().size(VoteRedisKeys.likes(songId));
+        Long dislikeSize = redisTemplate.opsForSet().size(VoteRedisKeys.dislikes(songId));
         int likes = likeSize != null ? likeSize.intValue() : 0;
         int dislikes = dislikeSize != null ? dislikeSize.intValue() : 0;
         return Map.of("likes", likes, "dislikes", dislikes);

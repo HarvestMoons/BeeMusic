@@ -3,6 +3,7 @@ package com.example.musicplayer.task;
 import com.example.musicplayer.model.SongVote;
 import com.example.musicplayer.repository.SongVoteRepository;
 import com.example.musicplayer.service.RedisTaskLock;
+import com.example.musicplayer.service.VoteRedisKeys;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -55,8 +56,8 @@ public class VoteCountSyncTask {
     }
 
     private void rebuildRedisVotes() {
-        deleteVoteKeys("likes:*");
-        deleteVoteKeys("dislikes:*");
+        deleteVoteKeys(VoteRedisKeys.LIKES_PATTERN);
+        deleteVoteKeys(VoteRedisKeys.DISLIKES_PATTERN);
         List<SongVote> votes = songVoteRepository.findAll();
         redisTemplate.executePipelined((RedisCallback<Object>) connection -> {
             RedisSerializer<String> serializer = redisTemplate.getStringSerializer();
@@ -64,7 +65,7 @@ public class VoteCountSyncTask {
                 if (vote.getSongId() == null || vote.getUserId() == null) {
                     continue;
                 }
-                String key = (vote.getVoteType().name().equals("LIKE") ? "likes:" : "dislikes:") + vote.getSongId();
+                String key = VoteRedisKeys.byType(vote.getSongId(), vote.getVoteType());
                 connection.setCommands().sAdd(serializer.serialize(key), serializer.serialize(vote.getUserId().toString()));
             }
             return null;

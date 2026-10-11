@@ -27,7 +27,7 @@ public class VoteRedisProjector {
         String vote = voteCode == null ? "0" : voteCode.toString();
         redisTemplate.execute(
                 PROJECT_SCRIPT,
-                java.util.List.of("likes:" + songId, "dislikes:" + songId),
+                VoteRedisKeys.all(songId),
                 vote,
                 userId.toString());
     }

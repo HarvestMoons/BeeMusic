@@ -288,7 +288,7 @@ public class SongService {
             songRepository.deleteById(songId);
         });
         // 事务提交后再清理 Redis 实时投票读模型，避免删除失败时 Redis 已被清空
-        stringRedisTemplate.delete(List.of("likes:" + songId, "dislikes:" + songId));
+        stringRedisTemplate.delete(VoteRedisKeys.all(songId));
         log.info("【歌曲清理】已删除歌曲: id={}, name={}, objectKey={}", songId, song.getName(), song.getKey());
     }
 
@@ -311,8 +311,9 @@ public class SongService {
                             .getStringSerializer();
                     for (Song song : songs) {
                         if (song.getId() != null) {
-                            connection.setCommands().sCard(serializer.serialize("likes:" + song.getId()));
-                            connection.setCommands().sCard(serializer.serialize("dislikes:" + song.getId()));
+                            connection.setCommands().sCard(serializer.serialize(VoteRedisKeys.likes(song.getId())));
+                            connection.setCommands()
+                                    .sCard(serializer.serialize(VoteRedisKeys.dislikes(song.getId())));
                         }
                     }
                     return null;
