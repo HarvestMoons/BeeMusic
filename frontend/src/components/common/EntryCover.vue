@@ -17,7 +17,7 @@
 </template>
 
 <script setup>
-import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue'
+import {computed, onBeforeUnmount, ref, watch} from 'vue'
 
 // 用相对路径而不是 '/src/...' 绝对路径：绝对路径展开后与导入者的盘符大小写不一致时，
 // Vite 生成的动态 import 说明符会算错，导致 rollup 解析失败（本地 Windows 构建会失败）
@@ -83,6 +83,8 @@ const coverStyle = computed(() => {
   }
 })
 
+// visible 默认 true，下面的 immediate 回调就是首次加载封面。
+// 不要再额外加 onMounted 去加载，否则会挑两次随机封面并多一次无用预加载
 watch(
     () => props.visible,
     (visible) => {
@@ -101,10 +103,6 @@ watch(
 )
 
 watch(() => props.imageUrl, () => {
-  loadCoverImage()
-})
-
-onMounted(() => {
   loadCoverImage()
 })
 
