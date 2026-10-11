@@ -5,6 +5,7 @@ const DEFAULT_SELECTED_FOLDER_STORAGE_ID = 'folder-selector'
 
 export function usePlayerPlaylistLoader({
     playlist,
+    currentIndex,
     selectedFolder,
     playbackRate,
     audioRef,
@@ -52,7 +53,7 @@ export function usePlayerPlaylistLoader({
         }
     }
 
-    async function fetchSongList(folder) {
+    async function fetchSongList(folder, clearOnError = true) {
         try {
             const query = new URLSearchParams({ folder }).toString()
             const res = await fetch(`${PUBLIC_API_BASE}/songs/get?${query}`)
@@ -60,8 +61,10 @@ export function usePlayerPlaylistLoader({
             playlist.value = data || []
             return playlist.value
         } catch (err) {
-            playlist.value = []
-            return []
+            if (clearOnError) {
+                playlist.value = []
+            }
+            return null
         }
     }
 
@@ -72,8 +75,37 @@ export function usePlayerPlaylistLoader({
         return firstSongIndex === -1 ? 0 : firstSongIndex
     }
 
+    /**
+     * 重新拉取当前文件夹的歌单，用于站长同步结束后刷新内存中的列表。
+     * 只替换歌曲列表和当前索引，不重置队列、不重新开始播放。
+     */
+    async function refreshSongList() {
+        const currentSongId = playlist.value[currentIndex.value]?.id
+        // clearOnError = false：刷新失败时保留原歌单，避免一次网络抖动把歌单清空
+        const freshPlaylist = await fetchSongList(selectedFolder.value, false)
+
+        if (!freshPlaylist || currentSongId == null) {
+            return
+        }
+
+        const newIndex = freshPlaylist.findIndex(song => song.id === currentSongId)
+        if (newIndex === -1) {
+            // 正在播放的歌曲已被清理，停止播放并提示
+            currentIndex.value = -1
+            currentSongInfo.value = {title: '', bv: null}
+            if (audioRef.value) {
+                audioRef.value.pause()
+                audioRef.value.src = ''
+            }
+            showToastMessage('当前播放的歌曲已被清理')
+            return
+        }
+        currentIndex.value = newIndex
+    }
+
     return {
         handleFolderChange,
-        setFolder
+        setFolder,
+        refreshSongList
     }
 }

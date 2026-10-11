@@ -166,6 +166,8 @@ async function handleSyncDatabase() {
     const added = res?.added ?? 0
     const removed = res?.removed ?? 0
     eventBus.emit('show-toast', `同步完成：新增 ${added} 首，清理 ${removed} 首`);
+    // 通知播放器刷新内存歌单：新增/被清理的歌曲立即生效
+    eventBus.emit('songs-updated');
   } catch (error) {
     console.error("Sync failed", error);
     eventBus.emit('show-toast', "同步失败，请重试。");

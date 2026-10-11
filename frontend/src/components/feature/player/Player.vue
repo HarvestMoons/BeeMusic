@@ -263,8 +263,9 @@ watch(playMode, (val) => {
   savePlayMode(val)
 })
 
-const {handleFolderChange, setFolder} = usePlayerPlaylistLoader({
+const {handleFolderChange, setFolder, refreshSongList} = usePlayerPlaylistLoader({
   playlist,
+  currentIndex,
   selectedFolder,
   playbackRate,
   audioRef,
@@ -463,6 +464,7 @@ onMounted(async () => {
   )
 
   eventBus.on('song-vote-updated', handleSongVoteUpdate)
+  eventBus.on('songs-updated', handleSongsUpdated)
 
   runAfterFirstPaint(() => {
     initializePlaylistData(shareSongId)
@@ -471,6 +473,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   eventBus.off('song-vote-updated', handleSongVoteUpdate)
+  eventBus.off('songs-updated', handleSongsUpdated)
   removeAudioGraphResumeListeners?.()
   teardownAudioGraph(audioRef.value)
 })
@@ -488,6 +491,11 @@ function handleSongVoteUpdate({songId, likes, dislikes}) {
     if (likes !== undefined) song.likeCount = likes
     if (dislikes !== undefined) song.dislikeCount = dislikes
   }
+}
+
+// 站长同步数据库后，刷新内存中的歌单，让被清理的歌曲立即消失
+async function handleSongsUpdated() {
+  await refreshSongList()
 }
 </script>
 
