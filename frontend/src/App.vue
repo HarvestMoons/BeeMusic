@@ -9,11 +9,7 @@
 
     <template v-if="!showEntryCover">
       <!-- 侧边栏：负责触发登录、注册、登出事件 -->
-      <Sidebar
-          @open-login="openLogin"
-          @open-register="openRegister"
-          @request-logout="handleLogout"
-      />
+      <Sidebar/>
 
       <!-- 主体部分 -->
       <div class="flex-1 main-content-column">
@@ -143,8 +139,8 @@ function closeEntryCover() {
 
 onMounted(() => {
   themeStore.initTheme()
-  eventBus.on('open-login', () => showLogin.value = true)
-  eventBus.on('open-register', () => showRegister.value = true)
+  eventBus.on('open-login', openLogin)
+  eventBus.on('open-register', openRegister)
   eventBus.on('request-logout', handleLogout)
   eventBus.on('show-toast', showToast)
   eventBus.on('request-confirm', openGlobalConfirm)

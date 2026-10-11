@@ -115,9 +115,6 @@ watch(() => themeStore.isDarkMode, (val) => isDarkMode.value = val)
 watch(() => themeStore.showParticles, (val) => showParticles.value = val)
 watch(() => siteConfigStore.commentsEnabled, (val) => commentsEnabledProxy.value = val)
 
-// 定义父组件通信事件
-const emit = defineEmits(['open-login', 'open-register', 'request-logout'])
-
 onMounted(() => {
   siteConfigStore.fetchConfig()
 })

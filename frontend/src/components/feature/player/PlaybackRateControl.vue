@@ -18,12 +18,13 @@
 </template>
 
 <script setup>
-import {onMounted, ref, watch} from 'vue'
+import {ref, watch} from 'vue'
 
 const props = defineProps({
   modelValue: {type: Number, default: 1.0},
 })
-const emits = defineEmits(['update:modelValue', 'change'])
+// change 事件没有任何监听者（父组件只用 v-model），故不再声明和触发
+const emits = defineEmits(['update:modelValue'])
 
 const rate = ref(props.modelValue)
 
@@ -31,17 +32,12 @@ watch(() => props.modelValue, val => rate.value = val)
 
 function updateRate() {
   emits('update:modelValue', rate.value)
-  emits('change', rate.value)
 }
 
 function resetRate() {
   rate.value = 1.0
   updateRate()
 }
-
-onMounted(() => {
-  emits('change', rate.value)
-})
 </script>
 
 <style scoped>
