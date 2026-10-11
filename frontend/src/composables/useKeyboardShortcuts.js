@@ -51,7 +51,7 @@ export function useKeyboardShortcuts(
 
     window.addEventListener('keydown', handler)
 
-    // 返回清理函数（可选）
+    // 返回清理函数，调用方需要在组件卸载时调用，否则监听会一直留在 window 上
     return () => {
         window.removeEventListener('keydown', handler)
         handler = null

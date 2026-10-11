@@ -176,6 +176,7 @@ const selectedFolder = ref(DEFAULT_FOLDER)
 const currentSongInfo = ref({title: '', bv: null})
 const playCountState = ref({songId: null, reported: false})
 let removeAudioGraphResumeListeners = null
+let removeKeyboardShortcuts = null
 
 let playSongAtIndex = () => {}
 
@@ -454,7 +455,7 @@ onMounted(async () => {
   const {shareSongId} = initializePlayerPreferences()
   setupAudioGraphForPlayback()
 
-  useKeyboardShortcuts(
+  removeKeyboardShortcuts = useKeyboardShortcuts(
       () => audioRef.value,
       () => audioRef.value && (audioRef.value.paused ? safePlayAudio(audioRef.value) : audioRef.value.pause()),
       playNextInOrder,
@@ -474,6 +475,7 @@ onMounted(async () => {
 onUnmounted(() => {
   eventBus.off('song-vote-updated', handleSongVoteUpdate)
   eventBus.off('songs-updated', handleSongsUpdated)
+  removeKeyboardShortcuts?.()
   removeAudioGraphResumeListeners?.()
   teardownAudioGraph(audioRef.value)
 })
