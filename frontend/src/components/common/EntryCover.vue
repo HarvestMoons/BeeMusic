@@ -19,7 +19,9 @@
 <script setup>
 import {computed, onBeforeUnmount, onMounted, ref, watch} from 'vue'
 
-const entryCoverImages = import.meta.glob('/src/assets/cover/entry_cover/*.{webp,avif}', {
+// 用相对路径而不是 '/src/...' 绝对路径：绝对路径展开后与导入者的盘符大小写不一致时，
+// Vite 生成的动态 import 说明符会算错，导致 rollup 解析失败（本地 Windows 构建会失败）
+const entryCoverImages = import.meta.glob('../../assets/cover/entry_cover/*.{webp,avif}', {
   eager: false,
   import: 'default'
 })
