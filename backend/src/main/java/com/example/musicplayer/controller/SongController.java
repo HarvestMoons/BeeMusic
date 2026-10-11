@@ -1,10 +1,10 @@
 package com.example.musicplayer.controller;
 
 import com.example.musicplayer.dto.FolderSongCount;
-import com.example.musicplayer.enums.UserRole;
 import com.example.musicplayer.model.Song;
 import com.example.musicplayer.service.SongService;
 import com.example.musicplayer.service.CustomUserDetails;
+import com.example.musicplayer.service.SecurityUtils;
 import com.example.musicplayer.service.VoteService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,21 +30,14 @@ public class SongController {
     @GetMapping("/public/songs/get")
     public List<Song> getSongs(@RequestParam String folder,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        boolean includeDeleted = false;
-        if (userDetails != null && userDetails.isEnabled()) {
-            UserRole role = userDetails.getUser().getRoleEnum();
-            if (role == UserRole.ADMIN || role == UserRole.STATION_MASTER) {
-                includeDeleted = true;
-            }
-        }
-        return songService.getSongs(folder, includeDeleted);
+        return songService.getSongs(folder, SecurityUtils.isAdminOrStationMaster(userDetails));
     }
 
     // 删除歌曲（软删除）
     @PostMapping("/songs/delete/{songId}")
     public ResponseEntity<?> deleteSong(@PathVariable Long songId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        if (isStationMaster(userDetails)) {
+        if (SecurityUtils.isStationMaster(userDetails)) {
             songService.deleteSong(songId);
             return ResponseEntity.ok(Map.of("status", "ok", "message", "已删除"));
         }
@@ -55,7 +48,7 @@ public class SongController {
     @PostMapping("/songs/restore/{songId}")
     public ResponseEntity<?> restoreSong(@PathVariable Long songId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        if (isStationMaster(userDetails)) {
+        if (SecurityUtils.isStationMaster(userDetails)) {
             songService.restoreSong(songId);
             return ResponseEntity.ok(Map.of("status", "ok", "message", "已恢复"));
         }
@@ -87,7 +80,7 @@ public class SongController {
     @PostMapping("/songs/like/{songId}")
     public Map<String, Integer> likeSong(@PathVariable Long songId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        Long userId = currentUserId(userDetails);
+        Long userId = SecurityUtils.currentUserId(userDetails);
         return voteService.like(songId, userId);
     }
 
@@ -95,7 +88,7 @@ public class SongController {
     @PostMapping("/songs/dislike/{songId}")
     public Map<String, Integer> dislikeSong(@PathVariable Long songId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        Long userId = currentUserId(userDetails);
+        Long userId = SecurityUtils.currentUserId(userDetails);
         return voteService.dislike(songId, userId);
     }
 
@@ -103,22 +96,15 @@ public class SongController {
     @DeleteMapping("/songs/vote/{songId}")
     public Map<String, Integer> cancelVote(@PathVariable Long songId,
             @AuthenticationPrincipal CustomUserDetails userDetails) {
-        Long userId = currentUserId(userDetails);
+        Long userId = SecurityUtils.currentUserId(userDetails);
         return voteService.cancel(songId, userId);
-    }
-
-    private Long currentUserId(CustomUserDetails userDetails) {
-        if (userDetails != null && userDetails.isEnabled()) {
-            return userDetails.getUser().getId();
-        }
-        throw new IllegalStateException("未登录");
     }
 
     // 手动触发 OSS 同步 (站长专用)
     // 注意：这是唯一会删除数据的同步入口，会硬删除 OSS 中已不存在的歌曲及其投票、评论、评论点赞
     @PostMapping("/admin/songs/sync")
     public ResponseEntity<?> syncSongs(@AuthenticationPrincipal CustomUserDetails userDetails) {
-        if (isStationMaster(userDetails)) {
+        if (SecurityUtils.isStationMaster(userDetails)) {
             SongService.SyncResult result = songService.syncAllSongsAndCleanupOrphans();
             return ResponseEntity.ok(Map.of(
                     "status", "ok",
@@ -127,11 +113,5 @@ public class SongController {
                     "removed", result.removed()));
         }
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only Station Master can sync database");
-    }
-
-    private boolean isStationMaster(CustomUserDetails userDetails) {
-        return userDetails != null
-                && userDetails.isEnabled()
-                && userDetails.getUser().getRoleEnum() == UserRole.STATION_MASTER;
     }
 }

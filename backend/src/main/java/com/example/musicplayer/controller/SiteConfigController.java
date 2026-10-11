@@ -1,7 +1,7 @@
 package com.example.musicplayer.controller;
 
-import com.example.musicplayer.enums.UserRole;
 import com.example.musicplayer.service.CustomUserDetails;
+import com.example.musicplayer.service.SecurityUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,9 +34,7 @@ public class SiteConfigController {
     @PostMapping("/admin/config/comments-enabled")
     public ResponseEntity<?> setCommentsEnabled(@RequestBody Map<String, Boolean> body,
                                                 @AuthenticationPrincipal CustomUserDetails userDetails) {
-        if (userDetails == null
-                || !userDetails.isEnabled()
-                || userDetails.getUser().getRoleEnum() != UserRole.STATION_MASTER) {
+        if (!SecurityUtils.isStationMaster(userDetails)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only Station Master can change site config");
         }
 
