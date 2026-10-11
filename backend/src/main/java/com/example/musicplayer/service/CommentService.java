@@ -94,18 +94,13 @@ public class CommentService {
             dtoMap.put(dto.getId(), dto);
         }
 
-        // 组装树 (两层结构)
-        // 规则：parentId 为 null 的是根评论。
-        // parentId 不为 null 的，找到其 parent (必须是根评论)。
-        // 如果 parentId 指向的是二级评论，则将其归类到该二级评论所属的根评论下（扁平化二级）。
-        // 但目前的数据库设计 parentId 指向的是直接父级。
-        // 需求是“两层结构”。
-        // 策略：如果 c.parentId 是根评论，直接加。
-        // 如果 c.parentId 是子评论，则需要找到最顶层的根。
-        // 为了简化，通常前端传参时，如果是回复子评论，parentId 传根评论ID，replyToUserId 传被回复人ID。
-        // 这样数据库里 parentId 永远是根评论ID。
-        // 让我们约定：前端在回复子评论时，parentId 填该子评论的 parentId (即根ID)。
-
+        // 组装两层评论树
+        // - parentId 为 null  → 根评论
+        // - parentId 不为 null → 直接挂到 dtoMap.get(parentId) 这条评论的 replies 下
+        //
+        // 注意：这里不做"上溯到根评论"的扁平化处理。两层结构依赖前端约定维持：
+        // 回复二级评论时 parentId 传根评论 ID、replyToUserId 传被回复用户的 ID。
+        // 若传入的 parentId 指向的是二级评论，该回复会被挂到那条二级评论下（形成三层），不会被提升到根评论。
         for (CommentDTO dto : allDTOs) {
             if (dto.getParentId() == null) {
                 rootComments.add(dto);
