@@ -12,7 +12,7 @@
 </template>
 
 <script setup>
-import {onMounted, ref, watch} from 'vue'
+import {ref, watch} from 'vue'
 import {useAuthStore} from '@/store';
 import {eventBus} from '@/utils/eventBus.js';
 // 引入图标
@@ -130,10 +130,9 @@ async function handleDislike() {
   }
 }
 
-// 监听 songId 变化
+// 监听 songId 变化（immediate: true 会在 setup 阶段立刻拉取一次，
+// 因此不需要再在 onMounted 里重复请求同一个接口）
 watch(() => props.songId, refreshVotes, {immediate: true})
-
-onMounted(refreshVotes)
 </script>
 
 <style scoped>
