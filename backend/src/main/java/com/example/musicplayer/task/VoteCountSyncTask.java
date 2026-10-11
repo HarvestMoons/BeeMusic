@@ -2,6 +2,7 @@ package com.example.musicplayer.task;
 
 import com.example.musicplayer.model.SongVote;
 import com.example.musicplayer.repository.SongVoteRepository;
+import com.example.musicplayer.service.RedisKeyScanner;
 import com.example.musicplayer.service.RedisTaskLock;
 import com.example.musicplayer.service.VoteRedisKeys;
 import jakarta.annotation.PostConstruct;
@@ -14,7 +15,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.time.Duration;
 
@@ -27,6 +27,7 @@ public class VoteCountSyncTask {
     private final StringRedisTemplate redisTemplate;
     private final RedisTaskLock taskLock;
 
+    private final RedisKeyScanner redisKeyScanner;
     private static final String LOCK_KEY = "music:task-lock:vote-projection";
     /**
      * 定期从 MySQL 事实表重建 Redis 读模型。
@@ -56,8 +57,8 @@ public class VoteCountSyncTask {
     }
 
     private void rebuildRedisVotes() {
-        deleteVoteKeys(VoteRedisKeys.LIKES_PATTERN);
-        deleteVoteKeys(VoteRedisKeys.DISLIKES_PATTERN);
+        redisKeyScanner.deleteByPattern(VoteRedisKeys.LIKES_PATTERN);
+        redisKeyScanner.deleteByPattern(VoteRedisKeys.DISLIKES_PATTERN);
         List<SongVote> votes = songVoteRepository.findAll();
         redisTemplate.executePipelined((RedisCallback<Object>) connection -> {
             RedisSerializer<String> serializer = redisTemplate.getStringSerializer();
@@ -71,25 +72,6 @@ public class VoteCountSyncTask {
             return null;
         });
         log.info("【投票同步任务】已从 MySQL 重建 {} 条 Redis 投票关系", votes.size());
-    }
-
-    private void deleteVoteKeys(String pattern) {
-        Set<String> keys = redisTemplate.execute((RedisCallback<Set<String>>) connection -> {
-            Set<String> result = new java.util.HashSet<>();
-            RedisSerializer<String> serializer = redisTemplate.getStringSerializer();
-            try (var cursor = connection.scan(org.springframework.data.redis.core.ScanOptions.scanOptions()
-                    .match(pattern).count(500).build())) {
-                while (cursor.hasNext()) {
-                    result.add(serializer.deserialize(cursor.next()));
-                }
-            } catch (Exception e) {
-                throw new IllegalStateException("Failed to scan Redis vote keys", e);
-            }
-            return result;
-        });
-        if (keys != null && !keys.isEmpty()) {
-            redisTemplate.delete(keys);
-        }
     }
 
 }

@@ -31,6 +31,7 @@ public class SongService {
     private final SongVoteRepository songVoteRepository;
     private final RedisTemplate<String, Object> redisTemplate;
     private final StringRedisTemplate stringRedisTemplate;
+    private final RedisKeyScanner redisKeyScanner;
     private final TransactionTemplate transactionTemplate;
 
     private final Map<String, String> AVAILABLE_FOLDERS = Map.of(
@@ -48,6 +49,7 @@ public class SongService {
             SongVoteRepository songVoteRepository,
             RedisTemplate<String, Object> jsonRedisTemplate,
             org.springframework.data.redis.core.StringRedisTemplate stringRedisTemplate,
+            RedisKeyScanner redisKeyScanner,
             PlatformTransactionManager transactionManager) {
         this.ossUtil = ossUtil;
         this.songRepository = songRepository;
@@ -56,6 +58,7 @@ public class SongService {
         this.songVoteRepository = songVoteRepository;
         this.redisTemplate = jsonRedisTemplate;
         this.stringRedisTemplate = stringRedisTemplate;
+        this.redisKeyScanner = redisKeyScanner;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
     }
 
@@ -134,24 +137,7 @@ public class SongService {
     }
 
     private void evictAllFolderCaches() {
-        Set<String> keys = redisTemplate
-                .execute((org.springframework.data.redis.core.RedisCallback<Set<String>>) connection -> {
-                    Set<String> result = new HashSet<>();
-                    org.springframework.data.redis.serializer.RedisSerializer<String> serializer = redisTemplate
-                            .getStringSerializer();
-                    try (var cursor = connection.scan(org.springframework.data.redis.core.ScanOptions.scanOptions()
-                            .match("songs:folder:*").count(500).build())) {
-                        while (cursor.hasNext()) {
-                            result.add(serializer.deserialize(cursor.next()));
-                        }
-                    } catch (Exception e) {
-                        throw new IllegalStateException("Failed to scan song cache keys", e);
-                    }
-                    return result;
-                });
-        if (keys != null && !keys.isEmpty()) {
-            redisTemplate.delete(keys);
-        }
+        redisKeyScanner.deleteByPattern("songs:folder:*");
     }
 
     /**
