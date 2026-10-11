@@ -124,7 +124,7 @@
 <script setup>
 import {computed, ref, watch} from 'vue'
 import {useAuthStore} from '@/store'
-import api from '@/services/auth'
+import api from '@/services/http'
 import unfoldIcon from '@/assets/icons/unfold.svg'
 import foldIcon from '@/assets/icons/fold.svg'
 import {eventBus, requestConfirm} from '@/utils/eventBus'
@@ -345,15 +345,12 @@ async function toggleLike(comment) {
 
   commentLikeLoadingMap.value[comment.id] = true
   try {
-    if (comment.liked) {
-      const res = await api.delete(`/comments/like/${comment.id}`)
-      comment.liked = Boolean(res.data?.liked)
-      comment.likeCount = Number(res.data?.likeCount ?? 0)
-    } else {
-      const res = await api.post(`/comments/like/${comment.id}`)
-      comment.liked = Boolean(res.data?.liked)
-      comment.likeCount = Number(res.data?.likeCount ?? 0)
-    }
+    // 已点赞则取消，否则点赞；两个分支的后续处理完全相同
+    const res = comment.liked
+        ? await api.delete(`/comments/like/${comment.id}`)
+        : await api.post(`/comments/like/${comment.id}`)
+    comment.liked = Boolean(res.data?.liked)
+    comment.likeCount = Number(res.data?.likeCount ?? 0)
     persistCurrentComments()
   } catch (err) {
     console.error('操作失败', err)

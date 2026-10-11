@@ -1,19 +1,13 @@
-import axios from 'axios';
-import {API_BASE} from '@/constants/index.js';
-
-const api = axios.create({
-    baseURL: API_BASE,
-    withCredentials: true
-});
+import http from './http';
 
 export const getCommentsEnabled = async () => {
-    return (await api.get('/public/config/comments-enabled')).data;
+    return (await http.get('/public/config/comments-enabled')).data;
 };
 
 export const setCommentsEnabled = async (enabled) => {
-    return (await api.post('/admin/config/comments-enabled', {enabled})).data;
+    return (await http.post('/admin/config/comments-enabled', {enabled})).data;
 };
 
 export const syncDatabase = async () => {
-    return (await api.post('/admin/songs/sync')).data;
+    return (await http.post('/admin/songs/sync')).data;
 };

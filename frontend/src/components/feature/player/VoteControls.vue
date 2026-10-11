@@ -18,7 +18,7 @@ import {eventBus} from '@/utils/eventBus.js';
 // 引入图标
 import likeIcon from '@/assets/icons/like.svg'
 import dislikeIcon from '@/assets/icons/dislike.svg'
-import api from '@/services/auth';
+import api from '@/services/http';
 
 // 使用 props 接收当前歌曲 ID
 const props = defineProps({
@@ -56,78 +56,48 @@ async function refreshVotes() {
   }
 }
 
-async function handleLike() {
+/**
+ * 提交投票。targetVote 是目标状态（1=点赞，-1=点踩）：
+ * 当前已经是该状态时，调同一个接口的 DELETE 表示取消。
+ */
+async function submitVote(targetVote, loginTip, failureTip) {
   if (isVoting.value) return
   if (!authStore.isAuthenticated) {
-    showToastMessage('请先登录再点赞哦')
+    showToastMessage(loginTip)
     return
   }
   isVoting.value = true
   try {
-    // 如果当前是已点赞 -> 取消
-    if (userVote.value === 1) {
-      const res = await api.delete(`/songs/vote/${props.songId}`)
-      likes.value = res.data.likes
-      dislikes.value = res.data.dislikes
-      userVote.value = 0
-      eventBus.emit('song-vote-updated', {
-        songId: props.songId,
-        likes: likes.value,
-        dislikes: dislikes.value
-      })
-      return
-    }
-    const res = await api.post(`/songs/like/${props.songId}`)
-    likes.value = res.data.likes
-    dislikes.value = res.data.dislikes
-    userVote.value = 1
-    eventBus.emit('song-vote-updated', {
-      songId: props.songId,
-      likes: likes.value,
-      dislikes: dislikes.value
-    })
+    const isCancelling = userVote.value === targetVote
+    const res = isCancelling
+        ? await api.delete(`/songs/vote/${props.songId}`)
+        : await api.post(`/songs/${targetVote === 1 ? 'like' : 'dislike'}/${props.songId}`)
+    applyVoteResult(res.data, isCancelling ? 0 : targetVote)
   } catch (err) {
-    console.error('点赞失败', err)
+    console.error(failureTip, err)
   } finally {
     isVoting.value = false
   }
 }
 
-async function handleDislike() {
-  if (isVoting.value) return
-  if (!authStore.isAuthenticated) {
-    showToastMessage('请先登录再点踩哦')
-    return
-  }
-  isVoting.value = true
-  try {
-    // 如果当前是已点踩 -> 取消
-    if (userVote.value === -1) {
-      const res = await api.delete(`/songs/vote/${props.songId}`)
-      likes.value = res.data.likes
-      dislikes.value = res.data.dislikes
-      userVote.value = 0
-      eventBus.emit('song-vote-updated', {
-        songId: props.songId,
-        likes: likes.value,
-        dislikes: dislikes.value
-      })
-      return
-    }
-    const res = await api.post(`/songs/dislike/${props.songId}`)
-    likes.value = res.data.likes
-    dislikes.value = res.data.dislikes
-    userVote.value = -1
-    eventBus.emit('song-vote-updated', {
-      songId: props.songId,
-      likes: likes.value,
-      dislikes: dislikes.value
-    })
-  } catch (err) {
-    console.error('点踩失败', err)
-  } finally {
-    isVoting.value = false
-  }
+/** 统一处理投票结果：更新本地票数，并通知播放器同步内存中的歌单 */
+function applyVoteResult(data, voted) {
+  likes.value = data.likes
+  dislikes.value = data.dislikes
+  userVote.value = voted
+  eventBus.emit('song-vote-updated', {
+    songId: props.songId,
+    likes: likes.value,
+    dislikes: dislikes.value
+  })
+}
+
+function handleLike() {
+  return submitVote(1, '请先登录再点赞哦', '点赞失败')
+}
+
+function handleDislike() {
+  return submitVote(-1, '请先登录再点踩哦', '点踩失败')
 }
 
 // 监听 songId 变化（immediate: true 会在 setup 阶段立刻拉取一次，
