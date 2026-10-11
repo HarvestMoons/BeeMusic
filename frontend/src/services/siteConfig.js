@@ -5,7 +5,7 @@ export const getCommentsEnabled = async () => {
 };
 
 export const setCommentsEnabled = async (enabled) => {
-    return (await http.post('/admin/config/comments-enabled', {enabled})).data;
+    return (await http.post('/admin/config/comments-enabled', { enabled })).data;
 };
 
 export const syncDatabase = async () => {
