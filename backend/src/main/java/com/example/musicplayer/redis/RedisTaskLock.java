@@ -1,15 +1,19 @@
-package com.example.musicplayer.service;
+package com.example.musicplayer.redis;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.Collections;
 import java.util.UUID;
 
-@Service
+/**
+ * 基于 Redis 的多实例定时任务租约锁。
+ * 获取成功返回 token，释放时用 Lua 脚本比对 token，避免误删其他实例的锁。
+ */
+@Component
 @RequiredArgsConstructor
 public class RedisTaskLock {
 

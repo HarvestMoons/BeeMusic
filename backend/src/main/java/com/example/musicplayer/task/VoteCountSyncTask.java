@@ -2,8 +2,8 @@ package com.example.musicplayer.task;
 
 import com.example.musicplayer.model.SongVote;
 import com.example.musicplayer.repository.SongVoteRepository;
-import com.example.musicplayer.service.RedisKeyScanner;
-import com.example.musicplayer.service.RedisTaskLock;
+import com.example.musicplayer.redis.RedisKeyScanner;
+import com.example.musicplayer.redis.RedisTaskLock;
 import com.example.musicplayer.service.VoteRedisKeys;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;

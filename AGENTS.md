@@ -47,6 +47,8 @@ Ice（线上站点为 BeeMusic）是一个音乐播放器网站，提供：
   `SongVote`、`Meme` 和 `Video`。
 - `repository/`：Spring Data JPA 数据访问接口。
 - `config/`：Security、Redis、OSS、WebSocket 和 Redis Pub/Sub 配置。
+- `redis/`：通用 Redis 小工具，与 `config/RedisConfig` 的 Spring 配置区分。
+  `RedisTaskLock` 提供多实例定时任务租约锁，`RedisKeyScanner` 按模式用 SCAN 批量删除键。
 - `task/`：`SongSyncTask` 每 30 分钟同步歌曲，`VoteCountSyncTask` 每 60 分钟同步投票计数。
 - `handler/`、`listener/`：在线人数 WebSocket 处理和跨实例消息同步。
 - `exception/`：领域异常和 `GlobalExceptionHandler`。

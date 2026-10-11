@@ -1,4 +1,4 @@
-package com.example.musicplayer.service;
+package com.example.musicplayer.redis;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisCallback;

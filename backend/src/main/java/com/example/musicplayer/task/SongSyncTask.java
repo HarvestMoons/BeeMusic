@@ -1,7 +1,7 @@
 package com.example.musicplayer.task;
 
 import com.example.musicplayer.service.SongService;
-import com.example.musicplayer.service.RedisTaskLock;
+import com.example.musicplayer.redis.RedisTaskLock;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
