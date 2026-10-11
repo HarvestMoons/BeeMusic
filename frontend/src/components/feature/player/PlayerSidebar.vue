@@ -91,9 +91,7 @@ onMounted(() => {
 
 defineExpose({
   showSpectrum,
-  toggleSpectrum,
-  toggleComments,
-  showComments
+  toggleSpectrum
 })
 </script>
 

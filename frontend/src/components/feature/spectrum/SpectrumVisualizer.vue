@@ -189,7 +189,6 @@ onMounted(() => {
   document.addEventListener("click", clickResumeHandler);
   document.addEventListener("keydown", keydownResumeHandler);
 
-  // 重要：用户第一次点播放器控件时，也要同步唤醒频谱使用的 AudioContext，避免必须额外点页面其他位置。
   // 按 Z 切换模式
   const modeKeyHandler = (e) => {
     if (!e.key || e.key.toLowerCase() !== "z") return;
