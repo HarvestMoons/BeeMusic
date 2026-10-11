@@ -21,6 +21,12 @@ downloaded_music/
 
 .env
 
+### 证书与私钥（敏感部署材料，不入库） ###
+certs/*.key
+certs/*.pem
+*.key
+*.pem
+
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
