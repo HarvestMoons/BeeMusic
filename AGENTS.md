@@ -20,16 +20,16 @@ Ice（线上站点为 BeeMusic）是一个音乐播放器网站，提供：
 
 ## 2. 技术栈和目录
 
-| 目录 | 作用 | 主要技术 |
-| --- | --- | --- |
-| `backend/` | REST API、认证、业务和定时任务 | Java 22、Spring Boot 3.2.4、Spring MVC、Security、Session、JPA、WebSocket |
-| `frontend/` | SPA 用户界面 | Vue 3、Vite 7、Pinia、Vue Router、Axios、原生 Fetch |
-| `documents/` | 设计记录、结构说明和待办 | Markdown |
-| `performance/` | Locust 压测及网络检查脚本 | Python |
-| `certs/` | Nginx HTTPS 证书挂载目录 | `.pem`/`.key`，属于敏感部署材料 |
-| `ServerDeployment/` | 服务器部署相关副本配置 | Docker Compose |
-| `download_oss_music.py` | 从 OSS 下载音乐的辅助脚本 | Python |
-| `docker-compose.yml` | 本地/生产容器编排参考 | Spring、Nginx、Redis |
+| 目录                    | 作用                           | 主要技术                                                                  |
+| ----------------------- | ------------------------------ | ------------------------------------------------------------------------- |
+| `backend/`              | REST API、认证、业务和定时任务 | Java 22、Spring Boot 3.2.4、Spring MVC、Security、Session、JPA、WebSocket |
+| `frontend/`             | SPA 用户界面                   | Vue 3、Vite 7、Pinia、Vue Router、Axios、原生 Fetch                       |
+| `documents/`            | 设计记录、结构说明和待办       | Markdown                                                                  |
+| `performance/`          | Locust 压测及网络检查脚本      | Python                                                                    |
+| `certs/`                | Nginx HTTPS 证书挂载目录       | `.pem`/`.key`，属于敏感部署材料                                           |
+| `ServerDeployment/`     | 服务器部署相关副本配置         | Docker Compose                                                            |
+| `download_oss_music.py` | 从 OSS 下载音乐的辅助脚本      | Python                                                                    |
+| `docker-compose.yml`    | 本地/生产容器编排参考          | Spring、Nginx、Redis                                                      |
 
 后端源码包为 `com.example.musicplayer`，入口是
 `backend/src/main/java/com/example/musicplayer/MusicPlayerApplication.java`。
@@ -80,16 +80,16 @@ Ice（线上站点为 BeeMusic）是一个音乐播放器网站，提供：
 
 后端 API 统一位于 `/api` 下，常用端点包括：
 
-| 功能 | 端点 |
-| --- | --- |
-| 认证 | `/api/auth/register`、`/login`、`/logout`、`/status` |
-| 歌曲 | `/api/public/songs/get`、`/folder-counts`、`/play/{id}`、`/votes/{id}` |
-| 投票 | `/api/songs/like/{id}`、`/dislike/{id}`、`/vote/{id}` |
-| 评论 | `/api/public/comments/{songId}`、`/api/comments/add`、评论点赞/删除 |
-| 迷因 | `/api/public/memes/random`、`/api/memes/sync`、`/api/memes/{id}` |
-| 视频 | `/api/public/videos/random` |
-| 健康 | `/api/public/health`、`/actuator/health/**` |
-| 在线人数 | WebSocket `/ws/online` |
+| 功能     | 端点                                                                   |
+| -------- | ---------------------------------------------------------------------- |
+| 认证     | `/api/auth/register`、`/login`、`/logout`、`/status`                   |
+| 歌曲     | `/api/public/songs/get`、`/folder-counts`、`/play/{id}`、`/votes/{id}` |
+| 投票     | `/api/songs/like/{id}`、`/dislike/{id}`、`/vote/{id}`                  |
+| 评论     | `/api/public/comments/{songId}`、`/api/comments/add`、评论点赞/删除    |
+| 迷因     | `/api/public/memes/random`、`/api/memes/sync`、`/api/memes/{id}`       |
+| 视频     | `/api/public/videos/random`                                            |
+| 健康     | `/api/public/health`、`/actuator/health/**`                            |
+| 在线人数 | WebSocket `/ws/online`                                                 |
 
 前端入口是 `frontend/src/main.js`，路由在 `frontend/src/router/index.js`，认证、主题和
 站点配置在 `frontend/src/store/index.js`。播放器相关代码集中在
