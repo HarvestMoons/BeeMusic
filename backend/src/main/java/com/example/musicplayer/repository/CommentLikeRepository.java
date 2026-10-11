@@ -27,4 +27,17 @@ public interface CommentLikeRepository extends JpaRepository<CommentLike, Long> 
 
     @Query("SELECT cl.commentId FROM CommentLike cl WHERE cl.userId = :userId AND cl.commentId IN :commentIds")
     List<Long> findLikedCommentIds(@Param("userId") Long userId, @Param("commentIds") Collection<Long> commentIds);
+
+    /**
+     * 删除某首歌曲下所有评论的点赞记录。
+     * comment_likes 没有外键约束，必须在删除 comments 之前显式清理，否则会产生孤儿数据。
+     */
+    @Modifying
+    @Transactional
+    @Query(value = """
+            DELETE cl FROM comment_likes cl
+            JOIN comments c ON cl.comment_id = c.id
+            WHERE c.song_id = :songId
+            """, nativeQuery = true)
+    int deleteBySongId(@Param("songId") Long songId);
 }

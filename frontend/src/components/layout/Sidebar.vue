@@ -69,9 +69,10 @@
               />
             </li>
             <li class="sub-item">
-              <button type="button" @click="handleSyncDatabase" class="sub-action-button theme-toggle-link">
+              <button type="button" @click="handleSyncDatabase" :disabled="syncingDatabase"
+                      class="sub-action-button theme-toggle-link">
                 <img :src="restoreIcon" class="svg-icon" alt="同步" style="width:16px;height:16px;"/>
-                <span>同步数据库</span>
+                <span>{{ syncingDatabase ? '同步中…' : '同步数据库' }}</span>
               </button>
             </li>
           </ul>
@@ -107,6 +108,7 @@ const navItems = [
 const isDarkMode = ref(themeStore.isDarkMode)
 const showParticles = ref(themeStore.showParticles)
 const commentsEnabledProxy = ref(false)
+const syncingDatabase = ref(false)
 
 // Watch store changes to sync local state (e.g. if changed elsewhere)
 watch(() => themeStore.isDarkMode, (val) => isDarkMode.value = val)
@@ -151,18 +153,24 @@ function handleCommentsToggle(val) {
 }
 
 async function handleSyncDatabase() {
+  if (syncingDatabase.value) return
   const confirmed = await requestConfirm({
     title: '同步数据库',
-    message: '确定要立即从 OSS 同步数据库吗？',
+    message: '将立即从 OSS 同步数据库：新增 OSS 中的新歌，并永久删除 OSS 中已不存在的歌曲及其投票、评论和评论点赞。删除不可恢复，确定继续吗？',
     confirmText: '立即同步'
   })
   if (!confirmed) return
+  syncingDatabase.value = true
   try {
-    await syncDatabase();
-    eventBus.emit('show-toast', "数据库同步触发成功！");
+    const res = await syncDatabase();
+    const added = res?.added ?? 0
+    const removed = res?.removed ?? 0
+    eventBus.emit('show-toast', `同步完成：新增 ${added} 首，清理 ${removed} 首`);
   } catch (error) {
     console.error("Sync failed", error);
     eventBus.emit('show-toast', "同步失败，请重试。");
+  } finally {
+    syncingDatabase.value = false
   }
 }
 
@@ -366,5 +374,10 @@ function onAuthClick() {
   padding: 0;
   cursor: pointer;
   text-align: left;
+}
+
+.sub-action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 </style>

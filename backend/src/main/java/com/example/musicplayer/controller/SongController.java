@@ -29,7 +29,7 @@ public class SongController {
     // 首页歌曲列表
     @GetMapping("/public/songs/get")
     public List<Song> getSongs(@RequestParam String folder,
-                               @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         boolean includeDeleted = false;
         if (userDetails != null && userDetails.isEnabled()) {
             UserRole role = userDetails.getUser().getRoleEnum();
@@ -43,7 +43,7 @@ public class SongController {
     // 删除歌曲（软删除）
     @PostMapping("/songs/delete/{songId}")
     public ResponseEntity<?> deleteSong(@PathVariable Long songId,
-                                        @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         if (isStationMaster(userDetails)) {
             songService.deleteSong(songId);
             return ResponseEntity.ok(Map.of("status", "ok", "message", "已删除"));
@@ -54,7 +54,7 @@ public class SongController {
     // 恢复歌曲
     @PostMapping("/songs/restore/{songId}")
     public ResponseEntity<?> restoreSong(@PathVariable Long songId,
-                                         @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         if (isStationMaster(userDetails)) {
             songService.restoreSong(songId);
             return ResponseEntity.ok(Map.of("status", "ok", "message", "已恢复"));
@@ -76,7 +76,7 @@ public class SongController {
     // 获取点赞/点踩数
     @GetMapping("/public/songs/votes/{songId}")
     public Map<String, Integer> getVotes(@PathVariable Long songId,
-                                         @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         if (userDetails != null && userDetails.isEnabled()) {
             return voteService.countsForUser(songId, userDetails.getUser().getId());
         }
@@ -86,7 +86,7 @@ public class SongController {
     // 点赞
     @PostMapping("/songs/like/{songId}")
     public Map<String, Integer> likeSong(@PathVariable Long songId,
-                                         @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long userId = currentUserId(userDetails);
         return voteService.like(songId, userId);
     }
@@ -94,7 +94,7 @@ public class SongController {
     // 点踩
     @PostMapping("/songs/dislike/{songId}")
     public Map<String, Integer> dislikeSong(@PathVariable Long songId,
-                                            @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long userId = currentUserId(userDetails);
         return voteService.dislike(songId, userId);
     }
@@ -102,7 +102,7 @@ public class SongController {
     // 取消点赞/点踩
     @DeleteMapping("/songs/vote/{songId}")
     public Map<String, Integer> cancelVote(@PathVariable Long songId,
-                                           @AuthenticationPrincipal CustomUserDetails userDetails) {
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long userId = currentUserId(userDetails);
         return voteService.cancel(songId, userId);
     }
@@ -115,11 +115,16 @@ public class SongController {
     }
 
     // 手动触发 OSS 同步 (站长专用)
+    // 注意：这是唯一会删除数据的同步入口，会硬删除 OSS 中已不存在的歌曲及其投票、评论、评论点赞
     @PostMapping("/admin/songs/sync")
     public ResponseEntity<?> syncSongs(@AuthenticationPrincipal CustomUserDetails userDetails) {
         if (isStationMaster(userDetails)) {
-            songService.syncAllSongs();
-            return ResponseEntity.ok(Map.of("status", "ok", "message", "数据库同步已触发"));
+            SongService.SyncResult result = songService.syncAllSongsAndCleanupOrphans();
+            return ResponseEntity.ok(Map.of(
+                    "status", "ok",
+                    "message", "数据库同步完成",
+                    "added", result.added(),
+                    "removed", result.removed()));
         }
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Only Station Master can sync database");
     }

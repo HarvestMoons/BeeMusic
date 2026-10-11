@@ -21,4 +21,15 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     @Transactional
     @Query("UPDATE Comment c SET c.likeCount = c.likeCount - 1 WHERE c.id = :id AND c.likeCount > 0")
     void decrementLikeCount(@Param("id") Long id);
+
+    /**
+     * 删除某首歌曲的全部评论（含已软删除的）。
+     * comments.song_id 在数据库中没有外键，不会级联，必须显式清理。
+     * comments.parent_id 同样没有外键约束，因此单条批量 DELETE 即可，无需按父子顺序拆分。
+     * 调用前必须先删除 comment_likes。
+     */
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM Comment c WHERE c.songId = :songId")
+    int deleteBySongId(@Param("songId") Long songId);
 }
