@@ -12,7 +12,7 @@
 <script setup>
 import {ref} from 'vue'
 
-const props = defineProps({
+defineProps({
   index: {
     type: [Number, String],
     required: true

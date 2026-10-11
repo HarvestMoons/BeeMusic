@@ -27,7 +27,7 @@
 <script setup>
 import {nextTick, onMounted, onUnmounted, ref} from 'vue'
 
-const props = defineProps({
+defineProps({
   placeholder: {
     type: String,
     default: '搜索...'   // 默认占位符

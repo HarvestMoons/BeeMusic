@@ -40,7 +40,7 @@ import {useRouter} from 'vue-router'
 import {login} from '@/services/auth.js'
 import {useAuthStore} from '@/store/index.js'
 
-const props = defineProps({
+defineProps({
   visible: {type: Boolean, default: false}
 })
 const emit = defineEmits(['close', 'switch'])

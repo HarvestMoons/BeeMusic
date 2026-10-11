@@ -15,7 +15,7 @@
 </template>
 
 <script setup>
-const props = defineProps({
+defineProps({
   visible: {type: Boolean, default: false},
   title: {type: String, default: '确认'},
   message: {type: String, default: ''},
