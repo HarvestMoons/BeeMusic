@@ -144,6 +144,78 @@ npm run dev
 `/api/` 转发到 `spring:8082`，`/ws/` 转发并保留 WebSocket Upgrade 头。修改后端端口、
 路径或 WebSocket 端点时必须同步检查 Compose、Nginx、健康检查和前端 URL。
 
+### 生产部署现状
+
+**部署目标**
+
+- 服务器：阿里云 ECS `root@8.155.47.138`（同时承载生产 MySQL）；
+- 部署目录：`/opt/project/Ice`（同一台机器上还有另一个项目 `/opt/project/Linkup`，别搞混）；
+- 容器名：`spring_app`、`nginx_frontend`、`redis_server`；
+- 镜像：本地 `ice-spring:latest` / `ice-frontend:latest`，
+  发版时 tag 成 Docker Hub 的 `beecool/music-player:latest` / `beecool/music-player-frontend:latest`；
+- Git 远程：`https://github.com/HarvestMoons/BeeMusic.git`（仓库原名 `EnjoyMusic`，已改名）。
+
+**本地发版：`deploy.bat`**
+
+`deploy.bat` 只做三件事：`docker login` → tag/push 两个镜像 → `git add .` + `commit` + `push`。
+
+```powershell
+# 1. 先重建镜像 —— 这一步不能省，见下面的坑
+docker compose up -d --build
+
+# 2. 推镜像 + 提交 + 推送（chcp 保证中文提交信息不乱码）
+chcp 65001 > $null
+cmd /c "deploy.bat <提交信息>"
+```
+
+三个必须知道的坑：
+
+1. **它不会构建镜像**。镜像存在但内容是旧的时，脚本不会提醒，会直接把旧镜像推到 Docker Hub，
+   服务器拉到的就是旧代码。所以发版前一定要先 `docker compose up -d --build`。
+2. **工作区干净时会跳过 `git push`**。脚本第 4 步发现没有待提交内容就 `exit /b 0`，
+   第 5 步的 `git push` 根本不会执行（还会 `pause` 等按键）。
+   因此「代码已单独 commit+push，只想推镜像」是安全的；但反过来别指望它替你推代码。
+3. 它是 `git add .`，会把工作区里所有改动一起提交。本仓库的编辑器格式化会顺手改动
+   文件（Markdown 表格列宽对齐、长行折行、**去掉文件结尾换行符**），
+   跑脚本前务必先 `git status --short` 确认没有这类噪音。
+
+**服务器发布**
+
+```bash
+cd /opt/project/Ice && bash deploy.sh
+```
+
+`ServerDeployment/deploy.sh` 依次执行：`docker compose pull` →
+`docker compose up -d --force-recreate --remove-orphans` → 轮询 `spring_app` /
+`nginx_frontend` 健康状态 → `curl` 健康检查端点。
+
+### 服务器网络限制
+
+服务器直连不了 Docker Hub（实测 `auth.docker.io` 超时），`docker compose pull` 必须走镜像源：
+在服务器 `/etc/docker/daemon.json` 里配 `registry-mirrors`，当前只配了 `https://docker.1ms.run`
+（实测唯一能拉取自建镜像的源；首次拉取要几分钟，不要用短超时），改完执行
+`systemctl daemon-reload && systemctl restart docker`。
+
+另外 `backend/Dockerfile` 每次构建后端镜像都要联网从 Maven Central 补 `jaxb-runtime`，
+国内偶发下载失败，**重试即可通过**。
+
+### HTTPS 证书
+
+- 证书文件放在服务器 `certs/`（Nginx 挂载），**不入库**：`.gitignore` 已忽略 `certs/*.key`、
+  `certs/*.pem` 以及全局的 `*.key` / `*.pem`。新环境部署时必须手动放入。
+- 当前证书由 DigiCert（`Encryption Everywhere DV TLS CA - G2`）签发，
+  SAN 覆盖 `beemusic.fun` 与 `www.beemusic.fun`。有效期记录见 `certs/有效期备忘.txt`（该文件入库）。
+- Nginx 必须把**叶子证书和中间证书拼接**后配置，否则部分客户端会报不受信任。自检方式：
+
+  ```bash
+  openssl s_client -connect beemusic.fun:443 -servername beemusic.fun -showcerts </dev/null
+  ```
+
+  正常应输出**两张**证书（叶子 + 中间证书），并以 `Verify return code: 0 (ok)` 结束。
+- 换证书后如果浏览器仍显示「不安全」，先排除浏览器缓存：
+  用无痕窗口访问，或在 `chrome://net-internals/#hsts` 删除 `beemusic.fun` 的策略后硬刷新
+  （证书过期期间访问过、点过「继续前往」的浏览器会记住该状态）。
+
 ## 6. 修改代码时的规则
 
 1. 先搜索现有实现和调用方，优先复用现有 service、composable、常量和异常类型。
