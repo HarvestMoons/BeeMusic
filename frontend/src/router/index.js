@@ -4,10 +4,13 @@ const About = () => import('@/views/About.vue');
 const MemePage = () => import('@/views/MemePage.vue');
 const Settings = () => import('@/views/Settings.vue');
 
-// 根路径不配 component：HomePage 由 App.vue 直接用 v-show 渲染（保持常驻不销毁），
-// 这里的 component 永远不会被 router-view 渲染，保留路径匹配即可
+// 根路径的 HomePage 由 App.vue 用 v-show 常驻渲染（避免切页时销毁播放器），
+// 这里不会渲染，但必须给一个 component：没有任何 component/children 的路由记录
+// 会被 vue-router 直接丢弃，导致所有对 '/' 的解析报 "No match found"。
+const EmptyView = { render: () => null };
+
 const routes = [
-    { path: '/' },
+    { path: '/', component: EmptyView },
     { path: '/about', component: About },
     { path: '/meme', component: MemePage },
     { path: '/settings', component: Settings },

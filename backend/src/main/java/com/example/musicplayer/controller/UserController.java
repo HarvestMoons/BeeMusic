@@ -7,9 +7,9 @@ import com.example.musicplayer.dto.ProfileResponse;
 import com.example.musicplayer.model.User;
 import com.example.musicplayer.service.CustomUserDetails;
 import com.example.musicplayer.service.UserService;
+import com.example.musicplayer.service.UserSessionService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -19,8 +19,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextHolderStrategy;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.context.SecurityContextRepository;
-import org.springframework.session.FindByIndexNameSessionRepository;
-import org.springframework.session.Session;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -28,17 +26,17 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final UserSessionService userSessionService;
     private final SecurityContextRepository securityContextRepository;
     private final SecurityContextHolderStrategy securityContextHolderStrategy;
-    private final FindByIndexNameSessionRepository<? extends Session> sessionRepository;
 
     public UserController(UserService userService,
-                          SecurityContextRepository securityContextRepository,
-                          FindByIndexNameSessionRepository<? extends Session> sessionRepository) {
+                          UserSessionService userSessionService,
+                          SecurityContextRepository securityContextRepository) {
         this.userService = userService;
+        this.userSessionService = userSessionService;
         this.securityContextRepository = securityContextRepository;
         this.securityContextHolderStrategy = SecurityContextHolder.getContextHolderStrategy();
-        this.sessionRepository = sessionRepository;
     }
 
     // 当前登录用户的资料
@@ -60,7 +58,7 @@ public class UserController {
         }
         User user = userService.changePassword(userDetails.getUser().getId(),
                 request.getOldPassword(), request.getNewPassword());
-        invalidateOtherSessions(user.getUsername(), httpRequest);
+        userSessionService.invalidateOtherSessions(user.getUsername(), httpRequest);
         return ResponseEntity.ok(successResponse("密码修改成功", user));
     }
 
@@ -76,7 +74,7 @@ public class UserController {
         String previousUsername = userDetails.getUsername();
         User user = userService.changeUsername(userDetails.getUser().getId(), request.getNewUsername());
         // 其他会话里缓存的仍是旧用户名，之后按用户名查库会失败，一并清理掉
-        invalidateOtherSessions(previousUsername, httpRequest);
+        userSessionService.invalidateOtherSessions(previousUsername, httpRequest);
         refreshAuthentication(user, httpRequest, httpResponse);
         return ResponseEntity.ok(successResponse("用户名修改成功", user));
     }
@@ -94,21 +92,6 @@ public class UserController {
     private AuthResponse successResponse(String message, User user) {
         return new AuthResponse(true, message, user.getUsername(),
                 user.getRole(), user.getIsHiddenPlaylistUnlocked());
-    }
-
-    /**
-     * 让该用户名下的其他会话失效，只保留当前请求所在的会话。
-     * 依赖 Spring Session 索引模式下按 principal 维护的索引。
-     */
-    private void invalidateOtherSessions(String principalName, HttpServletRequest request) {
-        HttpSession currentSession = request.getSession(false);
-        String currentSessionId = currentSession == null ? null : currentSession.getId();
-        sessionRepository.findByPrincipalName(principalName).keySet()
-                .forEach(sessionId -> {
-                    if (!sessionId.equals(currentSessionId)) {
-                        sessionRepository.deleteById(sessionId);
-                    }
-                });
     }
 
     /**

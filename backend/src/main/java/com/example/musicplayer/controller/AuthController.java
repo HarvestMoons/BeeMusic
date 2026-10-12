@@ -6,6 +6,7 @@ import com.example.musicplayer.dto.RegisterRequest;
 import com.example.musicplayer.model.User;
 import com.example.musicplayer.service.CustomUserDetails;
 import com.example.musicplayer.service.UserService;
+import com.example.musicplayer.service.UserSessionService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -26,13 +27,16 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
+    private final UserSessionService userSessionService;
     private final SecurityContextRepository securityContextRepository;
     private final SecurityContextHolderStrategy securityContextHolderStrategy;
 
     public AuthController(AuthenticationManager authenticationManager, UserService userService,
+                          UserSessionService userSessionService,
                           SecurityContextRepository securityContextRepository) {
         this.authenticationManager = authenticationManager;
         this.userService = userService;
+        this.userSessionService = userSessionService;
         this.securityContextRepository = securityContextRepository;
         this.securityContextHolderStrategy = SecurityContextHolder.getContextHolderStrategy();
     }
@@ -61,6 +65,9 @@ public class AuthController {
 
         User user = userService.findByUsername(request.getUsername());
         userService.updateLastActiveTime(user);
+
+        // 同一账号只保留最近一次登录的会话（取代原先未生效的 maximumSessions(1)）
+        userSessionService.invalidateOtherSessions(user.getUsername(), httpRequest);
 
         return ResponseEntity.ok(new AuthResponse(true, "Login successful", user.getUsername(), user.getRole(), user.getIsHiddenPlaylistUnlocked()));
 

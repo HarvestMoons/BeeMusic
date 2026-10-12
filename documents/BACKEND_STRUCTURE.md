@@ -14,7 +14,7 @@
 - **`RedisPubSubConfig.java`**：Redis 发布/订阅配置，用于在线人数等跨实例消息。
 - **`WebSocketConfig.java`**：注册 `/ws/online` WebSocket 端点及允许来源。
 - **`OssConfig.java`**：阿里云 OSS 客户端配置。
-- Session 由 Spring Session Data Redis 保存，配置中启用了 `spring.session.redis.repository-type=indexed`：索引模式会额外维护 principal 索引，`UserController` 依赖它来清理同一个用户的其他会话。切换该模式不会让已有会话失效（session key 布局不变）。
+- Session 由 Spring Session Data Redis 保存，配置中启用了 `spring.session.redis.repository-type=indexed`：索引模式会额外维护 principal 索引，`UserSessionService` 依赖它来保证同一账号只保留最近一次登录的会话。切换该模式不会让已有会话失效（session key 布局不变）。
 - 在线人数通过 Redis 有序集合、过期时间和 WebSocket 心跳维护，不在应用启动时清空全局计数。
 
 ## 3. 控制器（Controller）
@@ -32,6 +32,7 @@
 ## 4. 服务（Service）
 
 - **`UserService.java`**：用户注册、登录验证、用户状态，以及修改密码/用户名。
+- **`UserSessionService.java`**：按 principal 索引清理同一用户的其他会话（登录、改密码、改用户名时使用）。
 - **`CustomUserDetailsService.java`**：按用户名加载 Spring Security 用户。
 - **`CustomUserDetails.java`**：把 `User` 适配为 `UserDetails`，提供角色权限和启用状态。
 - **`SongService.java`**：歌曲查询、Redis 缓存、OSS 签名 URL、文件夹同步、播放量和软删除。
@@ -76,9 +77,6 @@
 
 - **`GlobalExceptionHandler.java`**：统一转换业务异常和参数错误响应。
 - **`UserOperationException.java`**：修改密码/用户名等用户自助操作失败，返回 400 和错误信息。
-- **`ElementExistedException.java`**：元素已存在异常。
-- **`ElementNotExistException.java`**：元素不存在异常。
-- **`UnexpectedNullElementException.java`**：预期对象为空时使用的异常。
 
 ## 9. 定时任务（Task）
 

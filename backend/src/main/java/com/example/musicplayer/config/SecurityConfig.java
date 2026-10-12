@@ -12,7 +12,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
-import org.springframework.security.web.session.HttpSessionEventPublisher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -41,21 +40,17 @@ public class SecurityConfig {
                         .hasAnyAuthority("ROLE_ADMIN", "ROLE_STATION_MASTER")
                         .anyRequest().authenticated())
                 .formLogin(AbstractHttpConfigurer::disable)
-                .httpBasic(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session
-                        .maximumSessions(1)
-                        .expiredUrl("/api/auth/login"));
+                .httpBasic(AbstractHttpConfigurer::disable);
+        // 并发会话限制不在这里做：原先的 maximumSessions(1) 因 CustomUserDetails
+        // 未实现 equals/hashCode（SessionRegistryImpl 按 principal 对象匹配）实际从未生效，
+        // 且配套的 expiredUrl 会把被踢的会话重定向到仅支持 POST 的 /api/auth/login。
+        // 现在改为登录时删除该用户的其他会话，见 UserSessionService。
         return http.build();
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public HttpSessionEventPublisher httpSessionEventPublisher() {
-        return new HttpSessionEventPublisher();
     }
 
     @Bean
