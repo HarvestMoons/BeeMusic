@@ -42,4 +42,11 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
     }
 
+    @ExceptionHandler(UserOperationException.class)
+    public ResponseEntity<Map<String, Object>> handleUserOperationException(UserOperationException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put(ErrorMessageConstants.MESSAGE, ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
 }

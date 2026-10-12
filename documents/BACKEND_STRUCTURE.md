@@ -14,6 +14,7 @@
 - **`RedisPubSubConfig.java`**：Redis 发布/订阅配置，用于在线人数等跨实例消息。
 - **`WebSocketConfig.java`**：注册 `/ws/online` WebSocket 端点及允许来源。
 - **`OssConfig.java`**：阿里云 OSS 客户端配置。
+- Session 由 Spring Session Data Redis 保存，配置中启用了 `spring.session.redis.repository-type=indexed`：索引模式会额外维护 principal 索引，`UserController` 依赖它来清理同一个用户的其他会话。切换该模式不会让已有会话失效（session key 布局不变）。
 - 在线人数通过 Redis 有序集合、过期时间和 WebSocket 心跳维护，不在应用启动时清空全局计数。
 
 ## 3. 控制器（Controller）
@@ -22,7 +23,7 @@
 - **`SongController.java`**：歌曲列表、文件夹统计、播放量、投票、软删除/恢复和同步。
 - **`MemeController.java`**：迷因随机获取、OSS 同步和删除。
 - **`CommentController.java`**：评论查询、发表、点赞和删除。
-- **`UserController.java`**：用户相关操作，包括隐藏歌单解锁。
+- **`UserController.java`**：用户相关操作，包括隐藏歌单解锁和"我的"页面接口（`GET /api/users/me`、修改密码、修改用户名）。
 - **`VideoController.java`**：随机视频。
 - **`SiteConfigController.java`**：读取和切换评论区开关；切换操作仅允许站长。
 - **`HealthController.java`**：公开健康检查。
@@ -30,7 +31,7 @@
 
 ## 4. 服务（Service）
 
-- **`UserService.java`**：用户注册、登录验证和用户状态。
+- **`UserService.java`**：用户注册、登录验证、用户状态，以及修改密码/用户名。
 - **`CustomUserDetailsService.java`**：按用户名加载 Spring Security 用户。
 - **`CustomUserDetails.java`**：把 `User` 适配为 `UserDetails`，提供角色权限和启用状态。
 - **`SongService.java`**：歌曲查询、Redis 缓存、OSS 签名 URL、文件夹同步、播放量和软删除。
@@ -66,11 +67,15 @@
 - **`LoginRequest.java`**：登录请求。
 - **`RegisterRequest.java`**：注册请求。
 - **`CommentDTO.java`**：评论及相关用户/点赞信息。
+- **`ProfileResponse.java`**：当前登录用户的资料（用户名、角色、注册时间）。
+- **`ChangePasswordRequest.java`**：修改密码请求。
+- **`ChangeUsernameRequest.java`**：修改用户名请求。
 - **`FolderSongCount.java`**：文件夹歌曲统计。
 
 ## 8. 异常处理（Exception）
 
 - **`GlobalExceptionHandler.java`**：统一转换业务异常和参数错误响应。
+- **`UserOperationException.java`**：修改密码/用户名等用户自助操作失败，返回 400 和错误信息。
 - **`ElementExistedException.java`**：元素已存在异常。
 - **`ElementNotExistException.java`**：元素不存在异常。
 - **`UnexpectedNullElementException.java`**：预期对象为空时使用的异常。

@@ -83,7 +83,7 @@
 </template>
 
 <script setup>
-import {onMounted, ref, watch} from 'vue'
+import {computed, onMounted, ref, watch} from 'vue'
 import {useAuthStore, useSiteConfigStore, useThemeStore} from '@/store/index.js'
 import {eventBus, requestConfirm} from "@/utils/eventBus.js";
 import settingsIcon from '@/assets/icons/settings.svg'
@@ -98,11 +98,18 @@ const authStore = useAuthStore()
 const themeStore = useThemeStore()
 const siteConfigStore = useSiteConfigStore()
 
-const navItems = [
-  {label: '首页', to: '/'},
-  {label: '关于本站', to: '/about'},
-  {label: '迷因漂流瓶', to: '/meme'}
-]
+// 未登录时不显示"我的"入口
+const navItems = computed(() => {
+  const items = [
+    {label: '首页', to: '/'},
+    {label: '关于本站', to: '/about'},
+    {label: '迷因漂流瓶', to: '/meme'}
+  ]
+  if (authStore.isAuthenticated) {
+    items.push({label: '我的', to: '/profile'})
+  }
+  return items
+})
 
 // Local state proxies for toggles
 const isDarkMode = ref(themeStore.isDarkMode)

@@ -1,6 +1,7 @@
 package com.example.musicplayer.service;
 
 import com.example.musicplayer.enums.UserRole;
+import com.example.musicplayer.exception.UserOperationException;
 import com.example.musicplayer.model.User;
 import com.example.musicplayer.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -10,6 +11,9 @@ import java.time.LocalDateTime;
 
 @Service
 public class UserService {
+
+    /** 与 users.username 列的 length 保持一致。 */
+    private static final int MAX_USERNAME_LENGTH = 64;
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -35,6 +39,52 @@ public class UserService {
     public User findByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    public User findById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    /**
+     * 修改密码。必须在事务外由调用方负责让其他会话失效。
+     */
+    public User changePassword(Long userId, String oldPassword, String newPassword) {
+        User user = findById(userId);
+        if (oldPassword == null || !passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new UserOperationException("当前密码不正确");
+        }
+        if (newPassword == null || newPassword.isBlank()) {
+            throw new UserOperationException("新密码不能为空");
+        }
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new UserOperationException("新密码不能与当前密码相同");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        return userRepository.save(user);
+    }
+
+    /**
+     * 修改用户名。调用方必须同步刷新当前会话的 SecurityContext，
+     * 否则会话里缓存的旧用户名会让后续按用户名查库的接口失败。
+     */
+    public User changeUsername(Long userId, String newUsername) {
+        User user = findById(userId);
+        String trimmed = newUsername == null ? "" : newUsername.trim();
+        if (trimmed.isEmpty()) {
+            throw new UserOperationException("用户名不能为空");
+        }
+        if (trimmed.length() > MAX_USERNAME_LENGTH) {
+            throw new UserOperationException("用户名不能超过 " + MAX_USERNAME_LENGTH + " 个字符");
+        }
+        if (trimmed.equals(user.getUsername())) {
+            throw new UserOperationException("新用户名与当前用户名相同");
+        }
+        if (userRepository.findByUsername(trimmed).isPresent()) {
+            throw new UserOperationException("用户名已被占用");
+        }
+        user.setUsername(trimmed);
+        return userRepository.save(user);
     }
 
     public void updateLastActiveTime(User user) {

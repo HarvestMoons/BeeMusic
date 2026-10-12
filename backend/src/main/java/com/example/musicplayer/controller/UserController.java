@@ -1,22 +1,84 @@
 package com.example.musicplayer.controller;
 
+import com.example.musicplayer.dto.AuthResponse;
+import com.example.musicplayer.dto.ChangePasswordRequest;
+import com.example.musicplayer.dto.ChangeUsernameRequest;
+import com.example.musicplayer.dto.ProfileResponse;
 import com.example.musicplayer.model.User;
+import com.example.musicplayer.service.CustomUserDetails;
 import com.example.musicplayer.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.context.SecurityContextHolderStrategy;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.session.FindByIndexNameSessionRepository;
+import org.springframework.session.Session;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
 
     private final UserService userService;
+    private final SecurityContextRepository securityContextRepository;
+    private final SecurityContextHolderStrategy securityContextHolderStrategy;
+    private final FindByIndexNameSessionRepository<? extends Session> sessionRepository;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService,
+                          SecurityContextRepository securityContextRepository,
+                          FindByIndexNameSessionRepository<? extends Session> sessionRepository) {
         this.userService = userService;
+        this.securityContextRepository = securityContextRepository;
+        this.securityContextHolderStrategy = SecurityContextHolder.getContextHolderStrategy();
+        this.sessionRepository = sessionRepository;
+    }
+
+    // 当前登录用户的资料
+    @GetMapping("/me")
+    public ResponseEntity<ProfileResponse> me(@AuthenticationPrincipal CustomUserDetails userDetails) {
+        if (userDetails == null || !userDetails.isEnabled()) {
+            return ResponseEntity.status(401).build();
+        }
+        return ResponseEntity.ok(ProfileResponse.from(userService.findById(userDetails.getUser().getId())));
+    }
+
+    // 修改密码：保留当前会话，其他会话失效
+    @PostMapping("/me/password")
+    public ResponseEntity<AuthResponse> changePassword(@RequestBody ChangePasswordRequest request,
+                                                       @AuthenticationPrincipal CustomUserDetails userDetails,
+                                                       HttpServletRequest httpRequest) {
+        if (userDetails == null || !userDetails.isEnabled()) {
+            return ResponseEntity.status(401).build();
+        }
+        User user = userService.changePassword(userDetails.getUser().getId(),
+                request.getOldPassword(), request.getNewPassword());
+        invalidateOtherSessions(user.getUsername(), httpRequest);
+        return ResponseEntity.ok(successResponse("密码修改成功", user));
+    }
+
+    // 修改用户名：当前会话立刻换用新用户名，其他会话失效
+    @PostMapping("/me/username")
+    public ResponseEntity<AuthResponse> changeUsername(@RequestBody ChangeUsernameRequest request,
+                                                       @AuthenticationPrincipal CustomUserDetails userDetails,
+                                                       HttpServletRequest httpRequest,
+                                                       HttpServletResponse httpResponse) {
+        if (userDetails == null || !userDetails.isEnabled()) {
+            return ResponseEntity.status(401).build();
+        }
+        String previousUsername = userDetails.getUsername();
+        User user = userService.changeUsername(userDetails.getUser().getId(), request.getNewUsername());
+        // 其他会话里缓存的仍是旧用户名，之后按用户名查库会失败，一并清理掉
+        invalidateOtherSessions(previousUsername, httpRequest);
+        refreshAuthentication(user, httpRequest, httpResponse);
+        return ResponseEntity.ok(successResponse("用户名修改成功", user));
     }
 
     @PostMapping("/unlock-hidden-playlist")
@@ -27,5 +89,44 @@ public class UserController {
         User user = userService.findByUsername(userDetails.getUsername());
         userService.unlockHiddenPlaylist(user.getId());
         return ResponseEntity.ok("Hidden playlist unlocked");
+    }
+
+    private AuthResponse successResponse(String message, User user) {
+        return new AuthResponse(true, message, user.getUsername(),
+                user.getRole(), user.getIsHiddenPlaylistUnlocked());
+    }
+
+    /**
+     * 让该用户名下的其他会话失效，只保留当前请求所在的会话。
+     * 依赖 Spring Session 索引模式下按 principal 维护的索引。
+     */
+    private void invalidateOtherSessions(String principalName, HttpServletRequest request) {
+        HttpSession currentSession = request.getSession(false);
+        String currentSessionId = currentSession == null ? null : currentSession.getId();
+        sessionRepository.findByPrincipalName(principalName).keySet()
+                .forEach(sessionId -> {
+                    if (!sessionId.equals(currentSessionId)) {
+                        sessionRepository.deleteById(sessionId);
+                    }
+                });
+    }
+
+    /**
+     * 用最新的用户信息替换当前会话里的 Authentication。
+     * 会话中保存的 {@link CustomUserDetails} 是登录时的快照，改名后必须重建；
+     * 重新保存 SecurityContext 也会让 Spring Session 把 principal 索引迁到新用户名。
+     */
+    private void refreshAuthentication(User user, HttpServletRequest request, HttpServletResponse response) {
+        Authentication current = securityContextHolderStrategy.getContext().getAuthentication();
+        CustomUserDetails refreshed = new CustomUserDetails(user);
+        UsernamePasswordAuthenticationToken newAuth = UsernamePasswordAuthenticationToken.authenticated(
+                refreshed, current == null ? null : current.getCredentials(), refreshed.getAuthorities());
+        if (current != null) {
+            newAuth.setDetails(current.getDetails());
+        }
+        SecurityContext context = securityContextHolderStrategy.createEmptyContext();
+        context.setAuthentication(newAuth);
+        securityContextHolderStrategy.setContext(context);
+        securityContextRepository.saveContext(context, request, response);
     }
 }

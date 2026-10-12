@@ -17,6 +17,18 @@ export async function register(credentials) {
     return http.post('/auth/register', credentials);
 }
 
+export async function getProfile() {
+    return (await http.get('/users/me')).data;
+}
+
+export async function changePassword(payload) {
+    return (await http.post('/users/me/password', payload)).data;
+}
+
+export async function changeUsername(payload) {
+    return (await http.post('/users/me/username', payload)).data;
+}
+
 export async function unlockHiddenPlaylist() {
     return http.post('/users/unlock-hidden-playlist');
 }
