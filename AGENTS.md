@@ -153,7 +153,7 @@ npm run dev
 - 容器名：`spring_app`、`nginx_frontend`、`redis_server`；
 - 镜像：本地 `ice-spring:latest` / `ice-frontend:latest`，
   发版时 tag 成 Docker Hub 的 `beecool/music-player:latest` / `beecool/music-player-frontend:latest`；
-- Git 远程：`https://github.com/HarvestMoons/BeeMusic.git`（仓库原名 `EnjoyMusic`，已改名）。
+- Git 远程：`https://github.com/HarvestMoons/BeeMusic.git`
 
 **本地发版：`deploy.bat`**
 
@@ -205,16 +205,6 @@ cd /opt/project/Ice && bash deploy.sh
   `certs/*.pem` 以及全局的 `*.key` / `*.pem`。新环境部署时必须手动放入。
 - 当前证书由 DigiCert（`Encryption Everywhere DV TLS CA - G2`）签发，
   SAN 覆盖 `beemusic.fun` 与 `www.beemusic.fun`。有效期记录见 `certs/有效期备忘.txt`（该文件入库）。
-- Nginx 必须把**叶子证书和中间证书拼接**后配置，否则部分客户端会报不受信任。自检方式：
-
-  ```bash
-  openssl s_client -connect beemusic.fun:443 -servername beemusic.fun -showcerts </dev/null
-  ```
-
-  正常应输出**两张**证书（叶子 + 中间证书），并以 `Verify return code: 0 (ok)` 结束。
-- 换证书后如果浏览器仍显示「不安全」，先排除浏览器缓存：
-  用无痕窗口访问，或在 `chrome://net-internals/#hsts` 删除 `beemusic.fun` 的策略后硬刷新
-  （证书过期期间访问过、点过「继续前往」的浏览器会记住该状态）。
 
 ## 6. 修改代码时的规则
 
