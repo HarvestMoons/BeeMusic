@@ -24,58 +24,9 @@
               exact-active-class="is-active"
               @click="closeSidebar"
           >
-            {{ item.label }}
+            <img v-if="item.icon" :src="item.icon" class="svg-icon" alt=""/>
+            <span>{{ item.label }}</span>
           </RouterLink>
-        </li>
-
-        <li class="nav-item settings-group">
-          <button type="button" @click="toggleDisplaySettings" class="nav-link nav-button theme-toggle-link">
-            <img :src="settingsIcon" class="svg-icon" alt="显示设置"/>
-            <span>显示设置</span>
-            <span class="chevron" :class="{ rotated: showDisplaySettings }">›</span>
-          </button>
-
-          <ul v-show="showDisplaySettings" class="sub-menu">
-            <li class="sub-item" @click.stop>
-              <span>夜间模式</span>
-              <ToggleSwitch
-                  v-model="isDarkMode"
-                  @change="handleThemeToggle"
-              />
-            </li>
-            <li class="sub-item" @click.stop>
-              <span>背景粒子</span>
-              <ToggleSwitch
-                  v-model="showParticles"
-                  @change="handleParticlesToggle"
-              />
-            </li>
-          </ul>
-        </li>
-
-        <li v-if="authStore.isStationMaster" class="nav-item settings-group">
-          <button type="button" @click="toggleSiteSettings" class="nav-link nav-button theme-toggle-link">
-            <img :src="settingsIcon" class="svg-icon" alt="站长设置"/>
-            <span>站长设置</span>
-            <span class="chevron" :class="{ rotated: showSiteSettings }">›</span>
-          </button>
-
-          <ul v-show="showSiteSettings" class="sub-menu">
-            <li class="sub-item" @click.stop>
-              <span>全站评论</span>
-              <ToggleSwitch
-                  v-model="commentsEnabledProxy"
-                  @change="handleCommentsToggle"
-              />
-            </li>
-            <li class="sub-item">
-              <button type="button" @click="handleSyncDatabase" :disabled="syncingDatabase"
-                      class="sub-action-button theme-toggle-link">
-                <img :src="restoreIcon" class="svg-icon" alt="同步" style="width:16px;height:16px;"/>
-                <span>{{ syncingDatabase ? '同步中…' : '同步数据库' }}</span>
-              </button>
-            </li>
-          </ul>
         </li>
       </ul>
     </nav>
@@ -83,48 +34,20 @@
 </template>
 
 <script setup>
-import {computed, onMounted, ref, watch} from 'vue'
-import {useAuthStore, useSiteConfigStore, useThemeStore} from '@/store/index.js'
-import {eventBus, requestConfirm} from "@/utils/eventBus.js";
+import {ref} from 'vue'
+import {useAuthStore} from '@/store/index.js'
+import {eventBus} from "@/utils/eventBus.js";
 import settingsIcon from '@/assets/icons/settings.svg'
-import ToggleSwitch from '@/components/common/ToggleSwitch.vue'
-import {syncDatabase} from "@/services/siteConfig.js";
-import restoreIcon from '@/assets/icons/restore.svg'
 
 const isOpen = ref(false)
-const showDisplaySettings = ref(false)
-const showSiteSettings = ref(false)
 const authStore = useAuthStore()
-const themeStore = useThemeStore()
-const siteConfigStore = useSiteConfigStore()
 
-// 未登录时不显示"我的"入口
-const navItems = computed(() => {
-  const items = [
-    {label: '首页', to: '/'},
-    {label: '关于本站', to: '/about'},
-    {label: '迷因漂流瓶', to: '/meme'}
-  ]
-  if (authStore.isAuthenticated) {
-    items.push({label: '我的', to: '/profile'})
-  }
-  return items
-})
-
-// Local state proxies for toggles
-const isDarkMode = ref(themeStore.isDarkMode)
-const showParticles = ref(themeStore.showParticles)
-const commentsEnabledProxy = ref(false)
-const syncingDatabase = ref(false)
-
-// Watch store changes to sync local state (e.g. if changed elsewhere)
-watch(() => themeStore.isDarkMode, (val) => isDarkMode.value = val)
-watch(() => themeStore.showParticles, (val) => showParticles.value = val)
-watch(() => siteConfigStore.commentsEnabled, (val) => commentsEnabledProxy.value = val)
-
-onMounted(() => {
-  siteConfigStore.fetchConfig()
-})
+const navItems = [
+  {label: '首页', to: '/'},
+  {label: '关于本站', to: '/about'},
+  {label: '迷因漂流瓶', to: '/meme'},
+  {label: '设置', to: '/settings', icon: settingsIcon}
+]
 
 function toggleSidebar() {
   isOpen.value = !isOpen.value
@@ -132,52 +55,6 @@ function toggleSidebar() {
 
 function closeSidebar() {
   isOpen.value = false
-}
-
-function toggleDisplaySettings() {
-  showDisplaySettings.value = !showDisplaySettings.value
-}
-
-function toggleSiteSettings() {
-  showSiteSettings.value = !showSiteSettings.value
-}
-
-function handleThemeToggle(val) {
-  if (val !== themeStore.isDarkMode) {
-    themeStore.toggleTheme()
-  }
-}
-
-function handleParticlesToggle(val) {
-  themeStore.setParticles(val)
-}
-
-function handleCommentsToggle(val) {
-  siteConfigStore.updateCommentsEnabled(val)
-}
-
-async function handleSyncDatabase() {
-  if (syncingDatabase.value) return
-  const confirmed = await requestConfirm({
-    title: '同步数据库',
-    message: '将立即从 OSS 同步数据库：新增 OSS 中的新歌，并永久删除 OSS 中已不存在的歌曲及其投票、评论和评论点赞。删除不可恢复，确定继续吗？',
-    confirmText: '立即同步'
-  })
-  if (!confirmed) return
-  syncingDatabase.value = true
-  try {
-    const res = await syncDatabase();
-    const added = res?.added ?? 0
-    const removed = res?.removed ?? 0
-    eventBus.emit('show-toast', `同步完成：新增 ${added} 首，清理 ${removed} 首`);
-    // 通知播放器刷新内存歌单：新增/被清理的歌曲立即生效
-    eventBus.emit('songs-updated');
-  } catch (error) {
-    console.error("Sync failed", error);
-    eventBus.emit('show-toast', "同步失败，请重试。");
-  } finally {
-    syncingDatabase.value = false
-  }
 }
 
 // 登录 / 登出处理
@@ -312,78 +189,5 @@ function onAuthClick() {
   cursor: pointer;
   font-family: inherit;
   text-align: left;
-}
-
-.theme-toggle-link:hover {
-  color: var(--sidebar-text-hover, #ffffff);
-}
-
-.theme-toggle-link {
-  justify-content: flex-start;
-}
-
-.settings-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.chevron {
-  margin-left: auto;
-  transition: transform 0.3s ease;
-  font-size: 1.2em;
-  line-height: 1;
-}
-
-.chevron.rotated {
-  transform: rotate(90deg);
-}
-
-.sub-menu {
-  list-style: none;
-  padding-left: 32px;
-  margin-top: 15px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  animation: slideDown 0.3s ease-out;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.sub-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 14px;
-  color: var(--secondary-text-color, #e0e0e0);
-}
-
-.sub-item span {
-  flex: 1;
-}
-
-.sub-action-button {
-  border: none;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  width: 100%;
-  padding: 0;
-  cursor: pointer;
-  text-align: left;
-}
-
-.sub-action-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
 }
 </style>

@@ -13,7 +13,7 @@
 - **`src/views/HomePage.vue`**：首页，承载播放器和主站内容。
 - **`src/views/About.vue`**：关于页面及彩蛋入口。
 - **`src/views/MemePage.vue`**：迷因漂流瓶页面。
-- **`src/views/Profile.vue`**：登录后的"我的"页面，展示用户名、身份和注册时间，并提供修改用户名与密码的表单。
+- **`src/views/Settings.vue`**：设置页。含登录后的基本资料（用户名、注册时间）与修改用户名/密码；显示设置（夜间模式、背景粒子）对所有访客可用；站长设置（全站评论开关、同步数据库）仅对站长展示。
 
 当前 `src/views` 中没有 `PrivacyPage.vue`；隐私政策相关 Markdown 资源也不应在结构文档中列为现存视图，新增后再补充。
 

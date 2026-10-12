@@ -62,7 +62,7 @@ import ConfirmModal from '@/components/common/ConfirmModal.vue'
 import Toast from '@/components/common/Toast.vue'
 import EntryCover from '@/components/common/EntryCover.vue'
 import {logout} from '@/services/auth.js'
-import {useAuthStore, useThemeStore} from '@/store/index.js'
+import {useAuthStore, useSiteConfigStore, useThemeStore} from '@/store/index.js'
 import {eventBus} from "@/utils/eventBus.js";
 import SiteFooter from '@/components/layout/SiteFooter.vue'
 
@@ -74,6 +74,7 @@ const showLogin = ref(false)
 const showRegister = ref(false)
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
+const siteConfigStore = useSiteConfigStore()
 const globalConfirm = ref({
   visible: false,
   title: '确认',
@@ -144,6 +145,7 @@ onMounted(() => {
   eventBus.on('request-logout', handleLogout)
   eventBus.on('show-toast', showToast)
   eventBus.on('request-confirm', openGlobalConfirm)
+  siteConfigStore.fetchConfig()
   authStore.initializeAuth()
 })
 
