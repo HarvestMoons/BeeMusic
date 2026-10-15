@@ -45,7 +45,7 @@
               ref="audioRef"
               controls
               crossorigin="anonymous"
-              @ended="handlePlaybackEnd"
+              @ended="handleListeningPlaybackEnd"
               @error="handleAudioError"
               @volumechange="handleVolumeChange"
               @ratechange="handleRateChangeNative"
@@ -114,6 +114,7 @@ import OnlineStatus from "@/components/common/OnlineStatus.vue";
 import {usePlayerQueue} from '@/composables/player/usePlayerQueue.js'
 import {usePlayerPlaylistLoader} from '@/composables/player/usePlayerPlaylistLoader.js'
 import {useStationMaster} from '@/composables/player/useStationMaster.js'
+import {useListeningTracker} from '@/composables/player/useListeningTracker.js'
 import {usePlayerStorage} from '@/composables/player/usePlayerStorage.js'
 import {eventBus} from '@/utils/eventBus.js'
 import {ensureAudioGraph, resumeAudioGraph, setMasterGain, teardownAudioGraph} from '@/utils/audioGraph.js'
@@ -293,6 +294,13 @@ async function safePlayAudio(audioElement) {
   }
 }
 
+const listeningTracker = useListeningTracker(audioRef, () => playlist.value[currentIndex.value], authStore)
+
+function handleListeningPlaybackEnd() {
+  listeningTracker.finish()
+  handlePlaybackEnd()
+}
+
 playSongAtIndex = function (index, fromHistory = false) {
   if (!playlist.value || playlist.value.length === 0) {
     currentSongInfo.value = {title: '播放失败：歌曲列表为空', bv: null}
@@ -308,6 +316,7 @@ playSongAtIndex = function (index, fromHistory = false) {
     historyStack.value.push(currentIndex.value);
   }
 
+  listeningTracker.finish()
   currentIndex.value = index;
   const song = playlist.value[index];
   playCountState.value = {songId: song.id, reported: false};

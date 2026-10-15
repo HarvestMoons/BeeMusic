@@ -19,6 +19,14 @@
             <dt>注册时间</dt>
             <dd>{{ formattedCreatedAt }}</dd>
           </div>
+          <div class="info-row">
+            <dt>累计听歌</dt>
+            <dd>{{ listeningStats ? `${(listeningStats.totalListenedMs / 3600000).toFixed(1)} 小时` : listeningPlaceholder }}</dd>
+          </div>
+          <div class="info-row">
+            <dt>你的最爱</dt>
+            <dd>{{ listeningStats ? (listeningStats.favoriteSong ? getSongTitle(listeningStats.favoriteSong) : '暂无') : listeningPlaceholder }}</dd>
+          </div>
         </dl>
       </section>
     </template>
@@ -122,12 +130,14 @@
 </template>
 
 <script setup>
-import {computed, onMounted, reactive, ref, watch} from 'vue'
+import {computed, onMounted, onUnmounted, reactive, ref, watch} from 'vue'
 import {changePassword, changeUsername, getProfile} from '@/services/auth.js'
 import {syncDatabase} from '@/services/siteConfig.js'
 import {useAuthStore, useSiteConfigStore, useThemeStore} from '@/store/index.js'
 import {eventBus, requestConfirm} from '@/utils/eventBus.js'
 import ToggleSwitch from '@/components/common/ToggleSwitch.vue'
+import api from '@/services/http'
+import {getSongTitle} from '@/utils/playerPlaylist'
 
 const authStore = useAuthStore()
 const themeStore = useThemeStore()
@@ -135,6 +145,21 @@ const siteConfigStore = useSiteConfigStore()
 
 const profile = ref(null)
 const loading = ref(true)
+const listeningStats = ref(null)
+const listeningPlaceholder = ref('—')
+let listeningRequestId = 0
+
+async function loadListeningStats() {
+  const id = ++listeningRequestId
+  if (!authStore.isAuthenticated) return
+  try {
+    const {data} = await api.get('/listening/summary')
+    if (id === listeningRequestId) listeningStats.value = data
+  } catch (error) {
+    if (id === listeningRequestId && !listeningStats.value) listeningPlaceholder.value = '加载失败'
+    console.error('Failed to load listening statistics', error)
+  }
+}
 
 // 各面板默认收起，点标题才展开
 const showDisplaySection = ref(false)
@@ -161,18 +186,29 @@ const formattedCreatedAt = computed(() => {
 })
 
 function reloadProfile() {
+  listeningRequestId++
+  listeningStats.value = null
+  listeningPlaceholder.value = '—'
   if (authStore.isAuthenticated) {
     loadProfile()
+    loadListeningStats()
   } else {
     profile.value = null
     loading.value = false
   }
 }
 
-onMounted(reloadProfile)
+onMounted(() => {
+  reloadProfile()
+  eventBus.on('listening-updated', loadListeningStats)
+})
+onUnmounted(() => {
+  listeningRequestId++
+  eventBus.off('listening-updated', loadListeningStats)
+})
 
 // 直接输 URL 进到这个页面时可能还没登录，或页面打开期间登录状态发生了变化
-watch(() => authStore.isAuthenticated, reloadProfile)
+watch(() => [authStore.isAuthenticated, authStore.username], reloadProfile)
 
 async function loadProfile() {
   loading.value = true

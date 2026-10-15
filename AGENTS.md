@@ -9,6 +9,7 @@ Ice（线上站点为 BeeMusic）是一个音乐播放器网站，提供：
 - 按 OSS 文件夹组织和播放音乐；
 - 用户注册、登录、登出和基于 Session Cookie 的认证；
 - 评论及评论点赞；
+- 登录用户的实际听歌时长和累计听得最久的“你的最爱”（见 `documents/LISTENING_STATS.md`）；
 - 歌曲点赞/点踩、按投票数排序；
 - 迷因图片漂流瓶；
 - 随机视频背景；
@@ -250,6 +251,7 @@ API 反代、HTTPS 证书挂载和 WebSocket 连接路径。提交前确认没�
 
 - `documents/BACKEND_STRUCTURE.md`：后端类和目录说明；
 - `documents/AUTH_SECURITY.md`：Session、CSRF 和脚本接入要求；
+- `documents/LISTENING_STATS.md`：听歌时长、你的最爱与数据库字段约定；
 - `documents/FRONTEND_STRUCTURE.md`：前端组件说明；
 - `documents/VOTE_AND_RANKING_IMPLEMENTATION.md`：投票、排序和缓存一致性；
 - `documents/OPTIMIZATION_LOG.md`：性能优化记录；
