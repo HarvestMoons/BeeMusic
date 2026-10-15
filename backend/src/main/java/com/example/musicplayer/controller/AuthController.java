@@ -9,7 +9,9 @@ import com.example.musicplayer.service.UserService;
 import com.example.musicplayer.service.UserSessionService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
+import org.springframework.http.CacheControl;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -18,6 +20,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextHolderStrategy;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,15 +33,26 @@ public class AuthController {
     private final UserSessionService userSessionService;
     private final SecurityContextRepository securityContextRepository;
     private final SecurityContextHolderStrategy securityContextHolderStrategy;
+    private final SessionAuthenticationStrategy sessionAuthenticationStrategy;
+    private final LogoutHandler logoutHandler;
 
     public AuthController(AuthenticationManager authenticationManager, UserService userService,
                           UserSessionService userSessionService,
-                          SecurityContextRepository securityContextRepository) {
+                          SecurityContextRepository securityContextRepository,
+                          SessionAuthenticationStrategy sessionAuthenticationStrategy,
+                          LogoutHandler apiLogoutHandler) {
         this.authenticationManager = authenticationManager;
         this.userService = userService;
         this.userSessionService = userSessionService;
         this.securityContextRepository = securityContextRepository;
         this.securityContextHolderStrategy = SecurityContextHolder.getContextHolderStrategy();
+        this.sessionAuthenticationStrategy = sessionAuthenticationStrategy;
+        this.logoutHandler = apiLogoutHandler;
+    }
+
+    @GetMapping("/csrf")
+    public ResponseEntity<CsrfToken> csrf(CsrfToken csrfToken) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(csrfToken);
     }
 
     @PostMapping("/register")
@@ -54,29 +68,35 @@ public class AuthController {
 
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword());
         Authentication authentication = authenticationManager.authenticate(authToken);
-
-        // 使用 SecurityContextHolderStrategy 创建并设置上下文
-        SecurityContext context = securityContextHolderStrategy.createEmptyContext();
-        context.setAuthentication(authentication);
-        securityContextHolderStrategy.setContext(context);
-
-        // 显式保存 SecurityContext 到 session
-        securityContextRepository.saveContext(context, httpRequest, httpResponse);
-
-        User user = userService.findByUsername(request.getUsername());
+        CustomUserDetails principal = (CustomUserDetails) authentication.getPrincipal();
+        User user = userService.findById(principal.getUser().getId());
         userService.updateLastActiveTime(user);
 
-        // 同一账号只保留最近一次登录的会话（取代原先未生效的 maximumSessions(1)）
-        userSessionService.invalidateOtherSessions(user.getUsername(), httpRequest);
+        try {
+            // 自定义登录入口必须主动调用会话策略，轮换已有 Session ID 并清除旧 CSRF Token。
+            sessionAuthenticationStrategy.onAuthentication(authentication, httpRequest, httpResponse);
+
+            SecurityContext context = securityContextHolderStrategy.createEmptyContext();
+            context.setAuthentication(authentication);
+            securityContextHolderStrategy.setContext(context);
+            securityContextRepository.saveContext(context, httpRequest, httpResponse);
+
+            // 同一账号继续只保留最近一次登录的会话。
+            userSessionService.invalidateOtherSessions(user.getUsername(), httpRequest);
+        } catch (RuntimeException error) {
+            // 登录初始化未完成时撤销当前认证，避免接口报错却留下已登录 Session。
+            logoutHandler.logout(httpRequest, httpResponse, authentication);
+            throw error;
+        }
 
         return ResponseEntity.ok(new AuthResponse(true, "Login successful", user.getUsername(), user.getRole(), user.getIsHiddenPlaylistUnlocked()));
 
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<AuthResponse> logout(HttpSession session) {
-        securityContextHolderStrategy.clearContext();
-        session.invalidate();
+    public ResponseEntity<AuthResponse> logout(HttpServletRequest request, HttpServletResponse response,
+                                               Authentication authentication) {
+        logoutHandler.logout(request, response, authentication);
         return ResponseEntity.ok(new AuthResponse(true, "Logout successful", null));
     }
 

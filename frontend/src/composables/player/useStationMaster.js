@@ -1,5 +1,5 @@
 import {ref} from 'vue'
-import {API_BASE} from '@/constants'
+import api from '@/services/http'
 
 export function useStationMaster(playlist, currentIndex, showToastMessage) {
     const showConfirmModal = ref(false)
@@ -27,20 +27,12 @@ export function useStationMaster(playlist, currentIndex, showToastMessage) {
 
         try {
             const endpoint = isDeleted ? 'restore' : 'delete';
-            const res = await fetch(`${API_BASE}/songs/${endpoint}/${song.id}`, {
-                method: 'POST',
-                credentials: 'include'
-            });
-
-            if (res.ok) {
-                showToastMessage(`歌曲已${action}`);
-                song.isDeleted = isDeleted ? 0 : 1;
-            } else {
-                showToastMessage(`${action}失败`);
-            }
+            await api.post(`/songs/${endpoint}/${song.id}`);
+            showToastMessage(`歌曲已${action}`);
+            song.isDeleted = isDeleted ? 0 : 1;
         } catch (e) {
             console.error(e);
-            showToastMessage('操作异常');
+            showToastMessage(e.response?.data?.message || '操作异常');
         } finally {
             pendingAction.value = null
         }

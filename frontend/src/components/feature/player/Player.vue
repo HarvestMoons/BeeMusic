@@ -108,7 +108,7 @@ import {useAuthStore} from '@/store'
 import PlaybackRateControl from "@/components/feature/player/PlaybackRateControl.vue";
 import FolderSelector from "@/components/feature/player/FolderSelector.vue";
 import PlayerSidebar from "@/components/feature/player/PlayerSidebar.vue";
-import {PUBLIC_API_BASE} from '@/constants';
+import api from '@/services/http';
 import {useKeyboardShortcuts} from "@/composables/useKeyboardShortcuts.js";
 import OnlineStatus from "@/components/common/OnlineStatus.vue";
 import {usePlayerQueue} from '@/composables/player/usePlayerQueue.js'
@@ -240,14 +240,12 @@ function handleTimeUpdate() {
   if (!state.songId || state.reported) return
   if (audioRef.value.currentTime >= PLAY_COUNT_THRESHOLD_SECONDS) {
     state.reported = true
-    fetch(`${PUBLIC_API_BASE}/songs/play/${state.songId}`, {method: 'POST'})
-        .then(res => {
-          if (res.ok) {
-            // 更新本地播放列表中的计数，以便 UI 实时反映
-            const song = playlist.value.find(s => s.id === state.songId)
-            if (song) {
-              song.playCount = (song.playCount || 0) + 1
-            }
+    api.post(`/public/songs/play/${state.songId}`)
+        .then(() => {
+          // 更新本地播放列表中的计数，以便 UI 实时反映
+          const song = playlist.value.find(s => s.id === state.songId)
+          if (song) {
+            song.playCount = (song.playCount || 0) + 1
           }
         })
         .catch(console.error)

@@ -68,6 +68,10 @@ Ice（线上站点为 BeeMusic）是一个音乐播放器网站，提供：
 ### 认证与权限
 
 - Spring Session Data Redis 保存 Session，浏览器通过 Cookie 维持登录状态。
+- 登录入口显式调用 SessionAuthenticationStrategy，轮换 Session ID 和 CSRF Token；登出清理 Session、认证上下文和 Token。
+- 所有 POST/PUT/PATCH/DELETE 请求（含登录、注册和匿名播放计数）必须携带 CSRF Token。
+  先使用同一 Cookie 会话 GET `/api/auth/csrf`，再将返回的 `token` 写入返回的 `headerName` 请求头。
+  前端统一 Axios 实例自动处理；脚本接入要求见 `documents/AUTH_SECURITY.md`，不要为脚本关闭 CSRF。
 - 业务接口的当前用户和角色统一从 Spring Security `Authentication`（控制器中使用
   `@AuthenticationPrincipal`）获取，不要从 Session 自定义的 `"user"` 属性读取身份。
 - 公共 API 使用 `/api/public/**`，认证 API 使用 `/api/auth/**`。
@@ -82,7 +86,7 @@ Ice（线上站点为 BeeMusic）是一个音乐播放器网站，提供：
 
 | 功能     | 端点                                                                   |
 | -------- | ---------------------------------------------------------------------- |
-| 认证     | `/api/auth/register`、`/login`、`/logout`、`/status`                   |
+| 认证     | `/api/auth/register`、`/login`、`/logout`、`/status`、`/csrf`          |
 | 歌曲     | `/api/public/songs/get`、`/folder-counts`、`/play/{id}`、`/votes/{id}` |
 | 投票     | `/api/songs/like/{id}`、`/dislike/{id}`、`/vote/{id}`                  |
 | 评论     | `/api/public/comments/{songId}`、`/api/comments/add`、评论点赞/删除    |
@@ -245,6 +249,7 @@ API 反代、HTTPS 证书挂载和 WebSocket 连接路径。提交前确认没�
 ## 8. 相关文档索引
 
 - `documents/BACKEND_STRUCTURE.md`：后端类和目录说明；
+- `documents/AUTH_SECURITY.md`：Session、CSRF 和脚本接入要求；
 - `documents/FRONTEND_STRUCTURE.md`：前端组件说明；
 - `documents/VOTE_AND_RANKING_IMPLEMENTATION.md`：投票、排序和缓存一致性；
 - `documents/OPTIMIZATION_LOG.md`：性能优化记录；
