@@ -1,6 +1,7 @@
 package com.example.musicplayer.controller;
 
 import com.example.musicplayer.dto.CommentDTO;
+import com.example.musicplayer.dto.AddCommentRequest;
 import com.example.musicplayer.service.CommentService;
 import com.example.musicplayer.service.CustomUserDetails;
 import com.example.musicplayer.service.SecurityUtils;
@@ -31,16 +32,10 @@ public class CommentController {
     }
 
     @PostMapping("/comments/add")
-    public CommentDTO addComment(@RequestBody Map<String, Object> body,
+    public CommentDTO addComment(@RequestBody AddCommentRequest body,
                                  @AuthenticationPrincipal CustomUserDetails userDetails) {
         Long userId = SecurityUtils.currentUserId(userDetails);
-        Long songId = Long.valueOf(body.get("songId").toString());
-        String content = (String) body.get("content");
-        Long parentId = body.get("parentId") != null ? Long.valueOf(body.get("parentId").toString()) : null;
-        Long replyToUserId = body.get("replyToUserId") != null ? Long.valueOf(body.get("replyToUserId").toString())
-                : null;
-
-        return commentService.addComment(userId, songId, content, parentId, replyToUserId);
+        return commentService.addComment(userId, body.getSongId(), body.getContent(), body.getParentId(), body.getReplyToUserId());
     }
 
     @PostMapping("/comments/like/{commentId}")

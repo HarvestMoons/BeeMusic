@@ -2,10 +2,15 @@ package com.example.musicplayer.service;
 
 import com.example.musicplayer.dto.CommentDTO;
 import com.example.musicplayer.model.Comment;
+import com.example.musicplayer.model.CommentLike;
 import com.example.musicplayer.model.User;
 import com.example.musicplayer.repository.CommentLikeRepository;
 import com.example.musicplayer.repository.CommentRepository;
 import com.example.musicplayer.repository.UserRepository;
+import com.example.musicplayer.repository.SongRepository;
+import com.example.musicplayer.exception.UserOperationException;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,12 +23,14 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final CommentLikeRepository commentLikeRepository;
     private final UserRepository userRepository;
+    private final SongRepository songRepository;
 
     public CommentService(CommentRepository commentRepository, CommentLikeRepository commentLikeRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository, SongRepository songRepository) {
         this.commentRepository = commentRepository;
         this.commentLikeRepository = commentLikeRepository;
         this.userRepository = userRepository;
+        this.songRepository = songRepository;
     }
 
     public List<CommentDTO> getComments(Long songId, Long currentUserId) {
@@ -126,6 +133,25 @@ public class CommentService {
 
     @Transactional
     public CommentDTO addComment(Long userId, Long songId, String content, Long parentId, Long replyToUserId) {
+        if (songId == null || songId <= 0) throw new UserOperationException("歌曲 ID 不正确");
+        String trimmed = content == null ? "" : content.trim();
+        if (trimmed.isBlank() || trimmed.length() > 1000) {
+            throw new UserOperationException("评论内容需为 1 到 1000 个字符");
+        }
+        var song = songRepository.findLockedById(songId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "歌曲不存在"));
+        if (song.getIsDeleted() != 0) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "歌曲已删除");
+        if (parentId != null) {
+            Comment parent = activeComment(parentId);
+            if (!songId.equals(parent.getSongId()) || parent.getParentId() != null) {
+                throw new UserOperationException("父评论必须是当前歌曲的根评论");
+            }
+            if (replyToUserId == null) replyToUserId = parent.getUserId();
+            if (!userRepository.existsById(replyToUserId)) throw new UserOperationException("被回复用户不存在");
+        } else if (replyToUserId != null) {
+            throw new UserOperationException("回复用户必须同时指定父评论");
+        }
+        content = trimmed;
         Comment comment = new Comment();
         comment.setUserId(userId);
         comment.setSongId(songId);
@@ -160,11 +186,12 @@ public class CommentService {
 
     @Transactional
     public Map<String, Object> likeComment(Long userId, Long commentId) {
-        commentRepository.findById(commentId)
-                .orElseThrow(() -> new IllegalArgumentException("Comment not found: " + commentId));
-
-        int inserted = commentLikeRepository.insertIfAbsent(userId, commentId);
-        if (inserted > 0) {
+        activeComment(commentId);
+        if (!commentLikeRepository.existsByUserIdAndCommentId(userId, commentId)) {
+            CommentLike like = new CommentLike();
+            like.setUserId(userId);
+            like.setCommentId(commentId);
+            commentLikeRepository.save(like);
             commentRepository.incrementLikeCount(commentId);
         }
         return buildCommentLikeState(commentId, true);
@@ -172,6 +199,7 @@ public class CommentService {
 
     @Transactional
     public Map<String, Object> unlikeComment(Long userId, Long commentId) {
+        activeComment(commentId);
         int deleted = commentLikeRepository.deleteByUserIdAndCommentId(userId, commentId);
         if (deleted > 0) {
             commentRepository.decrementLikeCount(commentId);
@@ -180,9 +208,8 @@ public class CommentService {
     }
 
     private Map<String, Object> buildCommentLikeState(Long commentId, boolean liked) {
-        Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new IllegalArgumentException("Comment not found: " + commentId));
-        int likeCount = comment.getLikeCount() == null ? 0 : Math.max(comment.getLikeCount(), 0);
+        Integer count = commentRepository.findLikeCount(commentId);
+        int likeCount = count == null ? 0 : Math.max(count, 0);
         return Map.of(
                 "commentId", commentId,
                 "liked", liked,
@@ -191,14 +218,19 @@ public class CommentService {
 
     @Transactional
     public void deleteComment(Long userId, Long commentId) {
-        Optional<Comment> opt = commentRepository.findById(commentId);
-        if (opt.isPresent()) {
-            Comment c = opt.get();
-            // 只有作者能删
-            if (c.getUserId().equals(userId)) {
-                c.setIsDeleted(1);
-                commentRepository.save(c);
-            }
+        Comment comment = activeComment(commentId);
+        if (!comment.getUserId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "只能删除自己的评论");
         }
+        comment.setIsDeleted(1);
+        commentRepository.save(comment);
+    }
+
+    private Comment activeComment(Long commentId) {
+        if (commentId == null || commentId <= 0) throw new UserOperationException("评论 ID 不正确");
+        Comment comment = commentRepository.findLockedById(commentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "评论不存在"));
+        if (comment.getIsDeleted() != 0) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "评论已删除");
+        return comment;
     }
 }

@@ -8,8 +8,17 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT c FROM Comment c WHERE c.id = :id")
+    Optional<Comment> findLockedById(@Param("id") Long id);
+
+    @Query("SELECT c.likeCount FROM Comment c WHERE c.id = :id")
+    Integer findLikeCount(@Param("id") Long id);
     List<Comment> findBySongIdAndIsDeletedOrderByLikeCountDescCreatedAtDesc(Long songId, int isDeleted);
 
     @Modifying

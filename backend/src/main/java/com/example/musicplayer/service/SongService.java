@@ -30,6 +30,7 @@ public class SongService {
     private final CommentRepository commentRepository;
     private final CommentLikeRepository commentLikeRepository;
     private final SongVoteRepository songVoteRepository;
+    private final VoteService voteService;
     private final RedisTemplate<String, Object> redisTemplate;
     private final StringRedisTemplate stringRedisTemplate;
     private final RedisKeyScanner redisKeyScanner;
@@ -48,6 +49,7 @@ public class SongService {
             CommentRepository commentRepository,
             CommentLikeRepository commentLikeRepository,
             SongVoteRepository songVoteRepository,
+            VoteService voteService,
             RedisTemplate<String, Object> jsonRedisTemplate,
             org.springframework.data.redis.core.StringRedisTemplate stringRedisTemplate,
             RedisKeyScanner redisKeyScanner,
@@ -57,6 +59,7 @@ public class SongService {
         this.commentRepository = commentRepository;
         this.commentLikeRepository = commentLikeRepository;
         this.songVoteRepository = songVoteRepository;
+        this.voteService = voteService;
         this.redisTemplate = jsonRedisTemplate;
         this.stringRedisTemplate = stringRedisTemplate;
         this.redisKeyScanner = redisKeyScanner;
@@ -269,6 +272,8 @@ public class SongService {
             return;
         }
         transactionTemplate.executeWithoutResult(status -> {
+            songRepository.findLockedById(songId)
+                    .orElseThrow(() -> new IllegalArgumentException("Song not found: " + songId));
             commentLikeRepository.deleteBySongId(songId);
             commentRepository.deleteBySongId(songId);
             songVoteRepository.deleteBySongId(songId);
@@ -292,34 +297,14 @@ public class SongService {
         if (songs.isEmpty()) {
             return;
         }
-        List<Object> counts = stringRedisTemplate
-                .executePipelined((org.springframework.data.redis.core.RedisCallback<Object>) connection -> {
-                    org.springframework.data.redis.serializer.RedisSerializer<String> serializer = stringRedisTemplate
-                            .getStringSerializer();
-                    for (Song song : songs) {
-                        if (song.getId() != null) {
-                            connection.setCommands().sCard(serializer.serialize(VoteRedisKeys.likes(song.getId())));
-                            connection.setCommands()
-                                    .sCard(serializer.serialize(VoteRedisKeys.dislikes(song.getId())));
-                        }
-                    }
-                    return null;
-                });
-        int index = 0;
+        var counts = voteService.countsForSongs(songs.stream().map(Song::getId).filter(Objects::nonNull).toList());
         for (Song song : songs) {
             if (song.getId() == null) {
                 continue;
             }
-            song.setLikeCount(readCount(counts, index++));
-            song.setDislikeCount(readCount(counts, index++));
+            song.setLikeCount(counts.get(song.getId()).get("likes"));
+            song.setDislikeCount(counts.get(song.getId()).get("dislikes"));
         }
-    }
-
-    private int readCount(List<Object> counts, int index) {
-        if (index >= counts.size() || !(counts.get(index) instanceof Number number)) {
-            return 0;
-        }
-        return number.intValue();
     }
 
     private String normalizeFolderKey(String folderKey) {

@@ -1,5 +1,5 @@
-import { PUBLIC_API_BASE } from '@/constants'
-import { sortPlaylist } from '@/utils/playerPlaylist.js'
+import { PUBLIC_API_BASE } from '../../constants/index.js'
+import { sortPlaylist } from '../../utils/playerPlaylist.js'
 
 const DEFAULT_SELECTED_FOLDER_STORAGE_ID = 'folder-selector'
 
@@ -17,16 +17,21 @@ export function usePlayerPlaylistLoader({
     resetQueueState,
     playSongAtIndex
 }) {
+    let songListRequestId = 0
+    let folderChangeId = 0
     async function handleFolderChange() {
         saveSelectedFolder(DEFAULT_SELECTED_FOLDER_STORAGE_ID, selectedFolder.value)
         await setFolder(selectedFolder.value)
     }
 
     async function setFolder(folder, targetSongId = null) {
+        const changeId = ++folderChangeId
         try {
             document.body.classList.add('loading')
             resetQueueState()
-            await fetchSongList(folder)
+            const result = await fetchSongList(folder)
+            if (changeId !== folderChangeId || !result || result.requestId !== songListRequestId) return
+            playlist.value = result.songs
 
             const savedRate = loadPlaybackRateForFolder(folder)
             if (savedRate != null) {
@@ -49,20 +54,31 @@ export function usePlayerPlaylistLoader({
             console.error('切换音乐文件夹失败', err)
             showToastMessage('请求失败: ' + err.message)
         } finally {
-            document.body.classList.remove('loading')
+            if (changeId === folderChangeId) document.body.classList.remove('loading')
         }
     }
 
     async function fetchSongList(folder, clearOnError = true) {
+        const requestId = ++songListRequestId
         try {
             const query = new URLSearchParams({ folder }).toString()
             const res = await fetch(`${PUBLIC_API_BASE}/songs/get?${query}`)
+            if (!res.ok) throw new Error(`加载歌单失败（${res.status}）`)
             const data = await res.json()
-            playlist.value = data || []
-            return playlist.value
+            if (!Array.isArray(data)) throw new Error('服务器返回的歌单格式不正确')
+            if (requestId !== songListRequestId) return null
+            return { songs: data, requestId }
         } catch (err) {
+            if (requestId !== songListRequestId) return null
+            showToastMessage(err.message || '加载歌单失败')
             if (clearOnError) {
                 playlist.value = []
+                currentIndex.value = -1
+                currentSongInfo.value = { title: '', bv: null }
+                if (audioRef.value) {
+                    audioRef.value.pause()
+                    audioRef.value.src = ''
+                }
             }
             return null
         }
@@ -80,13 +96,14 @@ export function usePlayerPlaylistLoader({
      * 只替换歌曲列表和当前索引，不重置队列、不重新开始播放。
      */
     async function refreshSongList() {
-        const currentSongId = playlist.value[currentIndex.value]?.id
         // clearOnError = false：刷新失败时保留原歌单，避免一次网络抖动把歌单清空
-        const freshPlaylist = await fetchSongList(selectedFolder.value, false)
+        const result = await fetchSongList(selectedFolder.value, false)
 
-        if (!freshPlaylist || currentSongId == null) {
-            return
-        }
+        if (!result || result.requestId !== songListRequestId) return
+        const currentSongId = playlist.value[currentIndex.value]?.id
+        const freshPlaylist = result.songs
+        playlist.value = freshPlaylist
+        if (currentSongId == null) return
 
         const newIndex = freshPlaylist.findIndex(song => song.id === currentSongId)
         if (newIndex === -1) {

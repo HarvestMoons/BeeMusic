@@ -2,6 +2,10 @@ package com.example.musicplayer.exception;
 
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
@@ -13,6 +17,21 @@ import java.util.Map;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Map<String, Object>> handleStatusException(ResponseStatusException ex) {
+        return ResponseEntity.status(ex.getStatusCode()).body(Map.of("message", ex.getReason() == null ? "请求失败" : ex.getReason()));
+    }
+
+    @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class, IllegalArgumentException.class})
+    public ResponseEntity<Map<String, Object>> handleInvalidRequest() {
+        return ResponseEntity.badRequest().body(Map.of("message", "请求参数格式不正确"));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleDataConflict() {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", "数据冲突，请刷新后重试"));
+    }
 
     public static class ErrorMessageConstants {
         public static final String MESSAGE = "message";

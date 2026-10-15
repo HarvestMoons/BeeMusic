@@ -10,7 +10,9 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.Map;
+import java.util.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @Slf4j
@@ -42,24 +44,27 @@ public class VoteService {
     }
 
     public Map<String, Integer> vote(Long songId, Long userId, VoteType newType) {
-        VoteChange change = transactionTemplate.execute(status -> saveVote(songId, userId, newType));
-        if (change != null) {
-            projectAfterCommit(change);
-        }
-        return counts(songId);
+        transactionTemplate.executeWithoutResult(status -> saveVote(songId, userId, newType));
+        projectAfterCommit(songId, userId);
+        return databaseState(songId, userId);
     }
 
     public Map<String, Integer> cancel(Long songId, Long userId) {
-        VoteChange change = transactionTemplate.execute(status -> cancelVote(songId, userId));
-        if (change != null) {
-            projectAfterCommit(change);
-        }
-        return counts(songId);
+        transactionTemplate.executeWithoutResult(status -> cancelVote(songId, userId));
+        projectAfterCommit(songId, userId);
+        return databaseState(songId, userId);
     }
 
-    private VoteChange saveVote(Long songId, Long userId, VoteType newType) {
-        songRepository.findById(songId)
-                .orElseThrow(() -> new IllegalArgumentException("Song not found: " + songId));
+    private void lockActiveSong(Long songId) {
+        var song = songRepository.findLockedById(songId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "歌曲不存在"));
+        if (song.getIsDeleted() != 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "歌曲已删除");
+        }
+    }
+
+    private void saveVote(Long songId, Long userId, VoteType newType) {
+        lockActiveSong(songId);
 
         SongVote existing = songVoteRepository.findByUserIdAndSongId(userId, songId).orElse(null);
         if (existing == null) {
@@ -67,52 +72,82 @@ public class VoteService {
             existing.setUserId(userId);
             existing.setSongId(songId);
         }
-        if (existing.getVoteType() == newType) {
-            return null;
+        if (Objects.equals(existing.getVote(), newType.getCode())) {
+            return;
         }
         existing.setVoteType(newType);
         songVoteRepository.save(existing);
-        return new VoteChange(songId, userId, newType.getCode());
     }
 
-    private VoteChange cancelVote(Long songId, Long userId) {
+    private void cancelVote(Long songId, Long userId) {
+        lockActiveSong(songId);
         SongVote existing = songVoteRepository.findByUserIdAndSongId(userId, songId).orElse(null);
         if (existing == null) {
-            return null;
+            return;
         }
         songVoteRepository.delete(existing);
-        return new VoteChange(songId, userId, null);
     }
 
-    private void projectAfterCommit(VoteChange change) {
+    private void projectAfterCommit(Long songId, Long userId) {
         try {
-            redisProjector.project(change.songId(), change.userId(), change.vote());
+            redisProjector.projectCurrent(songId, userId);
         } catch (RuntimeException error) {
             log.error("投票已写入 MySQL，但 Redis 更新失败；等待定期重建: songId={}, userId={}",
-                    change.songId(), change.userId(), error);
+                    songId, userId, error);
+            try {
+                redisTemplate.delete(VoteRedisKeys.counts(songId));
+            } catch (RuntimeException invalidationError) {
+                log.warn("投票缓存失效失败: songId={}", songId, invalidationError);
+            }
         }
     }
 
     public Map<String, Integer> counts(Long songId) {
-        Long likeSize = redisTemplate.opsForSet().size(VoteRedisKeys.likes(songId));
-        Long dislikeSize = redisTemplate.opsForSet().size(VoteRedisKeys.dislikes(songId));
-        int likes = likeSize != null ? likeSize.intValue() : 0;
-        int dislikes = dislikeSize != null ? dislikeSize.intValue() : 0;
-        return Map.of("likes", likes, "dislikes", dislikes);
+        return countsForSongs(List.of(songId)).get(songId);
     }
 
     public Map<String, Integer> countsForUser(Long songId, Long userId) {
-        Map<String, Integer> counts = counts(songId);
-        int userVote = songVoteRepository.findByUserIdAndSongId(userId, songId)
-                .map(SongVote::getVote)
-                .orElse(0);
-        return Map.of(
-                "likes", counts.get("likes"),
-                "dislikes", counts.get("dislikes"),
-                "userVote", userVote);
+        return databaseState(songId, userId);
     }
 
-    private record VoteChange(Long songId, Long userId, Integer vote) {
+    private Map<String, Integer> databaseState(Long songId, Long userId) {
+        return transactionTemplate.execute(status -> {
+            Map<String, Integer> counts = databaseCounts(List.of(songId)).get(songId);
+            int userVote = songVoteRepository.findVoteCode(userId, songId).orElse(0);
+            return Map.of("likes", counts.get("likes"), "dislikes", counts.get("dislikes"), "userVote", userVote);
+        });
+    }
+
+    /** MGET 读取原子计数字符串；Redis 重启、缺失或故障时按批次回源 MySQL。 */
+    public Map<Long, Map<String, Integer>> countsForSongs(List<Long> songIds) {
+        Map<Long, Map<String, Integer>> result = new HashMap<>();
+        if (songIds.isEmpty()) return result;
+        try {
+            List<String> cached = redisTemplate.opsForValue().multiGet(songIds.stream().map(VoteRedisKeys::counts).toList());
+            for (int i = 0; cached != null && i < songIds.size(); i++) {
+                String value = cached.get(i);
+                if (value == null) continue;
+                String[] parts = value.split(":");
+                if (parts.length == 2) {
+                    result.put(songIds.get(i), Map.of("likes", Integer.parseInt(parts[0]), "dislikes", Integer.parseInt(parts[1])));
+                }
+            }
+        } catch (RuntimeException error) {
+            log.warn("读取投票缓存失败，回源 MySQL", error);
+            result.clear();
+        }
+        List<Long> missing = songIds.stream().filter(id -> !result.containsKey(id)).toList();
+        if (!missing.isEmpty()) result.putAll(databaseCounts(missing));
+        return result;
+    }
+
+    private Map<Long, Map<String, Integer>> databaseCounts(List<Long> songIds) {
+        Map<Long, Map<String, Integer>> result = new HashMap<>();
+        for (Long id : songIds) result.put(id, new HashMap<>(Map.of("likes", 0, "dislikes", 0)));
+        for (var count : songVoteRepository.countVotes(songIds)) {
+            result.get(count.getSongId()).put(count.getVote() == 1 ? "likes" : "dislikes", Math.toIntExact(count.getTotal()));
+        }
+        return result;
     }
 
 }

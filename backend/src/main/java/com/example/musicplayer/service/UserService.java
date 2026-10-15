@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.nio.charset.StandardCharsets;
 
 @Service
 public class UserService {
@@ -24,8 +25,13 @@ public class UserService {
     }
 
     public User register(String username, String password) {
+        username = username == null ? "" : username.trim();
+        if (username.isBlank() || username.length() > MAX_USERNAME_LENGTH || username.chars().anyMatch(Character::isISOControl)) {
+            throw new UserOperationException("用户名需为 1 到 64 个字符，且不能包含控制字符");
+        }
+        validatePassword(password);
         if (userRepository.findByUsername(username).isPresent()) {
-            throw new RuntimeException("Username already exists");
+            throw new UserOperationException("用户名已被占用");
         }
         User user = new User();
         user.setUsername(username);
@@ -54,9 +60,7 @@ public class UserService {
         if (oldPassword == null || !passwordEncoder.matches(oldPassword, user.getPassword())) {
             throw new UserOperationException("当前密码不正确");
         }
-        if (newPassword == null || newPassword.isBlank()) {
-            throw new UserOperationException("新密码不能为空");
-        }
+        validatePassword(newPassword);
         if (passwordEncoder.matches(newPassword, user.getPassword())) {
             throw new UserOperationException("新密码不能与当前密码相同");
         }
@@ -97,5 +101,12 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         user.setIsHiddenPlaylistUnlocked(true);
         userRepository.save(user);
+    }
+
+    private void validatePassword(String password) {
+        if (password == null || password.isBlank()) throw new UserOperationException("密码不能为空");
+        if (password.getBytes(StandardCharsets.UTF_8).length > 72) {
+            throw new UserOperationException("密码不能超过 72 个 UTF-8 字节");
+        }
     }
 }

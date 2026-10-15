@@ -12,7 +12,7 @@
 </template>
 
 <script setup>
-import {ref, watch} from 'vue'
+import {onBeforeUnmount, ref, watch} from 'vue'
 import {useAuthStore} from '@/store';
 import {eventBus} from '@/utils/eventBus.js';
 // 引入图标
@@ -34,6 +34,9 @@ const userVote = ref(0) // 1=已点赞, -1=已点踩, 0=无
 const isVoting = ref(false)
 
 const authStore = useAuthStore()
+let votesRequestId = 0
+let disposed = false
+onBeforeUnmount(() => { disposed = true; votesRequestId++ })
 
 function showToastMessage(msg) {
   eventBus.emit('show-toast', msg)
@@ -41,8 +44,14 @@ function showToastMessage(msg) {
 
 // 刷新投票数
 async function refreshVotes() {
+  const songId = props.songId
+  const requestId = ++votesRequestId
+  likes.value = 0
+  dislikes.value = 0
+  userVote.value = 0
   try {
-    const res = await api.get(`/public/songs/votes/${props.songId}`)
+    const res = await api.get(`/public/songs/votes/${songId}`)
+    if (disposed || requestId !== votesRequestId || songId !== props.songId) return
     const data = res.data
     likes.value = data.likes
     dislikes.value = data.dislikes
@@ -67,28 +76,34 @@ async function submitVote(targetVote, loginTip, failureTip) {
     return
   }
   isVoting.value = true
+  const songId = props.songId
+  const requestId = ++votesRequestId
   try {
     const isCancelling = userVote.value === targetVote
     const res = isCancelling
-        ? await api.delete(`/songs/vote/${props.songId}`)
-        : await api.post(`/songs/${targetVote === 1 ? 'like' : 'dislike'}/${props.songId}`)
-    applyVoteResult(res.data, isCancelling ? 0 : targetVote)
+        ? await api.delete(`/songs/vote/${songId}`)
+        : await api.post(`/songs/${targetVote === 1 ? 'like' : 'dislike'}/${songId}`)
+    applyVoteResult(res.data, isCancelling ? 0 : targetVote, songId, requestId)
   } catch (err) {
     console.error(failureTip, err)
+    showToastMessage(err.response?.data?.message || failureTip)
   } finally {
     isVoting.value = false
   }
 }
 
 /** 统一处理投票结果：更新本地票数，并通知播放器同步内存中的歌单 */
-function applyVoteResult(data, voted) {
-  likes.value = data.likes
-  dislikes.value = data.dislikes
-  userVote.value = voted
+function applyVoteResult(data, voted, songId, requestId) {
+  if (disposed) return
+  if (songId === props.songId && requestId === votesRequestId) {
+    likes.value = data.likes
+    dislikes.value = data.dislikes
+    userVote.value = data.userVote ?? voted
+  }
   eventBus.emit('song-vote-updated', {
-    songId: props.songId,
-    likes: likes.value,
-    dislikes: dislikes.value
+    songId,
+    likes: data.likes,
+    dislikes: data.dislikes
   })
 }
 
@@ -102,7 +117,7 @@ function handleDislike() {
 
 // 监听 songId 变化（immediate: true 会在 setup 阶段立刻拉取一次，
 // 因此不需要再在 onMounted 里重复请求同一个接口）
-watch(() => props.songId, refreshVotes, {immediate: true})
+watch(() => [props.songId, authStore.isAuthenticated, authStore.username], refreshVotes, {immediate: true})
 </script>
 
 <style scoped>

@@ -60,9 +60,9 @@ Ice（线上站点为 BeeMusic）是一个音乐播放器网站，提供：
 3. Redis Set `likes:{songId}` 和 `dislikes:{songId}` 保存实时投票成员及计数；
    投票关系先在 MySQL `song_votes` 事务中提交，事务提交后尽力更新 Redis；Redis 是可重建的实时读模型，
    MySQL 是唯一事实来源，定时任务会从 MySQL 重建 Redis。
-4. 列表返回前会用 Redis Set 的实时计数覆盖缓存对象中的投票数。
-5. Redis 缺失或重启后，投票重建逻辑会从 `song_votes` 恢复 Set，再由定时任务将变化回写
-   `songs` 的计数字段。多实例定时任务使用 Redis 租约避免重复执行。
+4. Redis `votes:counts:{songId}` 与两个投票 Set 在 Lua 中原子更新；列表批量读取计数字符串，缺失时回源 MySQL。
+5. 投票写入和投影重建都使用歌曲行锁。提交后的投影重新读取当前数据库状态；定时任务逐首原子重建，
+   不清空全站 Set，也不将 Redis 票数回写 MySQL。多实例定时任务使用 Redis 租约避免重复执行。
 6. OSS URL 是带有效期的签名 URL，不要把它当作永久公共 URL 保存或硬编码。
 
 ### 认证与权限
@@ -122,7 +122,9 @@ npm ci
 npm run dev
 ```
 
-前端可用脚本只有 `dev`、`build`、`preview`；后端当前没有专门的测试源码目录。
+前端脚本包括 `dev`、`build`、`preview`、`test`；后端回归测试位于 `backend/src/test/java/`。
+后端默认测试使用独立 H2 数据库，不连接生产数据库。设置 `ICE_TEST_REDIS_PORT` 指向本机独立测试 Redis，
+可额外执行投票 Lua 集成测试；不要指向生产或现有开发 Redis。
 
 ### Docker Compose
 
@@ -181,6 +183,10 @@ cmd /c "deploy.bat <提交信息>"
 
 **服务器发布**
 
+当前 `.github/workflows/deploy.yml` 在推送 `main` 时自动连接服务器执行 `deploy.sh`，
+不需要从本机 SSH 登录服务器。工作流中的镜像构建步骤已注释，因此仍需先在本机构建并推送镜像，
+再推送 Git 触发部署；等待 Actions 成功后检查线上健康端点。
+
 ```bash
 cd /opt/project/Ice && bash deploy.sh
 ```
@@ -231,6 +237,7 @@ mvn test
 
 # 前端生产构建
 cd frontend
+npm test
 npm run build
 ```
 

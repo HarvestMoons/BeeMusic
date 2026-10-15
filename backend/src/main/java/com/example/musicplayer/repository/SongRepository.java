@@ -8,8 +8,18 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 
 public interface SongRepository extends JpaRepository<Song, Long> {
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM Song s WHERE s.id = :id")
+    Optional<Song> findLockedById(@Param("id") Long id);
+
+    @Query("SELECT s.id FROM Song s ORDER BY s.id")
+    List<Long> findAllIds();
 
     @Modifying
     @Transactional

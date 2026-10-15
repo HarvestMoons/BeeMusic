@@ -238,10 +238,20 @@ watch(() => props.songId, (val) => {
   commentsRequestId += 1
   comments.value = []
   loading.value = false
+  replyingTo.value = null
+  inputContent.value = ''
 
   if (props.visible && val) {
     fetchComments(false, val, commentsRequestId)
   }
+})
+
+watch(() => [authStore.isAuthenticated, authStore.username], () => {
+  commentCache.clear()
+  commentsRequestId += 1
+  comments.value = []
+  replyingTo.value = null
+  if (props.visible && props.songId) fetchComments()
 })
 
 async function fetchComments(force = false, songId = props.songId, requestId = ++commentsRequestId) {
@@ -305,6 +315,7 @@ async function submitComment() {
   if (!trimmedContent) return
 
   isSubmitting.value = true
+  const requestId = commentsRequestId
   const payload = {
     songId: props.songId,
     content: trimmedContent,
@@ -314,6 +325,10 @@ async function submitComment() {
 
   try {
     const res = await api.post('/comments/add', payload)
+    if (payload.songId !== props.songId || requestId !== commentsRequestId) {
+      commentCache.delete(payload.songId)
+      return
+    }
     const newComment = res.data
 
     if (payload.parentId) {
@@ -344,11 +359,17 @@ async function toggleLike(comment) {
   if (isCommentLikeLoading(comment.id)) return
 
   commentLikeLoadingMap.value[comment.id] = true
+  const songId = props.songId
+  const requestId = commentsRequestId
   try {
     // 已点赞则取消，否则点赞；两个分支的后续处理完全相同
     const res = comment.liked
         ? await api.delete(`/comments/like/${comment.id}`)
         : await api.post(`/comments/like/${comment.id}`)
+    if (songId !== props.songId || requestId !== commentsRequestId) {
+      commentCache.delete(songId)
+      return
+    }
     comment.liked = Boolean(res.data?.liked)
     comment.likeCount = Number(res.data?.likeCount ?? 0)
     persistCurrentComments()
@@ -360,14 +381,21 @@ async function toggleLike(comment) {
 }
 
 async function handleDelete(commentId) {
+  const songId = props.songId
+  const requestId = commentsRequestId
   const confirmed = await requestConfirm({
     title: '删除评论',
     message: '确定删除这条评论吗？',
     confirmText: '删除'
   })
   if (!confirmed) return
+  if (songId !== props.songId || requestId !== commentsRequestId) return
   try {
     await api.delete(`/comments/${commentId}`)
+    if (songId !== props.songId || requestId !== commentsRequestId) {
+      commentCache.delete(songId)
+      return
+    }
     // 从列表中移除
     // 可能是根评论，也可能是子评论
     const rootIdx = comments.value.findIndex(c => c.id === commentId)

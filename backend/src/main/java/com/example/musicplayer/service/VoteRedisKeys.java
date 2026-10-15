@@ -30,9 +30,13 @@ public final class VoteRedisKeys {
         return DISLIKES_PREFIX + songId;
     }
 
+    public static String counts(Long songId) {
+        return "votes:counts:" + songId;
+    }
+
     /** 某首歌的点赞键 + 点踩键，用于一次性删除。 */
     public static List<String> all(Long songId) {
-        return List.of(likes(songId), dislikes(songId));
+        return List.of(likes(songId), dislikes(songId), counts(songId));
     }
 
     /** 按投票类型取对应的键。 */

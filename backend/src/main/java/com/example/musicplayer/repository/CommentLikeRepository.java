@@ -11,14 +11,7 @@ import java.util.Collection;
 import java.util.List;
 
 public interface CommentLikeRepository extends JpaRepository<CommentLike, Long> {
-    @Modifying
-    @Transactional
-    @Query(value = """
-            INSERT INTO comment_likes (comment_id, user_id, created_at)
-            VALUES (:commentId, :userId, CURRENT_TIMESTAMP)
-            ON DUPLICATE KEY UPDATE id = id
-            """, nativeQuery = true)
-    int insertIfAbsent(@Param("userId") Long userId, @Param("commentId") Long commentId);
+    boolean existsByUserIdAndCommentId(Long userId, Long commentId);
 
     @Modifying
     @Transactional
