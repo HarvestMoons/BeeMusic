@@ -122,9 +122,7 @@ npm ci
 npm run dev
 ```
 
-前端脚本包括 `dev`、`build`、`preview`、`test`；后端回归测试位于 `backend/src/test/java/`。
-后端默认测试使用独立 H2 数据库，不连接生产数据库。设置 `ICE_TEST_REDIS_PORT` 指向本机独立测试 Redis，
-可额外执行投票 Lua 集成测试；不要指向生产或现有开发 Redis。
+前端可用脚本只有 `dev`、`build`、`preview`；后端当前没有专门的测试源码目录。
 
 ### Docker Compose
 
@@ -237,7 +235,6 @@ mvn test
 
 # 前端生产构建
 cd frontend
-npm test
 npm run build
 ```
 
