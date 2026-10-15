@@ -3,8 +3,7 @@
     <h1>关于本站</h1>
     <p style="text-indent: 2em;">开发者&站长：小蜜蜂
       <Footnote index="1">资深meme收藏家和亚文化研究员，一个脱离了高级趣味的人</Footnote>
-      <span
-          style="color: transparent; margin-left: 6em;">特别鸣谢：ChatGPT、DeepSeek、Github Copilot</span></p>
+      <span class="hidden-text hidden-thanks" tabindex="0">特别鸣谢：ChatGPT、DeepSeek、Github Copilot</span></p>
     <p style="text-indent: 2em;">本站是一个非营利性的音乐收藏网站，代码已开源在<a
         href="https://github.com/HarvestMoons/BeeMusic" target="_blank"
         class="link">Github</a>，音乐来源于<a
@@ -17,8 +16,7 @@
         厌恶纸质载体，我们在每周一次的满月日只吃山楂制品。希望你们能从这个网站中获得一些乐趣。
       </Footnote>
       仍处于活跃更新中，某些功能可能暂时不可用或有bug。如果有建议和反馈，欢迎与我交流。账号不是必须的，但还是建议注册———评价歌曲等相关功能需要在登录后进行，预计未来会继续推出更多账号相关功能。
-      彩<span style="font-size:0;">🈷</span>蛋：<span
-          style="color: transparent">在主页面，长按E键可以观看随机逆天视频。<span style="margin-left: 2em"></span>另外，搞个账号，在统计饼图中连续点击中心看看。</span>
+      彩<span style="font-size:0;">🈷</span>蛋：<span class="hidden-text" tabindex="0">在主页面，长按E键可以观看随机逆天视频。<span style="margin-left: 2em"></span>另外，搞个账号，在统计饼图中连续点击中心看看。</span>
     </p>
     <p>快捷键提示：</p>
     <div
@@ -70,5 +68,24 @@ onMounted(() => {
 
 .link:hover {
   text-decoration: underline;
+}
+
+.hidden-text {
+  color: transparent;
+  transition: color 0.18s ease;
+}
+
+.hidden-text:hover,
+.hidden-text:focus-visible {
+  color: var(--text-color);
+}
+
+.hidden-text:focus-visible {
+  outline: 1px dashed var(--link-color);
+  outline-offset: 3px;
+}
+
+.hidden-thanks {
+  margin-left: 6em;
 }
 </style>
