@@ -107,6 +107,8 @@ Ice（线上站点为 BeeMusic）是一个音乐播放器网站，提供：
   修改投票返回结构时必须同时检查这一条链路。
 - WebSocket 客户端在 `frontend/src/components/common/OnlineStatus.vue`，代理路径由
   `frontend/nginx/default.conf` 配置。
+- 在线人数按页面标识计数，登录、登出和 WebSocket 重连复用该标识；Redis Lua 原子维护连接归属，
+  旧连接的心跳与关闭事件不能覆盖新连接。歌曲在线人数随心跳续期，异常离线记录最多保留 90 秒。
 
 ## 5. 配置、运行和部署
 
