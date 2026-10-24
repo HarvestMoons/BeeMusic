@@ -11,15 +11,17 @@
 
     <!-- 输入框，出现在图标下方 -->
     <transition name="fade">
-      <input
-          v-if="showInput"
+      <div v-if="showInput" class="search-panel">
+        <input
           type="text"
           v-model="query"
           @input="onSearch"
           :placeholder="placeholder"
           class="search-input"
           ref="inputRef"
-      />
+        />
+        <slot/>
+      </div>
     </transition>
   </div>
 </template>
@@ -91,11 +93,21 @@ onUnmounted(() => {
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
-.search-input {
+.search-panel {
   position: absolute;
   top: 28px;
-  left: 0;
-  width: 200px;
+  right: 0;
+  width: 220px;
+  z-index: 10;
+  padding: 8px;
+  border: 1px solid var(--input-border);
+  border-radius: 6px;
+  background: var(--input-bg);
+}
+
+.search-input {
+  width: 100%;
+  box-sizing: border-box;
   border: 1px solid var(--input-border);
   border-radius: 6px;
   padding: 6px 10px;
@@ -103,7 +115,6 @@ onUnmounted(() => {
   outline: none;
   background: var(--input-bg);
   color: var(--input-text);
-  z-index: 10;
 }
 
 .search-input:focus {

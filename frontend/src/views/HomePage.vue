@@ -6,6 +6,7 @@
           :playlist="safePlaylist"
           :currentSongId="currentSongId"
           @select="handlePlaylistClick"
+          @select-global="playerRef?.handleGlobalSearchSelect($event)"
       />
 
       <!-- 右侧：播放器 + 频谱 -->

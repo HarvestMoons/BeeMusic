@@ -1,8 +1,13 @@
 <template>
   <div class="playlist-container">
     <div class="header">
-      <h3>当前歌单</h3>
-      <SearchBar placeholder="搜索歌曲..." @search="handleSearch"/>
+      <h3>{{ isGlobalSearch ? '全站搜索' : '当前歌单' }}</h3>
+      <SearchBar placeholder="搜索歌曲..." @search="handleSearch">
+        <button type="button" class="search-scope" :aria-pressed="searchEverywhere"
+                @click="searchEverywhere = !searchEverywhere">
+          当前搜索方式：{{ searchEverywhere ? '全站' : '本歌单' }} ⇄
+        </button>
+      </SearchBar>
     </div>
 
     <div class="sort-toolbar">
@@ -24,15 +29,20 @@
       </button>
     </div>
 
-    <ul class="playlist">
+    <p v-if="isGlobalSearch && globalLoading" class="search-message">正在搜索…</p>
+    <p v-else-if="isGlobalSearch && globalError" class="search-message">{{ globalError }}</p>
+    <ul v-else class="playlist">
       <li
           v-for="song in displayPlaylist"
           :key="song.id"
           :class="{ active: song.id === currentSongId, 'deleted-song': song.isDeleted === 1 }"
-          @click="$emit('select', song.id)"
+          @click="selectSong(song)"
       >
         <div class="song-item-content">
-          <span class="song-title-text" :title="getSongTitle(song.name)">{{ getSongTitle(song.name) }}</span>
+          <span class="song-title-text" :title="getSongTitle(song.name)">
+            {{ getSongTitle(song.name) }}
+            <small v-if="isGlobalSearch"> · {{ FOLDER_INFO[song.folderKey] }}</small>
+          </span>
           <span class="song-meta">{{ formatMeta(song) }}</span>
         </div>
       </li>
@@ -47,13 +57,17 @@ import upArrowIcon from '@/assets/icons/up_arrow.svg'
 import downArrowIcon from '@/assets/icons/down_arrow.svg'
 import {usePlayerStorage} from '@/composables/player/usePlayerStorage.js'
 import {getSongTitle, sortPlaylist} from '@/utils/playerPlaylist.js'
+import {FOLDER_INFO} from '@/constants'
+import {useAuthStore} from '@/store'
+import api from '@/services/http'
 
 const props = defineProps({
   playlist: {type: Array, required: true},
   currentSongId: {type: [String, Number], default: null}
 })
 
-defineEmits(['select'])
+const emit = defineEmits(['select', 'select-global'])
+const authStore = useAuthStore()
 
 const {
   loadPlaylistSortPreferences,
@@ -64,9 +78,36 @@ const {
 const savedSortPreferences = loadPlaylistSortPreferences()
 
 const searchQuery = ref('')
+const searchEverywhere = ref(false)
+const globalSongs = ref([])
+const globalLoading = ref(false)
+const globalError = ref('')
+const isGlobalSearch = computed(() => searchEverywhere.value && !!searchQuery.value)
 const sortField = ref(savedSortPreferences.field)
 const sortOrder = ref(savedSortPreferences.order)
 
+watch(() => [searchEverywhere.value, authStore.isHiddenPlaylistUnlocked, authStore.role, authStore.username],
+    async ([enabled], _, onCleanup) => {
+      globalSongs.value = []
+      globalError.value = ''
+      globalLoading.value = enabled
+      if (!enabled) return
+      const controller = new AbortController()
+      onCleanup(() => controller.abort())
+      try {
+        const folders = Object.keys(FOLDER_INFO).filter(folder => folder !== 'true_music' || authStore.isHiddenPlaylistUnlocked)
+        const results = await Promise.all(folders.map(async folderKey => {
+          const {data} = await api.get('/public/songs/get', {params: {folder: folderKey}, signal: controller.signal})
+          if (!Array.isArray(data)) throw new Error('服务器返回的歌单格式不正确')
+          return data.map(song => ({...song, folderKey}))
+        }))
+        if (!controller.signal.aborted) globalSongs.value = results.flat()
+      } catch (error) {
+        if (!controller.signal.aborted) globalError.value = '全站搜索加载失败，请切换搜索方式后重试。'
+      } finally {
+        if (!controller.signal.aborted) globalLoading.value = false
+      }
+    })
 
 watch(sortField, (newVal) => {
   savePlaylistSortField(newVal)
@@ -83,10 +124,16 @@ const handleSearch = (keyword) => {
 const filteredPlaylist = computed(() => {
   if (!searchQuery.value) return props.playlist
   const query = String(searchQuery.value ?? '').toLowerCase()
-  return props.playlist.filter(song =>
+  const songs = isGlobalSearch.value ? globalSongs.value : props.playlist
+  return songs.filter(song =>
       String(getSongTitle(song.name) ?? '').toLowerCase().includes(query)
   )
 })
+
+function selectSong(song) {
+  if (isGlobalSearch.value) emit('select-global', {songId: song.id, folder: song.folderKey})
+  else emit('select', song.id)
+}
 
 const displayPlaylist = computed(() => {
   return sortPlaylist(filteredPlaylist.value, {
@@ -157,6 +204,21 @@ function formatMeta(song) {
   margin-top: 12px;
   margin-bottom: 8px;
 }
+
+.search-scope {
+  width: 100%;
+  margin-top: 6px;
+  padding: 5px 0;
+  border: 0;
+  background: transparent;
+  color: var(--secondary-text-color);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.search-scope:hover { color: var(--primary-color); }
+.search-message { color: var(--secondary-text-color); font-size: 13px; }
+.song-title-text small { font-weight: normal; opacity: .7; }
 
 .sort-select {
   flex: 1;

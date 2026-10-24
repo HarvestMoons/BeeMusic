@@ -39,6 +39,7 @@
               :playlist="playlist"
               :currentSongId="playlist[currentIndex]?.id"
               @select="handleSelectSong"
+              @select-global="handleGlobalSearchSelect"
           />
           <audio
               id="audio-player"
@@ -278,6 +279,17 @@ const {handleFolderChange, setFolder, refreshSongList} = usePlayerPlaylistLoader
   playSongAtIndex: (...args) => playSongAtIndex(...args)
 })
 
+async function handleGlobalSearchSelect({songId, folder}) {
+  if (folder === 'true_music' && !authStore.isHiddenPlaylistUnlocked) return
+  if (folder === selectedFolder.value) {
+    handleSelectSong(songId)
+    return
+  }
+  selectedFolder.value = folder
+  saveSelectedFolder('folder-selector', folder)
+  await setFolder(folder, songId)
+}
+
 async function safePlayAudio(audioElement) {
   if (!audioElement) return false
 
@@ -491,7 +503,8 @@ defineExpose({
   playlist,
   currentIndex,
   playSongAtIndex,
-  handleSelectSong
+  handleSelectSong,
+  handleGlobalSearchSelect
 })
 
 function handleSongVoteUpdate({songId, likes, dislikes}) {
