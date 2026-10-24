@@ -24,8 +24,8 @@
           :title="sortOrder === 'asc' ? '升序' : '降序'"
           :aria-label="sortOrder === 'asc' ? '当前升序，点击切换为降序' : '当前降序，点击切换为升序'"
       >
-        <img v-if="sortOrder === 'asc'" :src="upArrowIcon" alt="升序" class="svg-icon"/>
-        <img v-else :src="downArrowIcon" alt="降序" class="svg-icon"/>
+        <img v-if="sortOrder === 'asc'" :src="upArrowIcon" alt="升序" class="svg-icon" draggable="false"/>
+        <img v-else :src="downArrowIcon" alt="降序" class="svg-icon" draggable="false"/>
       </button>
     </div>
 

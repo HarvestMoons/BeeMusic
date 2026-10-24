@@ -81,6 +81,15 @@
 }
 
 /* Global Icon Style */
+.svg-icon,
+.icp-icon,
+.portal-icon,
+button .icon {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
 .svg-icon {
     width: 20px;
     height: 20px;

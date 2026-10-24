@@ -1,7 +1,5 @@
 <template>
   <div class="settings-page">
-    <h1>设置</h1>
-
     <p v-if="loading" class="hint">正在加载…</p>
     <template v-else-if="authStore.isAuthenticated && profile">
       <section class="card">

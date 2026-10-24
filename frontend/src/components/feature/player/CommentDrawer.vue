@@ -20,8 +20,8 @@
         </div>
       </div>
       <button class="close-btn" @click="$emit('close')" :aria-label="visible ? '收起评论侧栏' : '展开评论侧栏'">
-        <img v-if="visible" :src="foldIcon" class="svg-icon" alt="收起"/>
-        <img v-else :src="unfoldIcon" class="svg-icon" alt="展开"/>
+        <img v-if="visible" :src="foldIcon" class="svg-icon" alt="收起" draggable="false"/>
+        <img v-else :src="unfoldIcon" class="svg-icon" alt="展开" draggable="false"/>
       </button>
     </div>
 

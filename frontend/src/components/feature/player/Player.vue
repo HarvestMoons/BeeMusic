@@ -16,7 +16,7 @@
               <span class="song-title">{{ currentSongInfo.title }}</span>
               <a v-if="currentSongInfo.bv" :href="`https://www.bilibili.com/video/${currentSongInfo.bv}/`"
                  target="_blank" class="portal-link">
-                <img :src="portalIcon" alt="传送门" class="svg-icon"/>
+                <img :src="portalIcon" alt="传送门" class="svg-icon" draggable="false"/>
               </a>
               <button v-if="authStore.isStationMaster"
                       @click="handleToggleDeleteStatus"
@@ -24,7 +24,7 @@
                       :aria-label="playlist[currentIndex]?.isDeleted === 1 ? '恢复当前歌曲' : '删除当前歌曲'"
                       :title="playlist[currentIndex]?.isDeleted === 1 ? '恢复当前歌曲' : '删除当前歌曲'">
                 <img :src="playlist[currentIndex]?.isDeleted === 1 ? restoreIcon : deleteIcon" class="svg-icon"
-                     alt="操作"/>
+                     alt="操作" draggable="false"/>
               </button>
             </template>
           </h2>
@@ -58,21 +58,21 @@
         <div class="controls-section">
           <div class="buttons-row">
             <button id="play-btn" @click="playRandomSong" title="随便听听 (R)" aria-label="随机播放一首歌曲">
-              <img :src="playRandomBtnIcon" alt="随便听听 (R)" class="svg-icon"/>
+              <img :src="playRandomBtnIcon" alt="随便听听 (R)" class="svg-icon" draggable="false"/>
             </button>
             <button id="prev-btn" @click="playPreviousSong" title="上一首 (←/A)" aria-label="播放上一首歌曲">
-              <img :src="prevIcon" alt="上一首 (←/A)" class="svg-icon"/>
+              <img :src="prevIcon" alt="上一首 (←/A)" class="svg-icon" draggable="false"/>
             </button>
             <button id="toggleSpectrumBtn" @click="handleToggleSpectrum"
                     :aria-label="isSpectrumVisible ? '隐藏频谱可视化' : '显示频谱可视化'"
                     :title="isSpectrumVisible ? '隐藏频谱' : '显示频谱'">
-              <img :src="spectrumIcon" alt="频谱" class="svg-icon"/>
+              <img :src="spectrumIcon" alt="频谱" class="svg-icon" draggable="false"/>
             </button>
             <button id="play-mode-btn" @click="cyclePlayMode" :title="playModeText" :aria-label="playModeText">
-              <img :src="currentPlayModeIcon" alt="模式" class="svg-icon"/>
+              <img :src="currentPlayModeIcon" alt="模式" class="svg-icon" draggable="false"/>
             </button>
             <button id="share-btn" @click="handleShare" title="分享当前歌曲" aria-label="复制当前歌曲分享链接">
-              <img :src="shareIcon" alt="分享" class="svg-icon"/>
+              <img :src="shareIcon" alt="分享" class="svg-icon" draggable="false"/>
             </button>
           </div>
 

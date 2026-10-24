@@ -24,7 +24,7 @@
               exact-active-class="is-active"
               @click="closeSidebar"
           >
-            <img v-if="item.icon" :src="item.icon" class="svg-icon" alt=""/>
+            <img v-if="item.icon" :src="item.icon" class="svg-icon" alt="" draggable="false"/>
             <span>{{ item.label }}</span>
           </RouterLink>
         </li>

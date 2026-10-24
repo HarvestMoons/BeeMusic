@@ -5,6 +5,7 @@
         src="@/assets/icons/search.svg"
         alt="search"
         class="search-icon svg-icon"
+        draggable="false"
         :class="{ active: showInput }"
         @click="toggleSearch"
     />
@@ -100,9 +101,11 @@ onUnmounted(() => {
   width: 220px;
   z-index: 10;
   padding: 8px;
-  border: 1px solid var(--input-border);
-  border-radius: 6px;
-  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--playlist-bg);
+  box-shadow: var(--sidebar-shadow);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .search-input {
@@ -112,13 +115,20 @@ onUnmounted(() => {
   border-radius: 6px;
   padding: 6px 10px;
   font-size: 14px;
+  font-family: inherit;
   outline: none;
-  background: var(--input-bg);
-  color: var(--input-text);
+  background: var(--playlist-item-bg);
+  color: var(--text-color);
+  transition: background-color 0.3s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-input::placeholder {
+  color: var(--secondary-text-color);
+  opacity: 0.75;
 }
 
 .search-input:focus {
   border-color: var(--primary-color);
-  box-shadow: 0 0 4px rgba(249, 168, 37, 0.4);
+  box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.2);
 }
 </style>

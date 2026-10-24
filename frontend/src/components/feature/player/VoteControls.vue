@@ -1,11 +1,11 @@
 <template>
   <div class="vote-controls">
     <button :class="{ active: userVote === 1 }" :disabled="isVoting" @click="handleLike">
-      <img :src="likeIcon" alt="点赞" class="vote-icon svg-icon"/>
+      <img :src="likeIcon" alt="点赞" class="vote-icon svg-icon" draggable="false"/>
       <span>{{ likes }}</span>
     </button>
     <button :class="{ active: userVote === -1 }" :disabled="isVoting" @click="handleDislike">
-      <img :src="dislikeIcon" alt="点踩" class="vote-icon svg-icon"/>
+      <img :src="dislikeIcon" alt="点踩" class="vote-icon svg-icon" draggable="false"/>
       <span>{{ dislikes }}</span>
     </button>
   </div>
