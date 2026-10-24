@@ -46,7 +46,7 @@ http.interceptors.request.use(async config => {
 });
 
 http.interceptors.response.use(response => {
-    if (['/auth/login', '/auth/logout'].includes(response.config.url)) clearCsrfToken();
+    if (['/auth/login', '/auth/logout', '/users/me/deactivate'].includes(response.config.url)) clearCsrfToken();
     return response;
 }, async error => {
     const config = error.config;

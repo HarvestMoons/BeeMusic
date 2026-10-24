@@ -5,6 +5,11 @@
 - 继续使用 Redis Session 和 Cookie 认证，同一账号登录时清理其他会话。
 - 自定义登录入口显式调用 Spring Security 会话策略：已有 Session ID 在登录时轮换，旧 CSRF Token 失效。
 - 登出使用 Spring Security 的 LogoutHandler 清理 CSRF Token、Session、SecurityContextHolder 和 SecurityContextRepository。
+- 设置页可注销非站长账户：输入当前密码、勾选确认并再次弹窗确认后，POST `/api/users/me/deactivate`
+  提交当前 `username` 和 `password`（沿用 CSRF）。服务端锁定当前用户并复核角色、用户名与密码，将 `status` 置为 0，
+  清理其他会话并登出当前会话。用户和历史数据、用户名占用均保留，不提供自行恢复入口，无需数据库迁移。
+- 已认证请求在授权前重新检查数据库中的账户状态，注销或禁用后的旧 Session 不能继续操作。
+  用户资料更新也锁定有效用户，避免并发请求将已注销账户重新保存为正常状态。
 - Session Cookie 保持已有 HttpOnly、Secure、有效期配置，显式设置 SameSite=Lax。
 - 所有非安全方法均校验 CSRF，包括登录、注册、评论、投票、管理操作和匿名播放计数。
 - 未登录访问受保护接口返回 JSON 401；权限不足返回 JSON 403。CSRF 失败返回 JSON 403，`code` 为 `CSRF_INVALID`。
@@ -14,7 +19,7 @@
 `frontend/src/services/http.js` 统一处理写请求：从 `/api/auth/csrf` 获取 Token，保存在当前页面内存中，
 通过返回的 `headerName` 携带 `token`。后端 Token 保存在 Session 中，端点返回带 XOR 掩码的 Token，保留 Spring Security 的 BREACH 防护。
 
-登录或登出成功后，前端丢弃旧 Token，下次写请求重新获取。跨标签页登录、登出或 Session 过期可能使缓存 Token 失效；
+登录、登出或账户注销成功后，前端丢弃旧 Token，下次写请求重新获取。跨标签页登录、登出或 Session 过期可能使缓存 Token 失效；
 只在后端明确返回 `CSRF_INVALID` 时刷新 Token 并重试一次，不重试普通权限错误、业务错误或网络错误。
 原生 Fetch 保留用于只读 GET 和 OSS 文件请求，站内写请求使用统一 Axios 实例。
 

@@ -6,6 +6,7 @@ import com.example.musicplayer.dto.ChangeUsernameRequest;
 import com.example.musicplayer.dto.ProfileResponse;
 import com.example.musicplayer.model.User;
 import com.example.musicplayer.service.CustomUserDetails;
+import com.example.musicplayer.service.SecurityUtils;
 import com.example.musicplayer.service.UserService;
 import com.example.musicplayer.service.UserSessionService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,6 +20,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextHolderStrategy;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -29,14 +31,34 @@ public class UserController {
     private final UserSessionService userSessionService;
     private final SecurityContextRepository securityContextRepository;
     private final SecurityContextHolderStrategy securityContextHolderStrategy;
+    private final LogoutHandler logoutHandler;
 
     public UserController(UserService userService,
                           UserSessionService userSessionService,
-                          SecurityContextRepository securityContextRepository) {
+                          SecurityContextRepository securityContextRepository,
+                          LogoutHandler apiLogoutHandler) {
         this.userService = userService;
         this.userSessionService = userSessionService;
         this.securityContextRepository = securityContextRepository;
         this.securityContextHolderStrategy = SecurityContextHolder.getContextHolderStrategy();
+        this.logoutHandler = apiLogoutHandler;
+    }
+
+    public record DeactivateRequest(String username, String password) {}
+
+    @PostMapping("/me/deactivate")
+    public ResponseEntity<AuthResponse> deactivate(@RequestBody DeactivateRequest payload,
+                                                   @AuthenticationPrincipal CustomUserDetails userDetails,
+                                                   HttpServletRequest request, HttpServletResponse response,
+                                                   Authentication authentication) {
+        User user = userService.deactivateAccount(SecurityUtils.currentUserId(userDetails),
+                payload.username(), payload.password());
+        try {
+            userSessionService.invalidateOtherSessions(user.getUsername(), request);
+        } finally {
+            logoutHandler.logout(request, response, authentication);
+        }
+        return ResponseEntity.ok(new AuthResponse(true, "账户已注销", null));
     }
 
     // 当前登录用户的资料

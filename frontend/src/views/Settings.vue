@@ -107,6 +107,32 @@
         </form>
       </section>
 
+      <section v-if="authStore.isAuthenticated && !authStore.isStationMaster" class="card">
+        <button type="button" class="toggle-header" :aria-expanded="showDeactivateSection"
+                @click="toggleDeactivateSection" :disabled="deactivateLoading">
+          <span class="card-title danger-text">注销账户</span>
+          <span class="chevron" :class="{ rotated: showDeactivateSection }">›</span>
+        </button>
+
+        <form v-if="showDeactivateSection" class="section-form" @submit.prevent="submitDeactivation">
+          <p class="muted">注销后将立即退出所有登录，无法再次使用此账户，也无法自行恢复。已有评论、投票和听歌数据会保留，用户名不能重新注册。</p>
+          <label class="field">
+            <span class="label-text">输入当前密码以确认身份</span>
+            <input v-model="deactivatePassword" type="password" required autocomplete="current-password"
+                   :disabled="deactivateLoading"/>
+          </label>
+          <label class="muted">
+            <input v-model="deactivateAcknowledged" type="checkbox" required :disabled="deactivateLoading"/>
+            我已了解注销后果，确认注销此账户
+          </label>
+          <p v-if="deactivateError" class="error">{{ deactivateError }}</p>
+          <button class="action-btn danger-action" type="submit"
+                  :disabled="deactivateLoading || !deactivateAcknowledged || !deactivatePassword">
+            {{ deactivateLoading ? '处理中…' : '注销账户' }}
+          </button>
+        </form>
+      </section>
+
       <section v-if="authStore.isStationMaster" class="card">
         <button type="button" class="toggle-header" :aria-expanded="showSiteSection"
                 @click="showSiteSection = !showSiteSection">
@@ -131,7 +157,7 @@
 
 <script setup>
 import {computed, onMounted, onUnmounted, reactive, ref, watch} from 'vue'
-import {changePassword, changeUsername, getProfile} from '@/services/auth.js'
+import {changePassword, changeUsername, deactivateAccount, getProfile} from '@/services/auth.js'
 import {syncDatabase} from '@/services/siteConfig.js'
 import {useAuthStore, useSiteConfigStore, useThemeStore} from '@/store/index.js'
 import {eventBus, requestConfirm} from '@/utils/eventBus.js'
@@ -166,6 +192,11 @@ const showDisplaySection = ref(false)
 const showUsernameSection = ref(false)
 const showPasswordSection = ref(false)
 const showSiteSection = ref(false)
+const showDeactivateSection = ref(false)
+const deactivatePassword = ref('')
+const deactivateAcknowledged = ref(false)
+const deactivateError = ref('')
+const deactivateLoading = ref(false)
 
 const usernameForm = reactive({newUsername: ''})
 const usernameError = ref('')
@@ -186,6 +217,10 @@ const formattedCreatedAt = computed(() => {
 })
 
 function reloadProfile() {
+  showDeactivateSection.value = false
+  deactivatePassword.value = ''
+  deactivateAcknowledged.value = false
+  deactivateError.value = ''
   listeningRequestId++
   listeningStats.value = null
   listeningPlaceholder.value = '—'
@@ -277,6 +312,42 @@ function togglePasswordSection() {
   showPasswordSection.value = !showPasswordSection.value
   if (showPasswordSection.value) {
     passwordError.value = ''
+  }
+}
+
+function toggleDeactivateSection() {
+  showDeactivateSection.value = !showDeactivateSection.value
+  deactivatePassword.value = ''
+  deactivateAcknowledged.value = false
+  deactivateError.value = ''
+}
+
+async function submitDeactivation() {
+  if (deactivateLoading.value || !deactivateAcknowledged.value || !deactivatePassword.value) return
+  const username = profile.value?.username
+  if (!username || authStore.isStationMaster) return
+  deactivateLoading.value = true
+  deactivateError.value = ''
+  try {
+    const confirmed = await requestConfirm({
+      title: '确认注销账户',
+      message: `即将注销账户「${username}」。注销后无法登录或自行恢复，历史内容保留，用户名仍被占用。确定继续吗？`,
+      confirmText: '确认注销',
+      cancelText: '保留账户'
+    })
+    if (!confirmed) return
+    if (!authStore.isAuthenticated || authStore.username !== username) {
+      deactivateError.value = '登录账户已变更，请刷新后重试。'
+      return
+    }
+    await deactivateAccount({username, password: deactivatePassword.value})
+    authStore.logout()
+    eventBus.emit('show-toast', '账户已注销，已退出登录')
+  } catch (error) {
+    deactivateError.value = error.response?.data?.message || '注销未能确认完成，请重新登录确认账户状态。'
+  } finally {
+    deactivatePassword.value = ''
+    deactivateLoading.value = false
   }
 }
 
@@ -566,6 +637,10 @@ input:focus {
   border-color: var(--border-color);
   color: var(--text-color);
 }
+
+.danger-text { color: var(--danger-color); }
+.danger-action { color: var(--danger-color); border-color: var(--danger-color); }
+.danger-action:hover:not(:disabled) { background: var(--danger-color); border-color: var(--danger-color); }
 
 .hint,
 .muted {

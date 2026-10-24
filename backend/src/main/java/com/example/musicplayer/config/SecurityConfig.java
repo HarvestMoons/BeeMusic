@@ -26,6 +26,8 @@ import org.springframework.security.web.csrf.CsrfTokenRequestHandler;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 import org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.savedrequest.NullRequestCache;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
+import com.example.musicplayer.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -49,13 +51,17 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http, CsrfTokenRepository csrfTokenRepository,
                                                    CsrfTokenRequestHandler csrfTokenRequestHandler,
                                                    SecurityContextRepository securityContextRepository,
-                                                   ObjectMapper objectMapper) throws Exception {
+                                                   ObjectMapper objectMapper, UserRepository userRepository,
+                                                   LogoutHandler apiLogoutHandler) throws Exception {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.csrfTokenRepository(csrfTokenRepository)
                         .csrfTokenRequestHandler(csrfTokenRequestHandler))
                 .securityContext(context -> context.securityContextRepository(securityContextRepository))
                 .requestCache(cache -> cache.requestCache(new NullRequestCache()))
+                .addFilterBefore(new ActiveUserFilter(userRepository, apiLogoutHandler,
+                        (request, response, error) -> writeSecurityError(objectMapper, response, 401,
+                                "UNAUTHENTICATED", "账户已注销或禁用，请重新登录")), AuthorizationFilter.class)
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint((request, response, error) ->
                                 writeSecurityError(objectMapper, response, 401, "UNAUTHENTICATED", "请先登录"))

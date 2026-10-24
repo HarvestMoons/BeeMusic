@@ -6,6 +6,9 @@ import com.example.musicplayer.model.User;
 import com.example.musicplayer.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.nio.charset.StandardCharsets;
@@ -55,8 +58,9 @@ public class UserService {
     /**
      * 修改密码。必须在事务外由调用方负责让其他会话失效。
      */
+    @Transactional
     public User changePassword(Long userId, String oldPassword, String newPassword) {
-        User user = findById(userId);
+        User user = activeUserForUpdate(userId);
         if (oldPassword == null || !passwordEncoder.matches(oldPassword, user.getPassword())) {
             throw new UserOperationException("当前密码不正确");
         }
@@ -72,8 +76,9 @@ public class UserService {
      * 修改用户名。调用方必须同步刷新当前会话的 SecurityContext，
      * 否则会话里缓存的旧用户名会让后续按用户名查库的接口失败。
      */
+    @Transactional
     public User changeUsername(Long userId, String newUsername) {
-        User user = findById(userId);
+        User user = activeUserForUpdate(userId);
         String trimmed = newUsername == null ? "" : newUsername.trim();
         if (trimmed.isEmpty()) {
             throw new UserOperationException("用户名不能为空");
@@ -91,16 +96,39 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    @Transactional
     public void updateLastActiveTime(User user) {
-        user.setLastActiveTime(LocalDateTime.now());
+        activeUserForUpdate(user.getId()).setLastActiveTime(LocalDateTime.now());
+    }
+
+    @Transactional
+    public void unlockHiddenPlaylist(Long userId) {
+        User user = activeUserForUpdate(userId);
+        user.setIsHiddenPlaylistUnlocked(true);
         userRepository.save(user);
     }
 
-    public void unlockHiddenPlaylist(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        user.setIsHiddenPlaylistUnlocked(true);
-        userRepository.save(user);
+    @Transactional
+    public User deactivateAccount(Long userId, String username, String password) {
+        User user = activeUserForUpdate(userId);
+        if (user.getRoleEnum() == UserRole.STATION_MASTER) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "站长账户暂不支持注销");
+        }
+        if (!user.getUsername().equals(username)) {
+            throw new UserOperationException("账户信息已变更，请刷新后重试");
+        }
+        if (password == null || password.isBlank() ||
+                password.getBytes(StandardCharsets.UTF_8).length > 72 ||
+                !passwordEncoder.matches(password, user.getPassword())) {
+            throw new UserOperationException("当前密码不正确");
+        }
+        user.setStatus(0);
+        return user;
+    }
+
+    private User activeUserForUpdate(Long userId) {
+        return userRepository.findActiveLockedById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "账户不可用，请重新登录"));
     }
 
     private void validatePassword(String password) {

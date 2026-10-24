@@ -29,6 +29,10 @@ export async function changeUsername(payload) {
     return (await http.post('/users/me/username', payload)).data;
 }
 
+export async function deactivateAccount(payload) {
+    return (await http.post('/users/me/deactivate', payload)).data;
+}
+
 export async function unlockHiddenPlaylist() {
     return http.post('/users/unlock-hidden-playlist');
 }
